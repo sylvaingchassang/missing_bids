@@ -10,11 +10,8 @@ class TestAuctionData(TestCase):
         self.auctions = auction_data.AuctionData(
             reference_file=os.path.join('reference_data', 'tsuchiura_data.csv')
         )
-        self.auctions.generate_auction_data()
-        self.auctions.add_most_competitive()
         self.auctions.compute_demand_moments()
         self.auctions.categorize_histories()
-
 
     def test_bid_data(self):
         assert_array_equal(
@@ -46,4 +43,10 @@ class TestAuctionData(TestCase):
                 (1, 0, 0): 1441,
                 (1, 0, 1): 16}
 
+    def test_get_demand(self):
+        p_c = (0.0, 0.10000000000000001, 0.90000000000000002, 0.5)
+        assert self.auctions.get_demand(p_c) == \
+            (0.025295193746881755, 0.53524031265591221, 0.0013304506901712955)
 
+        assert self.auctions.get_competitive_share(p_c) == \
+            0.56053550640279404

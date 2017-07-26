@@ -12,11 +12,17 @@ class AuctionData(object):
             {0: (0, 0, 0), 1: (1, 0, 0), 2: (0, 1, 0), 3: (1, 0, 1)}
         self._enum_categories = None
         self._num_histories = None
+        self.set_bid_data(self.df_bids)
+
+    def set_bid_data(self, df_bids):
+        self.df_bids = df_bids
+        self.generate_auction_data()
+        self.add_most_competitive()
 
     def generate_auction_data(self):
         '''
         generates an auction-level dataframe from bid-level dataframe df
-        includes second lowest bidder and cartel metrics
+        includes second lowest bidder
         '''
 
         list_auctions = list(set(self.df_bids.pid))
@@ -98,6 +104,10 @@ class AuctionData(object):
         self._num_histories = sum(self.enum_categories.values())
 
     def get_demand(self, p_c):
+        '''
+        :param p_c: likelihood of conserving auctions in each category
+        :return: sample tuple (D, Pm, Pp) corresponding to selection p_C
+        '''
         mean = np.array([0., 0., 0.])
         for i, z in enumerate(p_c):
             v = self.demand_outcomes[i]
@@ -109,7 +119,7 @@ class AuctionData(object):
         c = 0
         for i, z in enumerate(p_c):
             v = self.demand_outcomes[i]
-            c += z * self.enum_categories[v] / float(self.enum_categories)
+            c += z * self.enum_categories[v] / float(self._num_histories)
         return c
 
     @property
