@@ -1,7 +1,7 @@
-import pandas as pd
 import numpy as np
 from auction_data import AuctionData
 import itertools
+
 
 class ICSets(object):
 

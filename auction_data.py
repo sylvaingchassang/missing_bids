@@ -20,10 +20,10 @@ class AuctionData(object):
         self.add_most_competitive()
 
     def generate_auction_data(self):
-        '''
+        """
         generates an auction-level dataframe from bid-level dataframe df
         includes second lowest bidder
-        '''
+        """
 
         list_auctions = list(set(self.df_bids.pid))
         list_auctions.sort()
@@ -104,10 +104,10 @@ class AuctionData(object):
         self._num_histories = sum(self.enum_categories.values())
 
     def get_demand(self, p_c):
-        '''
+        """
         :param p_c: likelihood of conserving auctions in each category
         :return: sample tuple (D, Pm, Pp) corresponding to selection p_C
-        '''
+        """
         mean = np.array([0., 0., 0.])
         for i, z in enumerate(p_c):
             v = self.demand_outcomes[i]
