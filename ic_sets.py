@@ -4,7 +4,6 @@ import itertools
 
 
 class ICSets(object):
-
     def __init__(self, rho_p, rho_m, auction_data, m, t, k):
         self._rho_p = None
         self._rho_m = None
@@ -57,16 +56,16 @@ class ICSets(object):
 
     @property
     def lower_slope_pp(self):
-        return self.rho_p/(1. + self.rho_p - 1. / (1.+self.m))
+        return self.rho_p / (1. + self.rho_p - 1. / (1. + self.m))
 
     @property
     def tangent_binding_pm(self):
-        return self.rho_p/(self.rho_p + self.rho_m)
+        return self.rho_p / (self.rho_p + self.rho_m)
 
     def value_pm(self, d, pp=None):
         if pp is None:
             pp = self.lower_slope_pp * d
-        if pp > (self.rho_p/(self.rho_p + self.rho_m)) * d:
+        if pp >= (self.rho_p / (self.rho_p + self.rho_m)) * d:
             return 1 - d
         else:
             return min(
@@ -93,8 +92,8 @@ class ICSets(object):
                 (o_d, self.value_pm(o_d), self.lower_slope_pp * o_d)
             ]
 
-            denominator = -self.rho_p + (self.rho_p/self.lower_slope_pp)
-            intersect_d = (denominator - self.rho_m)/denominator
+            denominator = -self.rho_p + (self.rho_p / self.lower_slope_pp)
+            intersect_d = (denominator - self.rho_m) / denominator
             if intersect_d <= o_d:
                 list_points.append(
                     (intersect_d, self.value_pm(intersect_d),
@@ -105,7 +104,7 @@ class ICSets(object):
     def compute_set_a(self, p_c):
         d, pm, pp = self.auction_data.get_demand(p_c)
         t = self.t
-        range_d = [d-t, d+t]
+        range_d = [d - t, d + t]
         range_pm = [pm - t, pm + t]
         range_pp = [pp - t, pp + t]
         return range_d, range_pm, range_pp
@@ -130,7 +129,7 @@ class ICSets(object):
     def overline_b(self, x, k=None):
         k = self.k if k is None else k
         l = float(x) / (1. - x)
-        return l * np.exp(k)/(1. + l * np.exp(k))
+        return l * np.exp(k) / (1. + l * np.exp(k))
 
     def compute_set_b(self, p_c):
         d, pm, pp = self.auction_data.get_demand(p_c)
@@ -156,10 +155,10 @@ class ICSets(object):
     @staticmethod
     def choose_3_in(n):
         list_sel = []
-        for a in xrange(n-2):
-            for b in xrange(a+1, n-1):
-                for c in xrange(b+1, n):
-                    list_sel.append([a,b,c])
+        for a in xrange(n - 2):
+            for b in xrange(a + 1, n - 1):
+                for c in xrange(b + 1, n):
+                    list_sel.append([a, b, c])
         return np.array(list_sel)
 
     def get_triplets(self, array_points):
@@ -169,3 +168,51 @@ class ICSets(object):
             tuple(array_points[array_sel[:, i]] for i in range(3)),
             axis=1
         )
+
+    def is_separable(self, extreme_points_box, extreme_points_z):
+        all_extreme_points = np.concatenate(
+            (extreme_points_z, extreme_points_box), axis=0
+        )
+
+        all_triangles = self.get_triplets(all_extreme_points)
+        perpendiculars = np.apply_along_axis(
+            self.get_perpendicular, axis=1, arr=all_triangles
+        )
+
+        score_box = np.dot(extreme_points_box, perpendiculars.T)
+        score_set_z = np.dot(extreme_points_z, perpendiculars.T)
+
+        max_score_box, max_score_z = (np.max(score_box, axis=0),
+                                      np.max(score_set_z, axis=0))
+        min_score_box, min_score_z = (np.min(score_box, axis=0),
+                                      np.min(score_set_z, axis=0))
+
+        separates = (np.any(max_score_box <= min_score_z) or
+                     np.any(max_score_z <= min_score_box))
+
+        return ~separates
+
+    def is_rationalizable(self, p_c):
+        set_a = self.compute_set_a(p_c)
+        set_b = self.compute_set_b(p_c)
+        box = self.intersect_box(set_a, set_b)
+        if None in box:
+            return False
+
+        extreme_points_box = self.get_box_extreme_points(box)
+        extreme_points_z = self.extreme_points_set_z(*set_b[0])
+
+        return ~self.is_separable(extreme_points_box, extreme_points_z)
+
+    def assess_share_competitive(self, num_steps=11):
+        steps = np.linspace(0, 1, num_steps)
+        list_p_c = list(itertools.product(steps, repeat=4))
+        max_competitive = 0
+        arg_max = list_p_c[0]
+        for i, p_c in enumerate(list_p_c):
+            if self.is_rationalizable(p_c):
+                share_comp = self.auction_data.get_competitive_share(p_c)
+                if share_comp > max_competitive:
+                    max_competitive = share_comp
+                    arg_max = p_c
+        return max_competitive, arg_max
