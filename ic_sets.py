@@ -63,7 +63,7 @@ class ICSets(object):
     def tangent_binding_pm(self):
         return self.rho_p/(self.rho_p + self.rho_m)
 
-    def value_p_m(self, d, pp=None):
+    def value_pm(self, d, pp=None):
         if pp is None:
             pp = self.lower_slope_pp * d
         if pp > (self.rho_p/(self.rho_p + self.rho_m)) * d:
@@ -88,16 +88,16 @@ class ICSets(object):
             list_points = list_points_constrained
             list_points += [
                 (u_d, 0, self.lower_slope_pp * u_d),
-                (u_d, self.value_p_m(u_d), self.lower_slope_pp * u_d),
+                (u_d, self.value_pm(u_d), self.lower_slope_pp * u_d),
                 (o_d, 0, self.lower_slope_pp * o_d),
-                (o_d, self.value_p_m(o_d), self.lower_slope_pp * o_d)
+                (o_d, self.value_pm(o_d), self.lower_slope_pp * o_d)
             ]
 
             denominator = -self.rho_p + (self.rho_p/self.lower_slope_pp)
             intersect_d = (denominator - self.rho_m)/denominator
             if intersect_d <= o_d:
                 list_points.append(
-                    (intersect_d, self.value_p_m(intersect_d),
+                    (intersect_d, self.value_pm(intersect_d),
                      self.lower_slope_pp * intersect_d)
                 )
         return np.array(list_points)
