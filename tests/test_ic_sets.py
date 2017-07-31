@@ -115,10 +115,36 @@ class TestICSets(TestCase):
         )
 
     def test_is_separable(self):
-        pass
+        pyramid = np.array(
+            [[0, 0, 0], [0, 1, 0], [.5, 0, .5], [.5, 0, .4]]
+        )
+
+        cube = np.array(
+            [[.4, .21, .35], [.4, .21, .45],
+             [.4, .31, .35], [.4, .31, .45],
+             [.45, .21, .35], [.45, .21, .45],
+             [.45, .31, .35], [.45, .31, .45]]
+        )
+
+        assert self.ic_set.is_separable(pyramid, cube) == True
+        cube = np.array(
+            [[.4, .19, .35], [.4, .19, .45],
+             [.4, .31, .35], [.4, .31, .45],
+             [.45, .19, .35], [.45, .19, .45],
+             [.45, .31, .35], [.45, .31, .45]]
+        )
+        assert self.ic_set.is_separable(pyramid, cube) == False
 
     def test_is_rationalizable(self):
-        pass
+        p_c = (0, 0, 0, 0)
+        assert self.ic_set.is_rationalizable(p_c) == True
+        p_c = (1, 1, 1, 1)
+        assert self.ic_set.is_rationalizable(p_c) == False
+        p_c = (.5, .5, .5, .5)
+        assert self.ic_set.is_rationalizable(p_c) == True
 
     def test_share_competitive(self):
-        assert self.ic_set.assess_share_competitive(3) == (1, (1, 1, 1, 1))
+        assert_array_almost_equal(
+            self.ic_set.assess_share_competitive(3)[0],
+            0.88017628471644771
+        )

@@ -150,7 +150,11 @@ class ICSets(object):
             x = x[0:3]
         u = x - y
         v = x - z
-        return np.cross(u, v)
+        c = np.cross(u, v)
+        if np.sum(np.abs(c)) == 0:
+            return np.array([1., 1., 1.])
+        else:
+            return c
 
     @staticmethod
     def choose_3_in(n):
@@ -187,10 +191,22 @@ class ICSets(object):
         min_score_box, min_score_z = (np.min(score_box, axis=0),
                                       np.min(score_set_z, axis=0))
 
-        separates = (np.any(max_score_box <= min_score_z) or
-                     np.any(max_score_z <= min_score_box))
+        box_below = max_score_box <= min_score_z
+        is_box_below = np.any(box_below)
+        z_below = max_score_z <= min_score_box
+        is_z_below = np.any(z_below)
 
-        return ~separates
+        separates = (is_box_below or is_z_below)
+
+        if separates:
+            is_below, min_score, max_score = \
+                (box_below, min_score_box, max_score_box) if is_box_below else\
+                (z_below, min_score_z, max_score_z)
+            ind = np.where(is_below)
+            valid = np.any(min_score[ind] < max_score[ind])
+            return separates & valid
+        else:
+            return separates
 
     def is_rationalizable(self, p_c):
         set_a = self.compute_set_a(p_c)
