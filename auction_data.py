@@ -102,21 +102,24 @@ class AuctionData(object):
         )
 
     def counterfactual_demand(self, rho_p, rho_m, num=500):
-        assert (rho_p > 0) & (rho_m > 0)
+        assert (rho_p >= 0) & (rho_m >= 0)
         range_rho = zip(np.linspace(0, rho_m,  num=num),
                         np.linspace(0, rho_p, num=num))
-        demand = []
+        data = {'demand': [], 'revenue': []}
         index = []
         for this_rho_m, this_rho_p in range_rho:
+            bid_up = (1+this_rho_p) * self.df_bids.bid
+            bid_down = (1-this_rho_m) * self.df_bids.bid
             index += [-this_rho_m, this_rho_p]
             self.compute_demand_moments(this_rho_p, this_rho_m)
-            demand += [
-                (self.df_bids.sample_D + self.df_bids.sample_Pm).mean(),
-                (self.df_bids.sample_D - self.df_bids.sample_Pp).mean()
-            ]
-        return pd.DataFrame(data=demand,
+            d_m = self.df_bids.sample_D + self.df_bids.sample_Pm
+            d_p = self.df_bids.sample_D - self.df_bids.sample_Pp
+            data['demand'] += [d_m.mean(), d_p.mean()]
+            data['revenue'] += [(d_m * bid_down).mean(),
+                                (d_p * bid_up).mean()]
+        return pd.DataFrame(data=data,
                             index=index,
-                            columns=['demand']).sort_index()
+                            columns=['demand', 'revenue']).sort_index()
 
     def categorize_histories(self):
         ''' category = 1xyz with x, y, z = d, p_m, p_p'''
