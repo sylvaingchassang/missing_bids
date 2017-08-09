@@ -19,8 +19,9 @@ class ICSets(object):
         self._rho_p = rho_p
         self._rho_m = rho_m
 
-    def set_data(self, auction_data):
+    def set_data(self, auction_data=None):
         assert isinstance(auction_data, AuctionData)
+        auction_data.set_bid_data(auction_data.df_bids)
         auction_data.compute_demand_moments(rho_m=self.rho_m, rho_p=self.rho_p)
         auction_data.categorize_histories()
         self._auction_data = auction_data

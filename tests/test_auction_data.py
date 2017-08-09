@@ -38,15 +38,24 @@ class TestAuctionData(TestCase):
 
     def test_categorize_histories(self):
         assert self.auctions.enum_categories == \
-               {(0, 0, 0): 980,
-                (0, 1, 0): 3576,
+               {(0, 0, 0): 817,
+                (0, 1, 0): 3602,
                 (1, 0, 0): 1441,
                 (1, 0, 1): 16}
 
     def test_get_demand(self):
         p_c = (0.0, 0.10000000000000001, 0.90000000000000002, 0.5)
-        assert self.auctions.get_demand(p_c) == \
-            (0.025295193746881755, 0.53524031265591221, 0.0013304506901712955)
+        assert_array_almost_equal(
+            self.auctions.get_demand(p_c),
+            (0.025884955752212391, 0.55170183798502381, 0.0013614703880190605)
+        )
+        assert_array_almost_equal(
+            self.auctions.get_competitive_share(p_c), 0.577586793737)
 
-        assert self.auctions.get_competitive_share(p_c) == \
-            0.56053550640279404
+    def test_counterfactual_demand(self):
+        dmd = self.auctions.counterfactual_demand(.05, .05)
+        assert_array_almost_equal(
+            dmd.iloc[[1, 200, 400, 600, 800, 999]].values,
+            np.array([[0.86061947], [0.79373724], [0.49438393],
+                      [0.10483322], [0.031484], [0.02076242]])
+        )

@@ -1,5 +1,7 @@
 import pandas as pd
 import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
 
 
 class AuctionData(object):
@@ -18,6 +20,10 @@ class AuctionData(object):
         self.df_bids = df_bids
         self.generate_auction_data()
         self.add_most_competitive()
+        self.df_bids = self.df_bids.loc[
+            ~ (df_bids.norm_bid.isnull() |
+               self.df_bids.most_competitive.isnull())
+        ]
 
     def generate_auction_data(self):
         """
@@ -85,8 +91,8 @@ class AuctionData(object):
                 self.df_bids.norm_bid < self.df_bids.most_competitive)
 
         self.df_bids['sample_Pm'] = \
-            1. * (self.df_bids.most_competitive > bid_down) * (
-                self.df_bids.norm_bid > self.df_bids.most_competitive)
+            1. * (self.df_bids.most_competitive >= bid_down) * (
+                self.df_bids.norm_bid >= self.df_bids.most_competitive)
 
         self.df_bids['category'] = 0
 
@@ -95,7 +101,25 @@ class AuctionData(object):
             self.df_bids['sample_Pp']
         )
 
+    def counterfactual_demand(self, rho_p, rho_m, num=500):
+        assert (rho_p > 0) & (rho_m > 0)
+        range_rho = zip(np.linspace(0, rho_m,  num=num),
+                        np.linspace(0, rho_p, num=num))
+        demand = []
+        index = []
+        for this_rho_m, this_rho_p in range_rho:
+            index += [-this_rho_m, this_rho_p]
+            self.compute_demand_moments(this_rho_p, this_rho_m)
+            demand += [
+                (self.df_bids.sample_D + self.df_bids.sample_Pm).mean(),
+                (self.df_bids.sample_D - self.df_bids.sample_Pp).mean()
+            ]
+        return pd.DataFrame(data=demand,
+                            index=index,
+                            columns=['demand']).sort_index()
+
     def categorize_histories(self):
+        ''' category = 1xyz with x, y, z = d, p_m, p_p'''
         self._enum_categories = {}
         for v in self.demand_outcomes.values():
             c = self._encode(*v)
@@ -133,3 +157,16 @@ class AuctionData(object):
     @property
     def demand_outcomes(self):
         return self._demand_outcomes
+
+
+def hist_plot(this_delta, title =''):
+    sns.plt.figure(figsize=(10,6))
+    sns.distplot(
+        this_delta, kde=False,
+        hist_kws=dict(alpha=1),
+        bins=200,
+        hist=True,
+        norm_hist=1,
+    )
+    plt.title(title)
+    sns.plt.tight_layout(), plt.show()
