@@ -107,15 +107,15 @@ class TestICSets(TestCase):
     def test_triplets(self):
         assert_array_almost_equal(
             self.ic_set.get_triplets(self.set_z)[[0, 100, 200]],
-            np.array([[2.00000254e-01, 0.00000000e+00, 3.92157360e-03,
-                       2.00000254e-01, 0.00000000e+00, 2.00000254e-01,
-                       2.33922625e-01, 0.00000000e+00, 4.58671814e-03],
-                      [2.33922625e-01, 0.00000000e+00, 4.58671814e-03,
-                       2.33922625e-01, 0.00000000e+00, 2.33922625e-01,
-                       2.00000254e-01, 7.99999746e-01, 3.92157360e-03],
-                      [2.33922625e-01, 7.66077375e-01, 4.58671814e-03,
-                       2.33922625e-01, 7.66077375e-01, 2.33922625e-01,
-                       2.00000254e-01, 0.00000000e+00, 5.98206142e-04]])
+            np.array([[2.04764000e-01, 0.00000000e+00, 4.01498000e-03,
+                       2.04764000e-01, 0.00000000e+00, 2.04764000e-01,
+                       2.39252000e-01, 0.00000000e+00, 4.69122000e-03],
+                      [2.39252000e-01, 0.00000000e+00, 4.69122000e-03,
+                       2.39252000e-01, 0.00000000e+00, 2.39252000e-01,
+                       2.04764000e-01, 7.95236000e-01, 4.01498000e-03],
+                      [2.39252000e-01, 7.60748000e-01, 4.69122000e-03,
+                       2.39252000e-01, 7.60748000e-01, 2.39252000e-01,
+                       2.04764000e-01, 0.00000000e+00, 6.12450000e-04]])
         )
 
     def test_is_separable(self):
@@ -152,3 +152,15 @@ class TestICSets(TestCase):
             self.ic_set.assess_share_competitive(3)[0],
             0.8773825731790333
         )
+
+    def test_lower_bound_collusive(self):
+        df_bids = self.auctions.df_bids.copy(deep=True)
+        self.ic_set.auction_data.set_bid_data(
+            df_bids.loc[df_bids.minprice.isnull()])
+
+        lbc = self.ic_set.lower_bound_collusive(.0007)
+        assert_array_almost_equal(
+            [lbc[key] for key in ['tied_winner', 'deviate_up']],
+            [0.010417, 0.985614]
+        )
+        self.ic_set.auction_data.set_bid_data(df_bids)

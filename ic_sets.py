@@ -221,6 +221,20 @@ class ICSets(object):
 
         return ~self.is_separable(extreme_points_box, extreme_points_z)
 
+    def lower_bound_collusive(self, rho_p):
+        tied_winner = self.auction_data.df_bids.tied_winner.mean()
+        lower_bound_collusive = {'tied_winner': tied_winner}
+
+        revenue = self.auction_data.get_counterfactual_demand(
+            rho_p, .0).revenue
+        revenue = revenue.loc[revenue.index > 0].sort_index()
+        elasticity = (revenue.iloc[1:] - revenue.iloc[1])/(
+            revenue.iloc[1] * revenue.index[1:])
+        lower_bound_collusive['deviate_up'] = \
+            (1-tied_winner) * elasticity[rho_p]
+
+        return lower_bound_collusive
+
     def assess_share_competitive(self, num_steps=11):
         steps = np.linspace(0, 1, num_steps)
         list_p_c = list(itertools.product(steps, repeat=4))
