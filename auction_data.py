@@ -5,9 +5,11 @@ import matplotlib.pyplot as plt
 
 
 class AuctionData(object):
-    def __init__(self, reference_file):
-        self.df_bids = pd.read_csv(reference_file)
+    def __init__(self, bids_path, auction_path=None):
+        self.df_bids = pd.read_csv(bids_path)
         self.df_auctions = None
+        if auction_path is not None:
+            self.df_auctions = pd.read_csv(auction_path, index_col='pid')
         self._bid_gap = None
         self._list_available_auctions = None
         self._list_tied_auctions = None
@@ -16,12 +18,20 @@ class AuctionData(object):
             {0: (0, 0, 0), 1: (1, 0, 0), 2: (0, 1, 0), 3: (1, 0, 1)}
         self._enum_categories = None
         self._num_histories = None
-        self.set_bid_data(self.df_bids)
+        self.set_bid_data(self.df_bids, self.df_auctions)
 
-    def set_bid_data(self, df_bids):
+    def _collect_auctions(self):
+        self._list_tied_auctions = set(self.df_auctions[
+            self.df_auctions.lowest == self.df_auctions.second_lowest].index)
+        self._list_available_auctions = set(self.df_auctions.index)
+
+    def set_bid_data(self, df_bids, df_auctions=None):
         self.df_bids = df_bids
-        self.generate_auction_data()
-        self.add_auction_characteristics()
+        if df_auctions is None:
+            self.generate_auction_data()
+            self.add_auction_characteristics()
+        self._collect_auctions()
+
         self.df_bids = self.df_bids.loc[
             ~ (df_bids.norm_bid.isnull() |
                self.df_bids.most_competitive.isnull())
@@ -54,14 +64,10 @@ class AuctionData(object):
             data=data,
             columns=['pid', 'lowest', 'second_lowest']
         )
-        df_auctions = df_auctions.set_index('pid')
-
-        self.df_auctions = df_auctions
-        self._list_tied_auctions = set(self.df_auctions[
-            self.df_auctions.lowest == self.df_auctions.second_lowest].index)
-        self._list_available_auctions = set(self.df_auctions.index)
+        self.df_auctions = df_auctions.set_index('pid')
 
     def add_auction_characteristics(self):
+        self._collect_auctions()
         self.df_bids.loc[:, 'most_competitive'] = 0
         self.df_bids.loc[:, 'most_competitive'] = \
             self.df_bids[['pid', 'norm_bid']].apply(

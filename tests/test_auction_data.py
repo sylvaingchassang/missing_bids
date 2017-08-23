@@ -8,7 +8,7 @@ import os
 class TestAuctionData(TestCase):
     def setUp(self):
         self.auctions = auction_data.AuctionData(
-            reference_file=os.path.join('reference_data', 'tsuchiura_data.csv')
+            bids_path=os.path.join('reference_data', 'tsuchiura_data.csv')
         )
         self.auctions.compute_demand_moments()
         self.auctions.categorize_histories()

@@ -1,15 +1,24 @@
 from numpy.testing import TestCase, assert_array_equal, \
     assert_array_almost_equal
 import numpy as np
-import auction_data, ic_sets
+import auction_data
+import ic_sets
 import os
+import itertools
+import pandas as pd
 
 
 class TestICSets(TestCase):
     def setUp(self):
+        # self.auctions = auction_data.AuctionData(
+        # reference_file=os.path.join('reference_data',
+        # 'tsuchiura_data.csv') )
+
         self.auctions = auction_data.AuctionData(
-            reference_file=os.path.join('reference_data', 'tsuchiura_data.csv')
+            bids_path=os.path.join('reference_data', 'bids_data.csv'),
+            auction_path=os.path.join('reference_data', 'auction_data.csv')
         )
+
         self.ic_set = ic_sets.ICSets(
             rho_m=.05, rho_p=.001, auction_data=self.auctions,
             k=.1, m=.5, t=.05
@@ -164,3 +173,35 @@ class TestICSets(TestCase):
             [0.010417, 0.985614]
         )
         self.ic_set.auction_data.set_bid_data(df_bids)
+
+    def test_is_rationalizable_iid(self):
+        steps = np.linspace(0, 1, 5)
+        list_p_c = list(itertools.product(steps, repeat=4))
+
+        tsuchiura_data = auction_data.AuctionData(
+            bids_path=os.path.join('reference_data', 'bids_data.csv'),
+            auction_path=os.path.join('reference_data', 'auction_data.csv')
+        )
+        ic_solver = ic_sets.ICSets(rho_p=.001, rho_m=.001,
+                                   auction_data=tsuchiura_data,
+                                   k=0, t=.0, m=.5)
+
+        test_pc = list_p_c[1]
+        is_rationalizable_iid = ic_solver.is_rationalizable_iid(test_pc)
+        is_rationalizable = ic_solver.is_rationalizable(test_pc)
+
+        assert is_rationalizable == is_rationalizable_iid
+        # index = []
+        # rationalizability_data = []
+        # for i, test_pc in enumerate(list_p_c):
+        #     index.append(i)
+        #     is_rationalizable_iid = ic_solver.is_rationalizable_iid(test_pc)
+        #     is_rationalizable = ic_solver.is_rationalizable(test_pc)
+        #     rationalizability_data.append(
+        #         [is_rationalizable_iid, is_rationalizable])
+        #
+        # df_rationalizable = pd.DataFrame(data=rationalizability_data,
+        #                                  index=index,
+        #                                  columns=['iid', 'general'])
+        # assert (df_rationalizable.loc[:, 'iid'] >
+        #         df_rationalizable.loc[:, 'general']).mean() == .312

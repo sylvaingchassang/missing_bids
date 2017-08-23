@@ -21,7 +21,7 @@ class ICSets(object):
 
     def set_data(self, auction_data=None):
         assert isinstance(auction_data, AuctionData)
-        auction_data.set_bid_data(auction_data.df_bids)
+        # auction_data.set_bid_data(auction_data.df_bids)
         auction_data.compute_demand_moments(rho_m=self.rho_m, rho_p=self.rho_p)
         auction_data.categorize_histories()
         self._auction_data = auction_data
@@ -69,6 +69,7 @@ class ICSets(object):
         if pp >= (self.rho_p / (self.rho_p + self.rho_m)) * d:
             return 1 - d
         else:
+            # noinspection PyTypeChecker
             return min(
                 1 - d,
                 (self.rho_m * d) / (self.rho_p * (-1 + d / pp) - self.rho_m)
@@ -111,16 +112,23 @@ class ICSets(object):
         return range_d, range_pm, range_pp
 
     @staticmethod
-    def intersect_range(range_a, range_b):
+    def almost_less(c, d):
+        return np.logical_or(c < d, np.isclose(c, d))
+
+    @staticmethod
+    def strictly_less(c, d):
+        return np.logical_and(c < d, ~np.isclose(c, d))
+
+    def intersect_range(self, range_a, range_b):
         c, d = (max(range_a[0], range_b[0]),
                 min(range_a[1], range_b[1]))
-        if c <= d:
+        if self.almost_less(c, d):
             return [c, d]
         else:
             return None
 
     def intersect_box(self, set_a, set_b):
-        """Note: a box in three dimensions is described by by three ranges"""
+        """Note: a box in three dimensions is described by three ranges"""
         return [self.intersect_range(r_a, r_b) for
                 (r_a, r_b) in zip(set_a, set_b)]
 
@@ -192,22 +200,25 @@ class ICSets(object):
         min_score_box, min_score_z = (np.min(score_box, axis=0),
                                       np.min(score_set_z, axis=0))
 
-        box_below = max_score_box <= min_score_z
+        box_below = self.almost_less(max_score_box, min_score_z)
         is_box_below = np.any(box_below)
-        z_below = max_score_z <= min_score_box
+        z_below = self.almost_less(max_score_z, min_score_box)
         is_z_below = np.any(z_below)
 
         separates = (is_box_below or is_z_below)
-
-        if separates:
-            is_below, min_score, max_score = \
-                (box_below, min_score_box, max_score_box) if is_box_below else\
-                (z_below, min_score_z, max_score_z)
-            ind = np.where(is_below)
-            valid = np.any(min_score[ind] < max_score[ind])
-            return separates & valid
+        if is_box_below:
+            min_below, min_above, max_below, max_above = (
+                score[box_below] for score in [min_score_box, min_score_z,
+                                               max_score_box, max_score_z])
         else:
-            return separates
+            min_below, min_above, max_below, max_above = (
+                score[z_below] for score in [min_score_z, min_score_box,
+                                             max_score_z, max_score_box])
+
+        valid = (np.any(self.strictly_less(min_below, min_above)) &
+                 np.any(self.strictly_less(max_below, max_above)))
+
+        return separates & valid
 
     def is_rationalizable(self, p_c):
         set_a = self.compute_set_a(p_c)
@@ -221,6 +232,20 @@ class ICSets(object):
 
         return ~self.is_separable(extreme_points_box, extreme_points_z)
 
+    def is_rationalizable_iid(self, p_c):
+        # compute pp, pm, d
+        d, pm, pp = self.auction_data.get_demand(p_c)
+
+        # check that there exists c such that bids are IC
+        left_hand_side = max(
+            1 - self.rho_m - self.rho_m * (d / pm),
+            1 / (1 + self.m)
+        )
+
+        right_hand_side = 1 + self.rho_p - self.rho_p * (d / pp)
+
+        return left_hand_side <= right_hand_side
+
     def lower_bound_collusive(self, rho_p):
         tied_winner = self.auction_data.df_bids.tied_winner.mean()
         lower_bound_collusive = {'tied_winner': tied_winner}
@@ -228,10 +253,10 @@ class ICSets(object):
         revenue = self.auction_data.get_counterfactual_demand(
             rho_p, .0).revenue
         revenue = revenue.loc[revenue.index > 0].sort_index()
-        elasticity = (revenue.iloc[1:] - revenue.iloc[1])/(
+        elasticity = (revenue.iloc[1:] - revenue.iloc[1]) / (
             revenue.iloc[1] * revenue.index[1:])
         lower_bound_collusive['deviate_up'] = \
-            (1-tied_winner) * elasticity[rho_p]
+            (1 - tied_winner) * elasticity[rho_p]
 
         return lower_bound_collusive
 
