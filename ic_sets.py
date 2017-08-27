@@ -26,10 +26,13 @@ class ICSets(object):
         auction_data.categorize_histories()
         self._auction_data = auction_data
 
-    def set_tolerance_parameters(self, m, t, k):
-        self._m = m
-        self._t = t
-        self._k = k
+    def set_tolerance_parameters(self, m=None, t=None, k=None):
+        if m is not None:
+            self._m = m
+        if t is not None:
+            self._t = t
+        if k is not None:
+            self._k = k
 
     @property
     def rho_p(self):
@@ -58,6 +61,14 @@ class ICSets(object):
     @property
     def lower_slope_pp(self):
         return self.rho_p / (1. + self.rho_p - 1. / (1. + self.m))
+
+    @property
+    def intersect_d(self):
+        return (1-self.rho_m - 1/(1+self.m)) / (1 - 1/(1+self.m))
+
+    def binding_pp(self, d):
+        return self.rho_p * d / (self.rho_m + self.rho_p +
+                                 self.rho_m * d/(1-d))
 
     @property
     def tangent_binding_pm(self):
@@ -94,16 +105,15 @@ class ICSets(object):
                 (o_d, self.value_pm(o_d), self.lower_slope_pp * o_d)
             ]
 
-            denominator = -self.rho_p + (self.rho_p / self.lower_slope_pp)
-            intersect_d = (denominator - self.rho_m) / denominator
-            if intersect_d <= o_d:
+            if self.intersect_d <= o_d:
                 list_points.append(
-                    (intersect_d, self.value_pm(intersect_d),
-                     self.lower_slope_pp * intersect_d)
+                    (self.intersect_d, self.value_pm(self.intersect_d),
+                     self.lower_slope_pp * self.intersect_d)
                 )
         return np.array(list_points)
 
     def compute_set_a(self, p_c):
+        # set a describes empirical moment constraints
         d, pm, pp = self.auction_data.get_demand(p_c)
         t = self.t
         range_d = [d - t, d + t]
@@ -136,6 +146,7 @@ class ICSets(object):
         return self.overline_b(x, -self.k)
 
     def overline_b(self, x, k=None):
+        # set b describes information constraints
         k = self.k if k is None else k
         l = float(x) / (1. - x)
         return l * np.exp(k) / (1. + l * np.exp(k))
@@ -168,6 +179,8 @@ class ICSets(object):
     @staticmethod
     def choose_3_in(n):
         list_sel = []
+        if n < 3:
+            return np.array([[0, min(n-1, 1), 0]])
         for a in xrange(n - 2):
             for b in xrange(a + 1, n - 1):
                 for c in xrange(b + 1, n):
@@ -182,15 +195,21 @@ class ICSets(object):
             axis=1
         )
 
-    def is_separable(self, extreme_points_box, extreme_points_z):
+    def is_separable(self, extreme_points_box, extreme_points_z, seed=888):
         all_extreme_points = np.concatenate(
             (extreme_points_z, extreme_points_box), axis=0
         )
+        all_extreme_points = np.unique(all_extreme_points, axis=0)
 
         all_triangles = self.get_triplets(all_extreme_points)
         perpendiculars = np.apply_along_axis(
             self.get_perpendicular, axis=1, arr=all_triangles
         )
+
+        np.random.seed(seed)
+        alt_directions = np.random.randn(100, 3)
+        perpendiculars = np.concatenate((perpendiculars, alt_directions),
+                                        axis=0)
 
         score_box = np.dot(extreme_points_box, perpendiculars.T)
         score_set_z = np.dot(extreme_points_z, perpendiculars.T)
@@ -206,6 +225,7 @@ class ICSets(object):
         is_z_below = np.any(z_below)
 
         separates = (is_box_below or is_z_below)
+        # we need to check that the ordering is not degenerate
         if is_box_below:
             min_below, min_above, max_below, max_above = (
                 score[box_below] for score in [min_score_box, min_score_z,
@@ -221,8 +241,8 @@ class ICSets(object):
         return separates & valid
 
     def is_rationalizable(self, p_c):
-        set_a = self.compute_set_a(p_c)
-        set_b = self.compute_set_b(p_c)
+        set_a = self.compute_set_a(p_c)  # empirical moment constraints
+        set_b = self.compute_set_b(p_c)  # information constraints
         box = self.intersect_box(set_a, set_b)
         if None in box:
             return False
@@ -236,25 +256,30 @@ class ICSets(object):
         # compute pp, pm, d
         d, pm, pp = self.auction_data.get_demand(p_c)
 
-        # check that there exists c such that bids are IC
-        left_hand_side = max(
-            1 - self.rho_m - self.rho_m * (d / pm),
-            1 / (1 + self.m)
-        )
+        # always rationalizable if empirical demand is 0
+        if np.isclose(d, 0):
+            return True
 
-        right_hand_side = 1 + self.rho_p - self.rho_p * (d / pp)
+        # check that there exists c such that bids are IC
+        left_hand_side = 1 / (1 + self.m) if pm <= 0 else \
+            max(1 - self.rho_m - self.rho_m * (d / pm), 1 / (1 + self.m))
+
+        right_hand_side = - 1 if pp <= 0 else \
+            1 + self.rho_p - self.rho_p * (d / pp)
 
         return left_hand_side <= right_hand_side
 
     def lower_bound_collusive(self, rho_p):
-        tied_winner = self.auction_data.df_bids.tied_winner.mean()
+        num_tied = self.auction_data.df_tied_bids.shape[0]
+        num_untied = self.auction_data.df_bids.shape[0]
+        tied_winner = num_tied / float(num_tied + num_untied)
         lower_bound_collusive = {'tied_winner': tied_winner}
 
         revenue = self.auction_data.get_counterfactual_demand(
             rho_p, .0).revenue
         revenue = revenue.loc[revenue.index > 0].sort_index()
-        elasticity = (revenue.iloc[1:] - revenue.iloc[1]) / (
-            revenue.iloc[1] * revenue.index[1:])
+        elasticity = (revenue.iloc[1:] - revenue.iloc[0]) / (
+            revenue.iloc[1] * revenue.index[:-1])
         lower_bound_collusive['deviate_up'] = \
             (1 - tied_winner) * elasticity[rho_p]
 

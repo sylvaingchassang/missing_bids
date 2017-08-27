@@ -10,6 +10,12 @@ class TestAuctionData(TestCase):
         self.auctions = auction_data.AuctionData(
             bids_path=os.path.join('reference_data', 'tsuchiura_data.csv')
         )
+
+        # to save new bids/auction data, uncomment the lines below
+        bids_path = os.path.join('reference_data', 'bids_data.csv')
+        auction_path = os.path.join('reference_data', 'auction_data.csv')
+        self.auctions.save_data(bids_path, auction_path)
+
         self.auctions.compute_demand_moments()
         self.auctions.categorize_histories()
 
@@ -23,7 +29,7 @@ class TestAuctionData(TestCase):
         assert_array_almost_equal(
             self.auctions.df_auctions.lowest.values[:10],
             np.array([0.89655173, 0.94766617, 0.94867122, 0.69997638,
-                      0.9385258,  0.74189192, 0.7299363, 0.94310075,
+                      0.9385258, 0.74189192, 0.7299363, 0.94310075,
                       0.96039605, 0.97354496])
         )
 
@@ -39,7 +45,7 @@ class TestAuctionData(TestCase):
     def test_categorize_histories(self):
         assert self.auctions.enum_categories == \
                {(0, 0, 0): 817,
-                (0, 1, 0): 3602,
+                (0, 1, 0): 3576,
                 (1, 0, 0): 1441,
                 (1, 0, 1): 16}
 
@@ -47,17 +53,16 @@ class TestAuctionData(TestCase):
         p_c = (0.0, 0.10000000000000001, 0.90000000000000002, 0.5)
         assert_array_almost_equal(
             self.auctions.get_demand(p_c),
-            (0.025884955752212391, 0.55170183798502381, 0.0013614703880190605)
+            [0.026, 0.550154, 0.001368]
         )
         assert_array_almost_equal(
-            self.auctions.get_competitive_share(p_c), 0.577586793737)
+            self.auctions.get_competitive_share(p_c), 0.5761538461538462)
 
     def test_counterfactual_demand(self):
         dmd = self.auctions.get_counterfactual_demand(.05, .05)
         assert_array_almost_equal(
             dmd.demand.iloc[[1, 200, 400, 600, 800, 999]].values,
-            [0.86061947, 0.79373724, 0.49438393,
-             0.10483322, 0.031484, 0.02076242]
+            [0.86, 0.792821, 0.492137, 0.105299, 0.031624, 0.020855]
         )
 
     def test_dist_bid_gap(self):
@@ -72,6 +77,7 @@ class TestAuctionData(TestCase):
                      self.auctions.df_bids.norm_bid),
              np.mean(self.auctions.df_auctions.lowest ==
                      self.auctions.df_auctions.second_lowest),
-             np.mean(self.auctions.df_bids.tied_winner)],
-            [0.0044247787610619468, 0.008168822328114363, 0.010381211708645336]
+             np.mean(self.auctions.df_bids.lowest ==
+                     self.auctions.df_bids.second_lowest)],
+            [0., 0.008169, 0.005983]
         )

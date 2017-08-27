@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 class AuctionData(object):
     def __init__(self, bids_path, auction_path=None):
         self.df_bids = pd.read_csv(bids_path)
+        self.df_tied_bids = None
         self.df_auctions = None
         if auction_path is not None:
             self.df_auctions = pd.read_csv(auction_path, index_col='pid')
@@ -21,8 +22,6 @@ class AuctionData(object):
         self.set_bid_data(self.df_bids, self.df_auctions)
 
     def _collect_auctions(self):
-        self._list_tied_auctions = set(self.df_auctions[
-            self.df_auctions.lowest == self.df_auctions.second_lowest].index)
         self._list_available_auctions = set(self.df_auctions.index)
 
     def set_bid_data(self, df_bids, df_auctions=None):
@@ -36,6 +35,20 @@ class AuctionData(object):
             ~ (df_bids.norm_bid.isnull() |
                self.df_bids.most_competitive.isnull())
         ]
+        self.df_tied_bids = self.df_bids.loc[
+            self.df_bids.norm_bid == self.df_bids.most_competitive
+        ]
+        self.df_bids = self.df_bids.loc[
+            self.df_bids.norm_bid != self.df_bids.most_competitive
+        ]
+
+    @property
+    def all_bids(self):
+        return pd.concat((self.df_bids, self.df_tied_bids), axis=0)
+
+    def save_data(self, bids_path, auction_path):
+        self.all_bids.to_csv(bids_path)
+        self.df_auctions.to_csv(auction_path)
 
     def generate_auction_data(self):
         """
@@ -69,15 +82,17 @@ class AuctionData(object):
     def add_auction_characteristics(self):
         self._collect_auctions()
         self.df_bids.loc[:, 'most_competitive'] = 0
-        self.df_bids.loc[:, 'most_competitive'] = \
+        self.df_bids.loc[:, 'lowest'] = 0
+        self.df_bids.loc[:, 'second_lowest'] = 0
+        competition_frame = \
             self.df_bids[['pid', 'norm_bid']].apply(
                 self._add_most_competitive, axis=1
             )
-
-        self.df_bids.loc[:, 'tied_winner'] = 0
-        self.df_bids.loc[:, 'tied_winner'] = self.df_bids[['pid']].apply(
-            self._add_tied_winner, axis=1
-        )
+        self.df_bids.loc[:, 'most_competitive'] = competition_frame.apply(
+            lambda x: x[0])
+        self.df_bids.loc[:, 'lowest'] = competition_frame.apply(lambda x: x[1])
+        self.df_bids.loc[:, 'second_lowest'] = competition_frame.apply(
+            lambda x: x[2])
 
     def _add_most_competitive(self, x):
         u, v = x
@@ -85,14 +100,11 @@ class AuctionData(object):
             low1 = self.df_auctions.ix[u].lowest
             low2 = self.df_auctions.ix[u].second_lowest
             if v == low1:
-                return low2
+                return low2, low1, low2
             else:
-                return low1
+                return low1, low1, low2
         else:
-            return np.NaN
-
-    def _add_tied_winner(self, x):
-        return 1. * (x[0] in self._list_tied_auctions)
+            return np.NaN, np.NaN, np.NaN
 
     @property
     def list_available_auctions(self):

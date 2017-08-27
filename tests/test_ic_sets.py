@@ -1,5 +1,5 @@
 from numpy.testing import TestCase, assert_array_equal, \
-    assert_array_almost_equal
+    assert_array_almost_equal, assert_almost_equal
 import numpy as np
 import auction_data
 import ic_sets
@@ -10,10 +10,6 @@ import pandas as pd
 
 class TestICSets(TestCase):
     def setUp(self):
-        # self.auctions = auction_data.AuctionData(
-        # reference_file=os.path.join('reference_data',
-        # 'tsuchiura_data.csv') )
-
         self.auctions = auction_data.AuctionData(
             bids_path=os.path.join('reference_data', 'bids_data.csv'),
             auction_path=os.path.join('reference_data', 'auction_data.csv')
@@ -26,40 +22,39 @@ class TestICSets(TestCase):
         self.p_c = (0.10000000000000001, 0.90000000000000002,
                     0.70000000000000007, 0.30000000000000004)
 
-        self.set_a = ([[0.171528,  0.271528],
-                       [0.379101,  0.479101],
-                       [-0.049183,  0.050817]])
+        self.set_a = [[0.172513, 0.272513],
+                      [0.377897, 0.477897],
+                      [-0.049179, 0.050821]]
 
-        self.set_b = ([[0.204764,  0.239252],
-                       [0.404797,  0.453753],
-                       [0.000739,  0.000903]])
+        self.set_b = [[0.205693, 0.240291],
+                      [0.403613, 0.452535],
+                      [0.000742, 0.000907]]
 
-        self.box = [[0.204764,  0.239252],
-                    [0.404797, 0.453753],
-                    [0.000739, 0.000903]]
+        self.box = [[0.205693, 0.240291],
+                    [0.403613, 0.452535],
+                    [0.000742, 0.000907]]
 
         self.extreme_points_box = \
-            np.array([[0.204764,  0.453753,  0.000739],
-                      [0.204764,  0.453753,  0.000903],
-                      [0.239252,  0.404797,  0.000739]])
+            [[0.205693, 0.452535, 0.000742],
+             [0.205693, 0.452535, 0.000907],
+             [0.240291, 0.403613, 0.000742]]
 
         self.triangle = \
             np.array([[1, 1, 1], [1.2, 1.5, 1.6], [.9, .4, .5]])
 
         self.set_z = np.array(
-            [[0.204764, 0., 0.00401498],
-             [0.204764, 0., 0.204764],
-             [0.239252, 0., 0.00469122],
-             [0.239252, 0., 0.239252],
-             [0.204764, 0.795236, 0.00401498],
-             [0.204764, 0.795236, 0.204764],
-             [0.239252, 0.760748, 0.00469122],
-             [0.239252, 0.760748, 0.239252],
-             [0.204764, 0., 0.00061245],
-             [0.204764, 0.03613482, 0.00061245],
-             [0.239252, 0., 0.00071561],
-             [0.239252, 0.04222094, 0.00071561]]
-        )
+            [[2.05693000e-01, 0.00000000e+00, 4.03319608e-03],
+             [2.05693000e-01, 0.00000000e+00, 2.05693000e-01],
+             [2.40291000e-01, 0.00000000e+00, 4.71158824e-03],
+             [2.40291000e-01, 0.00000000e+00, 2.40291000e-01],
+             [2.05693000e-01, 7.94307000e-01, 4.03319608e-03],
+             [2.05693000e-01, 7.94307000e-01, 2.05693000e-01],
+             [2.40291000e-01, 7.59709000e-01, 4.71158824e-03],
+             [2.40291000e-01, 7.59709000e-01, 2.40291000e-01],
+             [2.05693000e-01, 0.00000000e+00, 6.15233300e-04],
+             [2.05693000e-01, 3.62987647e-02, 6.15233300e-04],
+             [2.40291000e-01, 0.00000000e+00, 7.18716849e-04],
+             [2.40291000e-01, 4.24042941e-02, 7.18716849e-04]])
 
     def test_init(self):
         ic = self.ic_set
@@ -116,15 +111,15 @@ class TestICSets(TestCase):
     def test_triplets(self):
         assert_array_almost_equal(
             self.ic_set.get_triplets(self.set_z)[[0, 100, 200]],
-            np.array([[2.04764000e-01, 0.00000000e+00, 4.01498000e-03,
-                       2.04764000e-01, 0.00000000e+00, 2.04764000e-01,
-                       2.39252000e-01, 0.00000000e+00, 4.69122000e-03],
-                      [2.39252000e-01, 0.00000000e+00, 4.69122000e-03,
-                       2.39252000e-01, 0.00000000e+00, 2.39252000e-01,
-                       2.04764000e-01, 7.95236000e-01, 4.01498000e-03],
-                      [2.39252000e-01, 7.60748000e-01, 4.69122000e-03,
-                       2.39252000e-01, 7.60748000e-01, 2.39252000e-01,
-                       2.04764000e-01, 0.00000000e+00, 6.12450000e-04]])
+            np.array([[2.05693000e-01, 0.00000000e+00, 4.03319608e-03,
+                       2.05693000e-01, 0.00000000e+00, 2.05693000e-01,
+                       2.40291000e-01, 0.00000000e+00, 4.71158824e-03],
+                      [2.40291000e-01, 0.00000000e+00, 4.71158824e-03,
+                       2.40291000e-01, 0.00000000e+00, 2.40291000e-01,
+                       2.05693000e-01, 7.94307000e-01, 4.03319608e-03],
+                      [2.40291000e-01, 7.59709000e-01, 4.71158824e-03,
+                       2.40291000e-01, 7.59709000e-01, 2.40291000e-01,
+                       2.05693000e-01, 0.00000000e+00, 6.15233300e-04]])
         )
 
     def test_is_separable(self):
@@ -159,20 +154,25 @@ class TestICSets(TestCase):
     def test_share_competitive(self):
         assert_array_almost_equal(
             self.ic_set.assess_share_competitive(3)[0],
-            0.8773825731790333
+            0.8768376068376069
         )
 
     def test_lower_bound_collusive(self):
-        df_bids = self.auctions.df_bids.copy(deep=True)
+        df_bids = self.auctions.all_bids
         self.ic_set.auction_data.set_bid_data(
             df_bids.loc[df_bids.minprice.isnull()])
 
         lbc = self.ic_set.lower_bound_collusive(.0007)
         assert_array_almost_equal(
             [lbc[key] for key in ['tied_winner', 'deviate_up']],
-            [0.010417, 0.985614]
+            [0.0049342105263157892, 0.99506299771369899]
         )
         self.ic_set.auction_data.set_bid_data(df_bids)
+
+    def test_intersection_binding_pp_lower_pp(self):
+        assert_array_almost_equal(
+            self.ic_set.binding_pp(self.ic_set.intersect_d),
+            self.ic_set.lower_slope_pp * self.ic_set.intersect_d)
 
     def test_is_rationalizable_iid(self):
         steps = np.linspace(0, 1, 5)
@@ -186,7 +186,7 @@ class TestICSets(TestCase):
                                    auction_data=tsuchiura_data,
                                    k=0, t=.0, m=.5)
 
-        test_pc = list_p_c[1]
+        test_pc = list_p_c[36]
         is_rationalizable_iid = ic_solver.is_rationalizable_iid(test_pc)
         is_rationalizable = ic_solver.is_rationalizable(test_pc)
 
