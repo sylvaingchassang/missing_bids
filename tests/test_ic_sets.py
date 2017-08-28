@@ -187,38 +187,10 @@ class TestICSets(TestCase):
                                    auction_data=tsuchiura_data,
                                    k=0, t=.0, m=.5)
 
-        for test_pc in list_p_c[:36]:
+        for test_pc in list_p_c:
             is_rationalizable_iid = ic_solver.is_rationalizable_iid(test_pc)
             is_rationalizable = ic_solver.is_rationalizable(test_pc)
 
             assert is_rationalizable == is_rationalizable_iid
-            # index = []
-            # rationalizability_data = []
-            # for i, test_pc in enumerate(list_p_c):
-            #     index.append(i)
-            #     is_rationalizable_iid = ic_solver.is_rationalizable_iid(test_pc)
-            #     is_rationalizable = ic_solver.is_rationalizable(test_pc)
-            #     rationalizability_data.append(
-            #         [is_rationalizable_iid, is_rationalizable])
-            #
-            # df_rationalizable = pd.DataFrame(data=rationalizability_data,
-            #                                  index=index,
-            #                                  columns=['iid', 'general'])
-            # assert (df_rationalizable.loc[:, 'iid'] >
-            #         df_rationalizable.loc[:, 'general']).mean() == .312
 
-    def test_extreme_points_z(self):
-        tsuchiura_data = auction_data.AuctionData(
-            bids_path=os.path.join('reference_data', 'bids_data.csv'),
-            auction_path=os.path.join('reference_data', 'auction_data.csv')
-        )
-        ic_solver = ic_sets.ICSets(rho_p=.001, rho_m=.001,
-                                   auction_data=tsuchiura_data,
-                                   k=0, t=.0, m=.5)
-        ic_solver.extreme_points_set_z(.4, .6, .2)
-        p_c = (.5, .5, .5, .5)
-        ic_solver.compute_set_b(p_c)
-        self.ic_set.extreme_points_set_z(.4, .6)
-        # plt.show()
-        # self.ic_set.plot_z(.4, .6)
-        # plt.show()
+

@@ -5,6 +5,7 @@ import itertools
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
+
 class ICSets(object):
     def __init__(self, rho_p, rho_m, auction_data, m, t, k):
         self._rho_p = None
@@ -20,10 +21,13 @@ class ICSets(object):
     def set_deviations(self, rho_p, rho_m):
         self._rho_p = rho_p
         self._rho_m = rho_m
+        if self._auction_data is not None:
+            self.set_data()
 
     def set_data(self, auction_data=None):
+        if auction_data is None:
+            auction_data = self._auction_data
         assert isinstance(auction_data, AuctionData)
-        # auction_data.set_bid_data(auction_data.df_bids)
         auction_data.compute_demand_moments(rho_m=self.rho_m, rho_p=self.rho_p)
         auction_data.categorize_histories()
         self._auction_data = auction_data
@@ -35,6 +39,8 @@ class ICSets(object):
             self._t = t
         if k is not None:
             self._k = k
+        if self._auction_data is not None:
+            self.set_data()
 
     @property
     def rho_p(self):
