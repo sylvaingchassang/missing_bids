@@ -164,7 +164,7 @@ class AuctionData(object):
         self._enum_categories = {}
         for v in self.demand_outcomes.values():
             c = self._encode(*v)
-            self.enum_categories[v] = np.sum(self.df_bids.category == c)
+            self._enum_categories[v] = np.sum(self.df_bids.category == c)
 
         self._num_histories = sum(self.enum_categories.values())
 

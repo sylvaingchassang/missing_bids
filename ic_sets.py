@@ -2,6 +2,8 @@ import numpy as np
 from auction_data import AuctionData
 import itertools
 
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 
 class ICSets(object):
     def __init__(self, rho_p, rho_m, auction_data, m, t, k):
@@ -64,11 +66,24 @@ class ICSets(object):
 
     @property
     def intersect_d(self):
+        # value of d such that binding_pp(d) = lower_slope_pp * d
         return (1-self.rho_m - 1/(1+self.m)) / (1 - 1/(1+self.m))
 
     def binding_pp(self, d):
-        return self.rho_p * d / (self.rho_m + self.rho_p +
-                                 self.rho_m * d/(1-d))
+        # min value of pp at which value_pm(d, pp) == 1 - d
+        return self._invert_pp(d, 1 - d)
+
+    def _invert_pp(self, d, pm):
+        # value of pp at which value_pm(d, pp) = pm
+        if pm > 1 - d:
+            raise ValueError('pm > 1 - d --- no inversion to pp possible')
+        elif self.value_pm(d, self.lower_slope_pp * d) > pm:
+            return self.lower_slope_pp * d
+        return self.rho_p * d * pm / (self.rho_m * d +
+                                      (self.rho_p + self.rho_m) * pm)
+
+    def invert_pp(self, d, pm):
+        return max(self._invert_pp(d, pm), self.lower_slope_pp * d)
 
     @property
     def tangent_binding_pm(self):
@@ -86,31 +101,50 @@ class ICSets(object):
                 (self.rho_m * d) / (self.rho_p * (-1 + d / pp) - self.rho_m)
             )
 
-    def extreme_points_set_z(self, u_d, o_d):
-        list_points_unconstrained, list_points_constrained = (
-            [(u_d, 0, a * u_d), (u_d, 0, u_d), (o_d, 0, a * o_d),
-             (o_d, 0, o_d), (u_d, 1 - u_d, a * u_d), (u_d, 1 - u_d, u_d),
-             (o_d, 1 - o_d, a * o_d), (o_d, 1 - o_d, o_d)]
-            for a in [self.lower_slope_pp, self.tangent_binding_pm]
-        )
+    def extreme_points_set_z(self, u_d, o_d, u_pm=0):
+        o_d = min(o_d, 1-u_pm)
+        if u_d > o_d:
+            return None
+        basis_d_pp = []
+        for d in [u_d, o_d]:
+            basis_d_pp += [(d, self.invert_pp(d, u_pm)),
+                           (d, self.binding_pp(d)), (d, d)]
+        list_points = []
+        for b in basis_d_pp:
+            d, pp = b
+            list_points += [(d, u_pm, pp), (d, self.value_pm(d, pp), pp)]
+            assert self.almost_less(u_pm, self.value_pm(d, pp))
 
-        if self.tangent_binding_pm <= self.lower_slope_pp:
-            list_points = list_points_unconstrained
-        else:
-            list_points = list_points_constrained
-            list_points += [
-                (u_d, 0, self.lower_slope_pp * u_d),
-                (u_d, self.value_pm(u_d), self.lower_slope_pp * u_d),
-                (o_d, 0, self.lower_slope_pp * o_d),
-                (o_d, self.value_pm(o_d), self.lower_slope_pp * o_d)
-            ]
-
-            if self.intersect_d <= o_d:
-                list_points.append(
-                    (self.intersect_d, self.value_pm(self.intersect_d),
-                     self.lower_slope_pp * self.intersect_d)
-                )
         return np.array(list_points)
+
+    def plot_z(self, u_d, o_d, u_pm=0, ax=None):
+        z = self.extreme_points_set_z(u_d, o_d, u_pm)
+        if ax is None:
+            fig = plt.figure(figsize=(14, 7))
+            ax = fig.add_subplot(111, projection='3d')
+        for i in range(6):
+            ind = [i, i+6]
+            ax.plot(xs=z[ind, 2], ys=z[ind, 0], zs=z[ind, 1], c='k')
+        for i in range(2):
+            ind = [i * 6 + j for j in [0, 3, 2, 4,1, 2, 4, 5, 3, 0]]
+            ax.plot(xs=z[ind, 2], ys=z[ind, 0], zs=z[ind, 1], c='b')
+        plt.xlabel('pp', fontsize=20)
+        plt.ylabel('d', fontsize=20)
+        ax.view_init(ax.elev, ax.azim+90)
+        return ax
+
+    def plot_box(self, box, ax=None):
+        b = self.get_box_extreme_points(box)
+        if ax is None:
+            fig = plt.figure(figsize=(14, 7))
+            ax = fig.add_subplot(111, projection='3d')
+        ax.scatter(xs=b[:, 2], ys=b[:, 0], zs=b[:, 1], c='r')
+        ind = [0,  2, 1, 3, 5, 7, 4, 6, 0, 1, 5, 4, 0, 2, 3, 7, 6, 2]
+        ax.plot(xs=b[ind, 2], ys=b[ind, 0], zs=b[ind, 1], c='r')
+        plt.xlabel('pp', fontsize=20)
+        plt.ylabel('d', fontsize=20)
+        ax.view_init(ax.elev, ax.azim+90)
+        return ax
 
     def compute_set_a(self, p_c):
         # set a describes empirical moment constraints
@@ -240,7 +274,7 @@ class ICSets(object):
 
         return separates & valid
 
-    def is_rationalizable(self, p_c):
+    def is_rationalizable(self, p_c, option=None):
         set_a = self.compute_set_a(p_c)  # empirical moment constraints
         set_b = self.compute_set_b(p_c)  # information constraints
         box = self.intersect_box(set_a, set_b)
@@ -248,7 +282,14 @@ class ICSets(object):
             return False
 
         extreme_points_box = self.get_box_extreme_points(box)
-        extreme_points_z = self.extreme_points_set_z(*set_b[0])
+        u_d, o_d = set_b[0]
+        u_pm, _ = set_b[1]
+        extreme_points_z = self.extreme_points_set_z(
+            u_d=u_d, o_d=o_d, u_pm=u_pm)
+
+        if option is not None:
+            ax = self.plot_z(u_d, o_d, u_pm)
+            self.plot_box(box, ax=ax)
 
         return ~self.is_separable(extreme_points_box, extreme_points_z)
 

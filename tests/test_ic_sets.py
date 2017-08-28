@@ -6,6 +6,7 @@ import ic_sets
 import os
 import itertools
 import pandas as pd
+import matplotlib.pyplot as plt
 
 
 class TestICSets(TestCase):
@@ -43,18 +44,18 @@ class TestICSets(TestCase):
             np.array([[1, 1, 1], [1.2, 1.5, 1.6], [.9, .4, .5]])
 
         self.set_z = np.array(
-            [[2.05693000e-01, 0.00000000e+00, 4.03319608e-03],
-             [2.05693000e-01, 0.00000000e+00, 2.05693000e-01],
-             [2.40291000e-01, 0.00000000e+00, 4.71158824e-03],
-             [2.40291000e-01, 0.00000000e+00, 2.40291000e-01],
-             [2.05693000e-01, 7.94307000e-01, 4.03319608e-03],
-             [2.05693000e-01, 7.94307000e-01, 2.05693000e-01],
-             [2.40291000e-01, 7.59709000e-01, 4.71158824e-03],
-             [2.40291000e-01, 7.59709000e-01, 2.40291000e-01],
-             [2.05693000e-01, 0.00000000e+00, 6.15233300e-04],
+            [[2.05693000e-01, 0.00000000e+00, 6.15233300e-04],
              [2.05693000e-01, 3.62987647e-02, 6.15233300e-04],
+             [2.05693000e-01, 0.00000000e+00, 3.21656893e-03],
+             [2.05693000e-01, 7.94307000e-01, 3.21656893e-03],
+             [2.05693000e-01, 0.00000000e+00, 2.05693000e-01],
+             [2.05693000e-01, 7.94307000e-01, 2.05693000e-01],
              [2.40291000e-01, 0.00000000e+00, 7.18716849e-04],
-             [2.40291000e-01, 4.24042941e-02, 7.18716849e-04]])
+             [2.40291000e-01, 4.24042941e-02, 7.18716849e-04],
+             [2.40291000e-01, 0.00000000e+00, 3.59638065e-03],
+             [2.40291000e-01, 7.59709000e-01, 3.59638065e-03],
+             [2.40291000e-01, 0.00000000e+00, 2.40291000e-01],
+             [2.40291000e-01, 7.59709000e-01, 2.40291000e-01]])
 
     def test_init(self):
         ic = self.ic_set
@@ -111,15 +112,15 @@ class TestICSets(TestCase):
     def test_triplets(self):
         assert_array_almost_equal(
             self.ic_set.get_triplets(self.set_z)[[0, 100, 200]],
-            np.array([[2.05693000e-01, 0.00000000e+00, 4.03319608e-03,
-                       2.05693000e-01, 0.00000000e+00, 2.05693000e-01,
-                       2.40291000e-01, 0.00000000e+00, 4.71158824e-03],
-                      [2.40291000e-01, 0.00000000e+00, 4.71158824e-03,
-                       2.40291000e-01, 0.00000000e+00, 2.40291000e-01,
-                       2.05693000e-01, 7.94307000e-01, 4.03319608e-03],
-                      [2.40291000e-01, 7.59709000e-01, 4.71158824e-03,
-                       2.40291000e-01, 7.59709000e-01, 2.40291000e-01,
-                       2.05693000e-01, 0.00000000e+00, 6.15233300e-04]])
+            np.array([[2.05693000e-01, 0.00000000e+00, 6.15233300e-04,
+                       2.05693000e-01, 3.62987647e-02, 6.15233300e-04,
+                       2.05693000e-01, 0.00000000e+00, 3.21656893e-03],
+                      [2.05693000e-01, 0.00000000e+00, 3.21656893e-03,
+                       2.05693000e-01, 7.94307000e-01, 3.21656893e-03,
+                       2.05693000e-01, 0.00000000e+00, 2.05693000e-01],
+                      [2.40291000e-01, 0.00000000e+00, 7.18716849e-04,
+                       2.40291000e-01, 4.24042941e-02, 7.18716849e-04,
+                       2.40291000e-01, 0.00000000e+00, 3.59638065e-03]])
         )
 
     def test_is_separable(self):
@@ -149,7 +150,7 @@ class TestICSets(TestCase):
         p_c = (1, 1, 1, 1)
         assert self.ic_set.is_rationalizable(p_c) == False
         p_c = (.5, .5, .5, .5)
-        assert self.ic_set.is_rationalizable(p_c) == True
+        assert self.ic_set.is_rationalizable(p_c) == False
 
     def test_share_competitive(self):
         assert_array_almost_equal(
@@ -186,22 +187,38 @@ class TestICSets(TestCase):
                                    auction_data=tsuchiura_data,
                                    k=0, t=.0, m=.5)
 
-        test_pc = list_p_c[36]
-        is_rationalizable_iid = ic_solver.is_rationalizable_iid(test_pc)
-        is_rationalizable = ic_solver.is_rationalizable(test_pc)
+        for test_pc in list_p_c[:36]:
+            is_rationalizable_iid = ic_solver.is_rationalizable_iid(test_pc)
+            is_rationalizable = ic_solver.is_rationalizable(test_pc)
 
-        assert is_rationalizable == is_rationalizable_iid
-        # index = []
-        # rationalizability_data = []
-        # for i, test_pc in enumerate(list_p_c):
-        #     index.append(i)
-        #     is_rationalizable_iid = ic_solver.is_rationalizable_iid(test_pc)
-        #     is_rationalizable = ic_solver.is_rationalizable(test_pc)
-        #     rationalizability_data.append(
-        #         [is_rationalizable_iid, is_rationalizable])
-        #
-        # df_rationalizable = pd.DataFrame(data=rationalizability_data,
-        #                                  index=index,
-        #                                  columns=['iid', 'general'])
-        # assert (df_rationalizable.loc[:, 'iid'] >
-        #         df_rationalizable.loc[:, 'general']).mean() == .312
+            assert is_rationalizable == is_rationalizable_iid
+            # index = []
+            # rationalizability_data = []
+            # for i, test_pc in enumerate(list_p_c):
+            #     index.append(i)
+            #     is_rationalizable_iid = ic_solver.is_rationalizable_iid(test_pc)
+            #     is_rationalizable = ic_solver.is_rationalizable(test_pc)
+            #     rationalizability_data.append(
+            #         [is_rationalizable_iid, is_rationalizable])
+            #
+            # df_rationalizable = pd.DataFrame(data=rationalizability_data,
+            #                                  index=index,
+            #                                  columns=['iid', 'general'])
+            # assert (df_rationalizable.loc[:, 'iid'] >
+            #         df_rationalizable.loc[:, 'general']).mean() == .312
+
+    def test_extreme_points_z(self):
+        tsuchiura_data = auction_data.AuctionData(
+            bids_path=os.path.join('reference_data', 'bids_data.csv'),
+            auction_path=os.path.join('reference_data', 'auction_data.csv')
+        )
+        ic_solver = ic_sets.ICSets(rho_p=.001, rho_m=.001,
+                                   auction_data=tsuchiura_data,
+                                   k=0, t=.0, m=.5)
+        ic_solver.extreme_points_set_z(.4, .6, .2)
+        p_c = (.5, .5, .5, .5)
+        ic_solver.compute_set_b(p_c)
+        self.ic_set.extreme_points_set_z(.4, .6)
+        # plt.show()
+        # self.ic_set.plot_z(.4, .6)
+        # plt.show()
