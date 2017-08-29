@@ -153,9 +153,10 @@ class TestICSets(TestCase):
         assert self.ic_set.is_rationalizable(p_c) == False
 
     def test_share_competitive(self):
+        test_dict = self.ic_set.assess_share_competitive(3)
         assert_array_almost_equal(
-            self.ic_set.assess_share_competitive(3)[0],
-            0.8768376068376069
+            [test_dict['non_comp_tied_bids'], test_dict['non_comp_IC']],
+            [0.00442477876106, 0.122617426821]
         )
 
     def test_lower_bound_collusive(self):
@@ -179,12 +180,8 @@ class TestICSets(TestCase):
         steps = np.linspace(0, 1, 5)
         list_p_c = list(itertools.product(steps, repeat=4))
 
-        tsuchiura_data = auction_data.AuctionData(
-            bids_path=os.path.join('reference_data', 'bids_data.csv'),
-            auction_path=os.path.join('reference_data', 'auction_data.csv')
-        )
         ic_solver = ic_sets.ICSets(rho_p=.001, rho_m=.001,
-                                   auction_data=tsuchiura_data,
+                                   auction_data=self.auctions,
                                    k=0, t=.0, m=.5)
 
         for test_pc in list_p_c:

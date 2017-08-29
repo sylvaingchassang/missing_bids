@@ -199,6 +199,12 @@ class AuctionData(object):
     def demand_outcomes(self):
         return self._demand_outcomes
 
+    @property
+    def tied_winners(self):
+        num_tied = self.df_tied_bids.shape[0]
+        num_untied = self.df_bids.shape[0]
+        return num_tied / float(num_tied + num_untied)
+
 
 def hist_plot(this_delta, title =''):
     sns.plt.figure(figsize=(10,6))

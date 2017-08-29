@@ -316,11 +316,10 @@ class ICSets(object):
 
         return left_hand_side <= right_hand_side
 
+
     def lower_bound_collusive(self, rho_p):
-        num_tied = self.auction_data.df_tied_bids.shape[0]
-        num_untied = self.auction_data.df_bids.shape[0]
-        tied_winner = num_tied / float(num_tied + num_untied)
-        lower_bound_collusive = {'tied_winner': tied_winner}
+        tied_winners = self.auction_data.tied_winners
+        lower_bound_collusive = {'tied_winner': tied_winners}
 
         revenue = self.auction_data.get_counterfactual_demand(
             rho_p, .0).revenue
@@ -328,19 +327,30 @@ class ICSets(object):
         elasticity = (revenue.iloc[1:] - revenue.iloc[0]) / (
             revenue.iloc[1] * revenue.index[:-1])
         lower_bound_collusive['deviate_up'] = \
-            (1 - tied_winner) * elasticity[rho_p]
+            (1 - tied_winners) * elasticity[rho_p]
 
         return lower_bound_collusive
 
-    def assess_share_competitive(self, num_steps=11):
+    def _assess_share_competitive(self, num_steps, is_rationalizable):
         steps = np.linspace(0, 1, num_steps)
         list_p_c = list(itertools.product(steps, repeat=4))
         max_competitive = 0
         arg_max = list_p_c[0]
         for i, p_c in enumerate(list_p_c):
-            if self.is_rationalizable(p_c):
+            if is_rationalizable(p_c):
                 share_comp = self.auction_data.get_competitive_share(p_c)
                 if share_comp > max_competitive:
                     max_competitive = share_comp
                     arg_max = p_c
-        return max_competitive, arg_max
+        tied_winners = self.auction_data.tied_winners
+        return {'non_comp_tied_bids': tied_winners,
+                'non_comp_IC': (1 - tied_winners) * (1 - max_competitive),
+                'arg_max': arg_max}
+
+    def assess_share_competitive(self, num_steps=11):
+        return self._assess_share_competitive(num_steps,
+                                              self.is_rationalizable)
+
+    def assess_share_competitive_iid(self, num_steps=11):
+        return self._assess_share_competitive(num_steps,
+                                              self.is_rationalizable_iid)
