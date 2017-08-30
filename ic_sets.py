@@ -316,7 +316,6 @@ class ICSets(object):
 
         return left_hand_side <= right_hand_side
 
-
     def lower_bound_collusive(self, rho_p):
         tied_winners = self.auction_data.tied_winners
         lower_bound_collusive = {'tied_winner': tied_winners}
