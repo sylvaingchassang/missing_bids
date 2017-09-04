@@ -190,4 +190,20 @@ class TestICSets(TestCase):
 
             assert is_rationalizable == is_rationalizable_iid
 
+    def test_2d_bounds(self):
+
+        for i in list(np.linspace(0, 5, num = 3)):
+            ic_solver = ic_sets.ICSets(rho_p=.001, rho_m=.01,
+                                       auction_data=self.auctions,
+                                       k=i, t=0.025, m=0.5)
+            full_solution = ic_solver.assess_share_competitive(num_steps=5)
+            solution_2d = \
+                ic_solver.assess_share_competitive_2d_bound(num_steps=5)
+            upward_only = \
+                ic_solver.assess_share_competitive_upward_only(num_steps=5)
+            assert ic_solver.almost_less(1 - full_solution['non_comp_IC'],
+                                         1 - solution_2d['non_comp_IC']) and \
+                   ic_solver.almost_less(1 - full_solution['non_comp_IC'],
+                                         1 - upward_only['non_comp_IC'])
+
 

@@ -4,7 +4,7 @@ import itertools
 
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
-
+from shapely.geometry import Polygon
 
 class ICSets(object):
     def __init__(self, rho_p, rho_m, auction_data, m, t, k):
@@ -316,6 +316,92 @@ class ICSets(object):
 
         return left_hand_side <= right_hand_side
 
+    def p_bar_minus(self, x, b_upper_pp):
+        num = self.rho_m * x
+        denom = - self.rho_m - self.rho_p + self.rho_p * x / b_upper_pp
+        if denom <= 0:
+            return 1 - x
+        else:
+            return np.min([1 - x, num / denom])
+
+    def inv_p_bar_minus(self, y, b_upper_pp):
+        # Get inverse of getPbarm()
+        if np.isclose(y, self.p_bar_minus(1 - y, b_upper_pp)):
+            return 1 - y
+        else:
+            return y * (self.rho_m + self.rho_p) / \
+                    (self.rho_p * y / b_upper_pp - self.rho_m)
+
+    def p_bar_minus_kinks(self, b_upper_pp):
+        a = self.rho_p / b_upper_pp
+        b = - self.rho_p - self.rho_p / b_upper_pp
+        c = self.rho_p + self.rho_m
+        if (b*b - 4*a*c >= 0):
+            return [(-b - np.sqrt(b*b - 4*a*c)) / (2*a),
+                    (-b + np.sqrt(b*b - 4*a*c)) / (2*a)]
+        else:
+            return None
+
+    def get_conv_z_i_2d_bound(self, p_c):
+        d, pm, pp = self.auction_data.get_demand(p_c)
+        set_b = self.compute_set_b(p_c)
+
+        # For Z and I(q) to be non-empty we need check1 and check2:
+        check1 = self.lower_slope_pp * set_b[0][0] <= set_b[2][1]
+        num = self.rho_m * set_b[0][1]
+        denom = - self.rho_m - self.rho_p + \
+                self.rho_p * set_b[0][1] / set_b[2][1]
+        if denom <= 0:
+            check2 = True
+        else:
+            denom = np.max([0, denom])
+            check2 = set_b[1][0] <= num/denom
+        if check1 and check2:
+            # Vertices of the triangle:
+            set_z_hat = [(set_b[0][0], set_b[1][0]),
+                    (self.inv_p_bar_minus(set_b[1][0], set_b[2][1]),
+                     set_b[1][0]),
+                    (set_b[0][0], self.p_bar_minus(set_b[0][0], set_b[2][1]))]
+            set_z_hat = set_z_hat + [set_z_hat[0]]  # Close the triangle
+
+            # If both the upper and rightmost vertices are on the straight
+            # part or curved part of P-bar-minus, then it's a triangle.
+            # Otherwise it will have a 4th vertex at the kink point.
+            upper_on_straight = np.isclose(
+                    self.p_bar_minus(set_b[0][0], set_b[2][1]), 1 - set_b[0][0])
+            right_on_straight= np.isclose(
+                    self.inv_p_bar_minus(set_b[1][0], set_b[2][1]),
+                    1 - set_b[1][0])
+
+            if upper_on_straight == right_on_straight:
+                return set_z_hat
+            else:
+                kinks = self.p_bar_minus_kinks(set_b[2][1])
+                if upper_on_straight and not right_on_straight:
+                    return set_z_hat[0:2] + \
+                        [(kinks[0],
+                          self.p_bar_minus(kinks[0], set_b[2][1]))] + \
+                        set_z_hat[2:4]
+                elif not upper_on_straight and right_on_straight:
+                    return set_z_hat[0:2] + \
+                        [(kinks[1],
+                          self.p_bar_minus(kinks[1], set_b[2][1]))] + \
+                        set_z_hat[2:4]
+        else:
+            return None
+
+    def is_rationalizable_2d_bound(self, p_c):
+        set_z_i = Polygon(self.get_conv_z_i_2d_bound(p_c))
+        if set_z_i is None:
+            return False
+        set_a = self.compute_set_a(p_c)
+        set_a = Polygon([(set_a[0][0], set_a[1][0]),
+                (set_a[0][1], set_a[1][0]),
+                (set_a[0][1], set_a[1][1]),
+                (set_a[0][0], set_a[1][1]),
+                (set_a[0][0], set_a[1][0])])
+        return set_z_i.intersects(set_a)
+
     def lower_bound_collusive(self, rho_p):
         tied_winners = self.auction_data.tied_winners
         lower_bound_collusive = {'tied_winner': tied_winners}
@@ -353,3 +439,48 @@ class ICSets(object):
     def assess_share_competitive_iid(self, num_steps=11):
         return self._assess_share_competitive(num_steps,
                                               self.is_rationalizable_iid)
+
+    @property
+    def q_star(self):
+        num = (self.auction_data.enum_categories[(1, 0, 1)] *
+                (1 - self.lower_slope_pp)) + \
+                self.t * (1 - self.lower_slope_pp)
+        denom = self.lower_slope_pp * \
+                self.auction_data.enum_categories[(1, 0, 0)]
+        if denom == 0:
+            return 1
+        else:
+            return np.min([1, num/denom])
+
+    def assess_share_competitive_2d_bound(self, num_steps=11):
+        steps = np.linspace(0, 1, num_steps)
+        list_p_c = list(itertools.product(steps, repeat=2))
+        list_p_c = [(1., x[0], x[1], 1.) for x in list_p_c]
+
+        # Drop if lower than q_star:
+        list_p_c = [x for x in list_p_c if x[1] <= self.q_star]
+
+        max_competitive = 0
+        arg_max = list_p_c[0]
+        for i, p_c in enumerate(list_p_c):
+            if self.is_rationalizable_2d_bound(p_c):
+                share_comp = self.auction_data.get_competitive_share(p_c)
+                if share_comp > max_competitive:
+                    max_competitive = share_comp
+                    arg_max = p_c
+        tied_winners = self.auction_data.tied_winners
+        return {'non_comp_tied_bids': tied_winners,
+                'non_comp_IC': (1 - tied_winners) * (1 - max_competitive),
+                'arg_max': arg_max}
+
+    def assess_share_competitive_upward_only(self, num_steps=11):
+        max_competitive = (1. / (self.auction_data.num_histories)) * \
+                (self.q_star * self.auction_data.enum_categories[(1, 0, 0)] +
+                 self.auction_data.enum_categories[(0, 0, 0)] +
+                 self.auction_data.enum_categories[(0, 1, 0)] +
+                 self.auction_data.enum_categories[(1, 0, 1)])
+        tied_winners = self.auction_data.tied_winners
+        return {'non_comp_tied_bids': tied_winners,
+                'non_comp_IC': (1 - tied_winners) * (1 - max_competitive),
+                'arg_max': (1, self.q_star, 1, 1)}
+
