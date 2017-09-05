@@ -318,6 +318,8 @@ class ICSets(object):
 
     def p_bar_minus(self, x, b_upper_pp):
         num = self.rho_m * x
+        if b_upper_pp == 0:
+            return 1 - x
         denom = - self.rho_m - self.rho_p + self.rho_p * x / b_upper_pp
         if denom <= 0:
             return 1 - x
@@ -342,51 +344,72 @@ class ICSets(object):
         else:
             return None
 
-    def get_conv_z_i_2d_bound(self, p_c):
-        d, pm, pp = self.auction_data.get_demand(p_c)
-        set_b = self.compute_set_b(p_c)
+    # For Z and I(q) to be non-empty we need both conditions 1 and 2:
+    def z_i_nonempty_cond_1(self, set_b):
+        return self.lower_slope_pp * set_b[0][0] <= set_b[2][1]
 
-        # For Z and I(q) to be non-empty we need check1 and check2:
-        check1 = self.lower_slope_pp * set_b[0][0] <= set_b[2][1]
+    def z_i_nonempty_cond_2(self, set_b):
         num = self.rho_m * set_b[0][1]
         denom = - self.rho_m - self.rho_p + \
                 self.rho_p * set_b[0][1] / set_b[2][1]
         if denom <= 0:
-            check2 = True
+            return True
         else:
             denom = np.max([0, denom])
-            check2 = set_b[1][0] <= num/denom
-        if check1 and check2:
-            # Vertices of the triangle:
+            return set_b[1][0] <= num/denom
+
+    def check_kinks_conv_z_i_2d_bound(self, set_b):
+        # If both the upper and rightmost vertices are on the straight
+        # part or curved part of P-bar-minus, then it's a triangle.
+        # Otherwise it will have a 4th vertex at the kink point.
+        upper_on_straight = np.isclose(
+                self.p_bar_minus(set_b[0][0], set_b[2][1]), 1 - set_b[0][0])
+        right_on_straight= np.isclose(
+                self.inv_p_bar_minus(set_b[1][0], set_b[2][1]),
+                1 - set_b[1][0])
+        return {'upper_on_straight' : upper_on_straight,
+                'right_on_straight' : right_on_straight}
+
+    def is_triangle_conv_z_i_2d_bound(self, kink_checks):
+        # If both True or both False, it's a triangle:
+        return len(set(kink_checks.values())) == 1
+
+    def add_kink_points_2d_bound(self, set_z_hat, set_b, kink_checks):
+        # If conv(Z intersection I) is not a triangle we need to add the
+        # relevant kink point:
+        kinks = self.p_bar_minus_kinks(set_b[2][1])
+        if kink_checks['upper_on_straight'] and \
+                not kink_checks['right_on_straight']:
+            return set_z_hat[0:2] + \
+                [(kinks[0],
+                  self.p_bar_minus(kinks[0], set_b[2][1]))] + \
+                set_z_hat[2:4]
+        elif not kink_checks['upper_on_straight'] and \
+                kink_checks['right_on_straight']:
+            return set_z_hat[0:2] + \
+                [(kinks[1],
+                  self.p_bar_minus(kinks[1], set_b[2][1]))] + \
+                set_z_hat[2:4]
+
+    def get_conv_z_i_2d_bound(self, p_c):
+        d, pm, pp = self.auction_data.get_demand(p_c)
+        set_b = self.compute_set_b(p_c)
+
+        if self.z_i_nonempty_cond_1(set_b) and self.z_i_nonempty_cond_2(set_b):
+            # Vertices of the set (triangle):
             set_z_hat = [(set_b[0][0], set_b[1][0]),
                     (self.inv_p_bar_minus(set_b[1][0], set_b[2][1]),
                      set_b[1][0]),
                     (set_b[0][0], self.p_bar_minus(set_b[0][0], set_b[2][1]))]
             set_z_hat = set_z_hat + [set_z_hat[0]]  # Close the triangle
 
-            # If both the upper and rightmost vertices are on the straight
-            # part or curved part of P-bar-minus, then it's a triangle.
-            # Otherwise it will have a 4th vertex at the kink point.
-            upper_on_straight = np.isclose(
-                    self.p_bar_minus(set_b[0][0], set_b[2][1]), 1 - set_b[0][0])
-            right_on_straight= np.isclose(
-                    self.inv_p_bar_minus(set_b[1][0], set_b[2][1]),
-                    1 - set_b[1][0])
-
-            if upper_on_straight == right_on_straight:
+            # Check if we need to add a vertex at a kink point of p-bar-minus:
+            kink_checks = self.check_kinks_conv_z_i_2d_bound(set_b)
+            if self.is_triangle_conv_z_i_2d_bound(kink_checks):
                 return set_z_hat
             else:
-                kinks = self.p_bar_minus_kinks(set_b[2][1])
-                if upper_on_straight and not right_on_straight:
-                    return set_z_hat[0:2] + \
-                        [(kinks[0],
-                          self.p_bar_minus(kinks[0], set_b[2][1]))] + \
-                        set_z_hat[2:4]
-                elif not upper_on_straight and right_on_straight:
-                    return set_z_hat[0:2] + \
-                        [(kinks[1],
-                          self.p_bar_minus(kinks[1], set_b[2][1]))] + \
-                        set_z_hat[2:4]
+                return self.add_kink_points_2d_bound(set_z_hat, set_b,
+                        kink_checks)
         else:
             return None
 

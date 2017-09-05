@@ -190,6 +190,53 @@ class TestICSets(TestCase):
 
             assert is_rationalizable == is_rationalizable_iid
 
+    def test_p_bar_minus(self):
+
+        ic_solver = ic_sets.ICSets(rho_p=.01, rho_m=.01,
+                                   auction_data=self.auctions,
+                                   k=0, t=0.0, m=0.0)
+        # For D = 1, p_bar_minus should always be zero:
+        for b_upper_pp in list(np.linspace(0, 1, num=20)):
+            assert_array_almost_equal(0, ic_solver.p_bar_minus(1, b_upper_pp))
+
+        # If denominator in on RHS is negative, p-bar-minus is just 1 - x:
+        for d in list(np.linspace(0, 1, num=20)):
+            assert_array_almost_equal(1 - d, ic_solver.p_bar_minus(d, 1))
+
+        # For b_upper_pp=0.05 there are kinks when rho_p=rho_m.
+        assert ic_solver.strictly_less(ic_solver.p_bar_minus(0.5, 0.05), 0.5)
+
+    def test_inv_p_bar_minus(self):
+
+        ic_solver = ic_sets.ICSets(rho_p=.01, rho_m=.01,
+                                   auction_data=self.auctions,
+                                   k=1, t=0.025, m=0.5)
+        # Find p-bar-minus for several d, then check if inverse function is
+        # consistent:
+        ds = list(np.linspace(0, 1, num=20))
+        p_bar_ms = []
+        for d in ds:
+            p_bar_ms.append(ic_solver.p_bar_minus(d, 0.05))
+        for i, p_bar_m in enumerate(p_bar_ms):
+            assert_array_almost_equal(ds[i],
+                                      ic_solver.inv_p_bar_minus(p_bar_m, 0.05))
+
+    def p_bar_minus_kinks(self):
+
+        ic_solver = ic_sets.ICSets(rho_p=.01, rho_m=.01,
+                                   auction_data=self.auctions,
+                                   k=1, t=0.025, m=0.5)
+        kinks = ic_solver.p_bar_minus_kinks(0.05)
+
+        # Check if kinks correspond to where left and right of p-bar-minus
+        # are equal:
+        for i in kinks:
+            num = ic_solver.rho_m * i
+            denom = - ic_solver.rho_m - ic_solver.rho_p + \
+                    ic_solver.rho_p * i / 0.05
+            assert_array_almost_equal(1 - i, num/denom)
+
+
     def test_2d_bounds(self):
 
         for i in list(np.linspace(0, 5, num = 3)):
@@ -206,4 +253,18 @@ class TestICSets(TestCase):
                    ic_solver.almost_less(1 - full_solution['non_comp_IC'],
                                          1 - upward_only['non_comp_IC'])
 
+    def test_2d_bounds_large_k(self):
+
+        ic_solver = ic_sets.ICSets(rho_p=.001, rho_m=.01,
+                                   auction_data=self.auctions,
+                                   k=30, t=0.025, m=0.5)
+        full_solution = ic_solver.assess_share_competitive(num_steps=5)
+        solution_2d = \
+            ic_solver.assess_share_competitive_2d_bound(num_steps=5)
+        upward_only = \
+            ic_solver.assess_share_competitive_upward_only(num_steps=5)
+        assert_array_almost_equal(1 - full_solution['non_comp_IC'],
+                                  1 - solution_2d['non_comp_IC']) and \
+            assert_array_almost_equal(1 - full_solution['non_comp_IC'],
+                                      1 - upward_only['non_comp_IC'])
 
