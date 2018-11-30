@@ -2,15 +2,14 @@ import pandas as pd
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
+import lazy_property
 
 
 class AuctionData(object):
-    def __init__(self, bids_path, auction_path=None):
-        self.df_bids = pd.read_csv(bids_path)
+    def __init__(self, bidding_data):
+        self.df_bids = pd.read_csv(bidding_data)
         self.df_tied_bids = None
         self.df_auctions = None
-        if auction_path is not None:
-            self.df_auctions = pd.read_csv(auction_path, index_col='pid')
         self._bid_gap = None
         self._list_available_auctions = None
         self._list_tied_auctions = None
@@ -19,16 +18,16 @@ class AuctionData(object):
             {0: (0, 0, 0), 1: (1, 0, 0), 2: (0, 1, 0), 3: (1, 0, 1)}
         self._enum_categories = None
         self._num_histories = None
-        self.set_bid_data(self.df_bids, self.df_auctions)
+        self.set_bid_data(self.df_bids)
 
     def _collect_auctions(self):
         self._list_available_auctions = set(self.df_auctions.index)
 
-    def set_bid_data(self, df_bids, df_auctions=None):
+    def set_bid_data(self, df_bids):
         self.df_bids = df_bids
-        if df_auctions is None:
-            self.generate_auction_data()
-            self.add_auction_characteristics()
+        self.generate_auction_data()
+        self.add_auction_characteristics()
+
         self._collect_auctions()
 
         self.df_bids = self.df_bids.loc[
@@ -46,9 +45,8 @@ class AuctionData(object):
     def all_bids(self):
         return pd.concat((self.df_bids, self.df_tied_bids), axis=0)
 
-    def save_data(self, bids_path, auction_path):
-        self.all_bids.to_csv(bids_path)
-        self.df_auctions.to_csv(auction_path)
+    def save_data(self, path):
+        self.all_bids.to_csv(path)
 
     def generate_auction_data(self):
         """
