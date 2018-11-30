@@ -8,6 +8,7 @@ import lazy_property
 class AuctionData(object):
     def __init__(self, bidding_data):
         self._df_bids = pd.read_csv(bidding_data)
+        self._df_bids = self._df_bids.loc[~self._df_bids.norm_bid.isnull()]
         self.df_tied_bids = None
         self.df_auctions = None
         self._bid_gap = None
@@ -40,6 +41,11 @@ class AuctionData(object):
             self._df_bids.norm_bid != self._df_bids.most_competitive
             ]
 
+    # @lazy_property.LazyProperty
+    # def df_bids(self):
+    #     self._df_bids.loc[
+    #         ~ (self._df_bids.norm_bid.isnull()
+
     @property
     def all_bids(self):
         return pd.concat((self._df_bids, self.df_tied_bids), axis=0)
@@ -59,7 +65,7 @@ class AuctionData(object):
         self._bid_gap = []
         for a in list_auctions:
             this_df = self._df_bids[self._df_bids.pid == a]
-            bids = this_df.norm_bid.dropna().values
+            bids = this_df.norm_bid.values
             if len(bids) > 1:
                 bids.sort()
                 self._bid_gap += list(
