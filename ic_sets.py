@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from shapely.geometry import Polygon
 
+
 class ICSets(object):
     def __init__(self, rho_p, rho_m, auction_data, m, t, k):
         self._rho_p = None

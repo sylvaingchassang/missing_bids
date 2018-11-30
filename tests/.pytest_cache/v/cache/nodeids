@@ -1,0 +1,10 @@
+[
+  "test_auction_data.py::TestAuctionData::test_auction_data",
+  "test_auction_data.py::TestAuctionData::test_bid_data",
+  "test_auction_data.py::TestAuctionData::test_categorize_histories",
+  "test_auction_data.py::TestAuctionData::test_counterfactual_demand",
+  "test_auction_data.py::TestAuctionData::test_dist_bid_gap",
+  "test_auction_data.py::TestAuctionData::test_get_demand",
+  "test_auction_data.py::TestAuctionData::test_most_competitive",
+  "test_auction_data.py::TestAuctionData::test_tied_winners"
+]
