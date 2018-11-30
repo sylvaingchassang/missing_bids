@@ -207,13 +207,13 @@ class AuctionData(object):
 
 
 def hist_plot(this_delta, title =''):
-    sns.plt.figure(figsize=(10,6))
+    plt.figure(figsize=(10,6))
     sns.distplot(
         this_delta, kde=False,
         hist_kws=dict(alpha=1),
         bins=200,
         hist=True,
-        norm_hist=1,
+        #norm_hist=1,
     )
     plt.title(title)
-    sns.plt.tight_layout(), plt.show()
+    plt.tight_layout(), plt.show()
