@@ -222,9 +222,9 @@ class ICSets(object):
         list_sel = []
         if n < 3:
             return np.array([[0, min(n-1, 1), 0]])
-        for a in xrange(n - 2):
-            for b in xrange(a + 1, n - 1):
-                for c in xrange(b + 1, n):
+        for a in range(n - 2):
+            for b in range(a + 1, n - 1):
+                for c in range(b + 1, n):
                     list_sel.append([a, b, c])
         return np.array(list_sel)
 
