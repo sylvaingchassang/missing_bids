@@ -14,7 +14,7 @@ class TestAuctionData(TestCase):
         self.auctions.categorize_histories()
 
     def test_bid_data(self):
-        assert self.auctions._df_bids.shape == (5850, 74)
+        assert self.auctions._df_bids.shape == (5850, 10)
         assert self.auctions.df_auctions.shape == (1469, 2)
         assert_array_equal(
             self.auctions._df_bids.pid.values[:10],

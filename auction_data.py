@@ -9,6 +9,7 @@ class AuctionData(object):
     def __init__(self, bidding_data):
         self._df_bids = pd.read_csv(bidding_data)
         self._df_bids = self._df_bids.loc[~self._df_bids.norm_bid.isnull()]
+        self._df_bids = self._df_bids[['pid', 'norm_bid', 'bid']]
         self.df_tied_bids = None
         self.df_auctions = None
         self._bid_gap = None
@@ -40,18 +41,6 @@ class AuctionData(object):
         self._df_bids = self._df_bids.loc[
             self._df_bids.norm_bid != self._df_bids.most_competitive
             ]
-
-    # @lazy_property.LazyProperty
-    # def df_bids(self):
-    #     self._df_bids.loc[
-    #         ~ (self._df_bids.norm_bid.isnull()
-
-    @property
-    def all_bids(self):
-        return pd.concat((self._df_bids, self.df_tied_bids), axis=0)
-
-    def save_data(self, path):
-        self.all_bids.to_csv(path)
 
     def generate_auction_data(self):
         """
@@ -209,14 +198,10 @@ class AuctionData(object):
         return num_tied / float(num_tied + num_untied)
 
 
-def hist_plot(this_delta, title =''):
-    plt.figure(figsize=(10,6))
+def hist_plot(df, title=''):
+    plt.figure(figsize=(10, 6))
     sns.distplot(
-        this_delta, kde=False,
-        hist_kws=dict(alpha=1),
-        bins=200,
-        hist=True,
-        norm_hist=1,
-    )
+        df, kde=False, hist_kws=dict(alpha=1), bins=200, hist=True,
+        norm_hist=1)
     plt.title(title)
     plt.tight_layout(), plt.show()
