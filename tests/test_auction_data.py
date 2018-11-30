@@ -14,8 +14,10 @@ class TestAuctionData(TestCase):
         self.auctions.categorize_histories()
 
     def test_bid_data(self):
+        assert self.auctions._df_bids.shape == (5850, 74)
+        assert self.auctions.df_auctions.shape == (1469, 2)
         assert_array_equal(
-            self.auctions.df_bids.pid.values[:10],
+            self.auctions._df_bids.pid.values[:10],
             np.array([15, 15, 15, 15, 15, 16, 16, 16, 16, 16])
         )
 
@@ -29,7 +31,7 @@ class TestAuctionData(TestCase):
 
     def test_most_competitive(self):
         assert_array_almost_equal(
-            self.auctions.df_bids.most_competitive.values[10:20],
+            self.auctions._df_bids.most_competitive.values[10:20],
             np.array(
                 [0.79662162, 0.74189192, 0.74189192, 0.74189192, 0.74189192,
                  0.74189192, 0.74189192, 0.74189192, 0.74189192, 0.74189192]
@@ -67,11 +69,11 @@ class TestAuctionData(TestCase):
 
     def test_tied_winners(self):
         assert_array_almost_equal(
-            [np.mean(self.auctions.df_bids.most_competitive ==
-                     self.auctions.df_bids.norm_bid),
+            [np.mean(self.auctions._df_bids.most_competitive ==
+                     self.auctions._df_bids.norm_bid),
              np.mean(self.auctions.df_auctions.lowest ==
                      self.auctions.df_auctions.second_lowest),
-             np.mean(self.auctions.df_bids.lowest ==
-                     self.auctions.df_bids.second_lowest)],
+             np.mean(self.auctions._df_bids.lowest ==
+                     self.auctions._df_bids.second_lowest)],
             [0., 0.008169, 0.005983]
         )

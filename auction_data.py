@@ -7,7 +7,7 @@ import lazy_property
 
 class AuctionData(object):
     def __init__(self, bidding_data):
-        self.df_bids = pd.read_csv(bidding_data)
+        self._df_bids = pd.read_csv(bidding_data)
         self.df_tied_bids = None
         self.df_auctions = None
         self._bid_gap = None
@@ -18,32 +18,31 @@ class AuctionData(object):
             {0: (0, 0, 0), 1: (1, 0, 0), 2: (0, 1, 0), 3: (1, 0, 1)}
         self._enum_categories = None
         self._num_histories = None
-        self.set_bid_data(self.df_bids)
+        self.set_bid_data()
 
     def _collect_auctions(self):
         self._list_available_auctions = set(self.df_auctions.index)
 
-    def set_bid_data(self, df_bids):
-        self.df_bids = df_bids
+    def set_bid_data(self):
         self.generate_auction_data()
         self.add_auction_characteristics()
 
         self._collect_auctions()
 
-        self.df_bids = self.df_bids.loc[
-            ~ (df_bids.norm_bid.isnull() |
-               self.df_bids.most_competitive.isnull())
+        self._df_bids = self._df_bids.loc[
+            ~ (self._df_bids.norm_bid.isnull() |
+               self._df_bids.most_competitive.isnull())
         ]
-        self.df_tied_bids = self.df_bids.loc[
-            self.df_bids.norm_bid == self.df_bids.most_competitive
-        ]
-        self.df_bids = self.df_bids.loc[
-            self.df_bids.norm_bid != self.df_bids.most_competitive
-        ]
+        self.df_tied_bids = self._df_bids.loc[
+            self._df_bids.norm_bid == self._df_bids.most_competitive
+            ]
+        self._df_bids = self._df_bids.loc[
+            self._df_bids.norm_bid != self._df_bids.most_competitive
+            ]
 
     @property
     def all_bids(self):
-        return pd.concat((self.df_bids, self.df_tied_bids), axis=0)
+        return pd.concat((self._df_bids, self.df_tied_bids), axis=0)
 
     def save_data(self, path):
         self.all_bids.to_csv(path)
@@ -54,12 +53,12 @@ class AuctionData(object):
         includes second lowest bidder
         """
 
-        list_auctions = list(set(self.df_bids.pid))
+        list_auctions = list(set(self._df_bids.pid))
         list_auctions.sort()
         data = []
         self._bid_gap = []
         for a in list_auctions:
-            this_df = self.df_bids[self.df_bids.pid == a]
+            this_df = self._df_bids[self._df_bids.pid == a]
             bids = this_df.norm_bid.dropna().values
             if len(bids) > 1:
                 bids.sort()
@@ -79,17 +78,17 @@ class AuctionData(object):
 
     def add_auction_characteristics(self):
         self._collect_auctions()
-        self.df_bids.loc[:, 'most_competitive'] = 0
-        self.df_bids.loc[:, 'lowest'] = 0
-        self.df_bids.loc[:, 'second_lowest'] = 0
+        self._df_bids.loc[:, 'most_competitive'] = 0
+        self._df_bids.loc[:, 'lowest'] = 0
+        self._df_bids.loc[:, 'second_lowest'] = 0
         competition_frame = \
-            self.df_bids[['pid', 'norm_bid']].apply(
+            self._df_bids[['pid', 'norm_bid']].apply(
                 self._add_most_competitive, axis=1
             )
-        self.df_bids.loc[:, 'most_competitive'] = competition_frame.apply(
+        self._df_bids.loc[:, 'most_competitive'] = competition_frame.apply(
             lambda x: x[0])
-        self.df_bids.loc[:, 'lowest'] = competition_frame.apply(lambda x: x[1])
-        self.df_bids.loc[:, 'second_lowest'] = competition_frame.apply(
+        self._df_bids.loc[:, 'lowest'] = competition_frame.apply(lambda x: x[1])
+        self._df_bids.loc[:, 'second_lowest'] = competition_frame.apply(
             lambda x: x[2])
 
     def _add_most_competitive(self, x):
@@ -113,24 +112,24 @@ class AuctionData(object):
         return 1000 + 100. * x + 10. * y + 1. * z
 
     def compute_demand_moments(self, rho_p=.001, rho_m=.05):
-        self.df_bids['sample_D'] = \
-            1. * (self.df_bids.norm_bid < self.df_bids.most_competitive)
-        bid_up = (1 + rho_p) * self.df_bids.norm_bid
-        bid_down = (1 - rho_m) * self.df_bids.norm_bid
+        self._df_bids['sample_D'] = \
+            1. * (self._df_bids.norm_bid < self._df_bids.most_competitive)
+        bid_up = (1 + rho_p) * self._df_bids.norm_bid
+        bid_down = (1 - rho_m) * self._df_bids.norm_bid
 
-        self.df_bids['sample_Pp'] = \
-            1. * (self.df_bids.most_competitive < bid_up) * (
-                self.df_bids.norm_bid < self.df_bids.most_competitive)
+        self._df_bids['sample_Pp'] = \
+            1. * (self._df_bids.most_competitive < bid_up) * (
+                self._df_bids.norm_bid < self._df_bids.most_competitive)
 
-        self.df_bids['sample_Pm'] = \
-            1. * (self.df_bids.most_competitive >= bid_down) * (
-                self.df_bids.norm_bid >= self.df_bids.most_competitive)
+        self._df_bids['sample_Pm'] = \
+            1. * (self._df_bids.most_competitive >= bid_down) * (
+                self._df_bids.norm_bid >= self._df_bids.most_competitive)
 
-        self.df_bids.loc[:, 'category'] = 0
+        self._df_bids.loc[:, 'category'] = 0
 
-        self.df_bids.loc[:, 'category'] = self._encode(
-            self.df_bids['sample_D'], self.df_bids['sample_Pm'],
-            self.df_bids['sample_Pp']
+        self._df_bids.loc[:, 'category'] = self._encode(
+            self._df_bids['sample_D'], self._df_bids['sample_Pm'],
+            self._df_bids['sample_Pp']
         )
 
     def get_counterfactual_demand(self, rho_p, rho_m, num=500):
@@ -140,12 +139,12 @@ class AuctionData(object):
         data = {'demand': [], 'revenue': []}
         index = []
         for this_rho_m, this_rho_p in range_rho:
-            bid_up = (1+this_rho_p) * self.df_bids.bid
-            bid_down = (1-this_rho_m) * self.df_bids.bid
+            bid_up = (1+this_rho_p) * self._df_bids.bid
+            bid_down = (1-this_rho_m) * self._df_bids.bid
             index += [-this_rho_m, this_rho_p]
             self.compute_demand_moments(this_rho_p, this_rho_m)
-            d_m = self.df_bids.sample_D + self.df_bids.sample_Pm
-            d_p = self.df_bids.sample_D - self.df_bids.sample_Pp
+            d_m = self._df_bids.sample_D + self._df_bids.sample_Pm
+            d_p = self._df_bids.sample_D - self._df_bids.sample_Pp
             data['demand'] += [d_m.mean(), d_p.mean()]
             data['revenue'] += [(d_m * bid_down).mean(),
                                 (d_p * bid_up).mean()]
@@ -162,7 +161,7 @@ class AuctionData(object):
         self._enum_categories = {}
         for v in self.demand_outcomes.values():
             c = self._encode(*v)
-            self._enum_categories[v] = np.sum(self.df_bids.category == c)
+            self._enum_categories[v] = np.sum(self._df_bids.category == c)
 
         self._num_histories = sum(self.enum_categories.values())
 
@@ -200,7 +199,7 @@ class AuctionData(object):
     @property
     def tied_winners(self):
         num_tied = self.df_tied_bids.shape[0]
-        num_untied = self.df_bids.shape[0]
+        num_untied = self._df_bids.shape[0]
         return num_tied / float(num_tied + num_untied)
 
 
@@ -211,7 +210,7 @@ def hist_plot(this_delta, title =''):
         hist_kws=dict(alpha=1),
         bins=200,
         hist=True,
-        #norm_hist=1,
+        norm_hist=1,
     )
     plt.title(title)
     plt.tight_layout(), plt.show()
