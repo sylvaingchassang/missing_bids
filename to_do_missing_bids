@@ -1,5 +1,0 @@
-1- include cost in lower bound estimate
-2- run tests for is_rationalizable in iid case
-3- compute share of non-competitive data as m moves given iid
-4- run tests for upper deviation alone as m moves -- clarify that is is equivalent to unconstrained information
-5- is_rationalizable_iid -- make sure denominators are non-zero
