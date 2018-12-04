@@ -1,7 +1,8 @@
 [
-  "test_auction_data.py::TestAuctionData::test_auction_data",
-  "test_auction_data.py::TestAuctionData::test_bid_data",
-  "test_auction_data.py::TestAuctionData::test_counterfactual_demand",
-  "test_auction_data.py::TestAuctionData::test_demand_function",
-  "test_auction_data.py::TestAuctionData::test_most_competitive"
+  "tests.py::TestDeviations::test_bids",
+  "tests.py::TestDeviations::test_deviation_profits",
+  "tests.py::TestDeviations::test_deviation_temptation",
+  "tests.py::TestDeviations::test_equilibrium_profits",
+  "tests.py::TestDeviations::test_is_competitive",
+  "tests.py::TestDeviations::test_profits"
 ]

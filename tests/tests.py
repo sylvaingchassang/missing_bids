@@ -3,6 +3,7 @@ from numpy.testing import TestCase, assert_array_equal, \
 import numpy as np
 import auction_data
 import os
+import analytics
 
 
 class TestAuctionData(TestCase):
@@ -42,3 +43,45 @@ class TestAuctionData(TestCase):
         dmd = self.auctions.demand_function(start=-.01, stop=.01, num=4)
         assert_array_almost_equal(dmd, [[0.495575], [0.293397], [0.21341],
                                         [0.105599]])
+
+
+class TestDeviations(TestCase):
+
+    def setUp(self):
+        self.dev = analytics.Deviations(1, [-.02, .01], [.3, .5, .2], .5)
+        self.dev_array = analytics.Deviations(
+            [1, 2], [-.02, .01], [[.3, .5, .2], [.4, .41, .1]], [.5, .9])
+
+    def test_bids(self):
+        assert_array_almost_equal(
+            self.dev.bids_and_deviations, [[1, 0.98, 1.01]])
+        assert_array_almost_equal(
+            self.dev_array.bids_and_deviations,
+            [[1, 0.98, 1.01], [2, 1.96, 2.02]]
+        )
+
+    def test_profits(self):
+        assert_array_almost_equal(self.dev.profits, [[0.15, 0.24, 0.102]])
+        assert_array_almost_equal(
+            self.dev_array.profits,
+            [[0.15, 0.24, 0.102], [0.44, 0.4346, 0.112]])
+
+    def test_equilibrium_profits(self):
+        assert_array_almost_equal(self.dev.equilibrium_profits, [[0.15]])
+        assert_array_almost_equal(
+            self.dev_array.equilibrium_profits, [[0.15], [0.44]])
+
+    def test_deviation_profits(self):
+        assert_array_almost_equal(self.dev.deviation_profits, [[0.24, 0.102]])
+        assert_array_almost_equal(
+            self.dev_array.deviation_profits,
+            [[0.24, 0.102], [0.4346, 0.112]])
+
+    def test_is_competitive(self):
+        assert_array_almost_equal(self.dev.is_competitive, [[0]])
+        assert_array_almost_equal(self.dev_array.is_competitive, [[0], [1]])
+
+    def test_deviation_temptation(self):
+        assert_array_almost_equal(self.dev.deviation_temptation, [[.09]])
+        assert_array_almost_equal(self.dev_array.deviation_temptation,
+                                  [[.09], [0]])
