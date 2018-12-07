@@ -4,6 +4,7 @@ import numpy as np
 import auction_data
 import os
 import analytics
+from parameterized import parameterized
 
 
 class TestAuctionData(TestCase):
@@ -45,43 +46,66 @@ class TestAuctionData(TestCase):
                                         [0.105599]])
 
 
-class TestDeviations(TestCase):
+class TestEnvironments(TestCase):
 
     def setUp(self):
-        self.dev = analytics.Deviations(1, [-.02, .01], [.3, .5, .2], .5)
-        self.dev_array = analytics.Deviations(
-            [1, 2], [-.02, .01], [[.3, .5, .2], [.4, .41, .1]], [.5, .9])
+        self.constraints = [analytics.MarkupConstraint(.6),
+                            analytics.InformationConstraint(.5, [.65, .48])]
+        self.env_no_cons = analytics.Environments(num_actions=2)
 
-    def test_bids(self):
+    def test_generate_raw_environments(self):
         assert_array_almost_equal(
-            self.dev.bids_and_deviations, [[1, 0.98, 1.01]])
-        assert_array_almost_equal(
-            self.dev_array.bids_and_deviations,
-            [[1, 0.98, 1.01], [2, 1.96, 2.02]]
+            self.env_no_cons._generate_raw_environments(3, seed=0),
+            [[0.715189, 0.548814, 0.602763],
+             [0.544883, 0.423655, 0.645894],
+             [0.891773, 0.437587, 0.963663]]
         )
 
-    def test_profits(self):
-        assert_array_almost_equal(self.dev.profits, [[0.15, 0.24, 0.102]])
+    def test_generate_environments_no_cons(self):
         assert_array_almost_equal(
-            self.dev_array.profits,
-            [[0.15, 0.24, 0.102], [0.44, 0.4346, 0.112]])
+            self.env_no_cons._generate_raw_environments(3, seed=0),
+            self.env_no_cons.generate_environments(3, seed=0),
+        )
 
-    def test_equilibrium_profits(self):
-        assert_array_almost_equal(self.dev.equilibrium_profits, [[0.15]])
+    @parameterized.expand([
+        [[0], [[0.544883, 0.423655, 0.645894],
+               [0.891773, 0.437587, 0.963663]]],
+        [[1], [[0.715189, 0.548814, 0.602763],
+               [0.544883, 0.423655, 0.645894]]],
+        [[0, 1], [[0.544883, 0.423655, 0.645894]]]
+    ])
+    def test_generate_environments_cons(self, cons_id, expected):
+        env = analytics.Environments(
+            num_actions=2,
+            constraints=[self.constraints[i] for i in cons_id]
+        )
         assert_array_almost_equal(
-            self.dev_array.equilibrium_profits, [[0.15], [0.44]])
+            env.generate_environments(3, seed=0),
+            expected
+        )
 
-    def test_deviation_profits(self):
-        assert_array_almost_equal(self.dev.deviation_profits, [[0.24, 0.102]])
+
+class TestConstraints(TestCase):
+
+    def setUp(self):
+        self.mkp = analytics.MarkupConstraint(2.)
+        self.info = analytics.InformationConstraint(.01, [.5, .4, .3])
+
+    def test_markup_constraint(self):
+        assert not self.mkp([.5, .6, .33])
+        assert self.mkp([.5, .6, .34])
+
+    def test_info_bounds(self):
         assert_array_almost_equal(
-            self.dev_array.deviation_profits,
-            [[0.24, 0.102], [0.4346, 0.112]])
+            self.info.belief_bounds,
+            [[0.4975, 0.5025], [0.397602, 0.402402], [0.297904, 0.302104]]
+        )
 
-    def test_is_competitive(self):
-        assert_array_almost_equal(self.dev.is_competitive, [[0]])
-        assert_array_almost_equal(self.dev_array.is_competitive, [[0], [1]])
+    def test_info(self):
+        assert self.info([.5, .4, .3, .5])
+        assert not self.info([.5, .4, .35, .5])
+        assert not self.info([.45, .4, .3, .5])
 
-    def test_deviation_temptation(self):
-        assert_array_almost_equal(self.dev.deviation_temptation, [[.09]])
-        assert_array_almost_equal(self.dev_array.deviation_temptation,
-                                  [[.09], [0]])
+
+
+

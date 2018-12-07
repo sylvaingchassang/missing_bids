@@ -1,8 +1,15 @@
 [
-  "tests.py::TestDeviations::test_bids",
-  "tests.py::TestDeviations::test_deviation_profits",
-  "tests.py::TestDeviations::test_deviation_temptation",
-  "tests.py::TestDeviations::test_equilibrium_profits",
-  "tests.py::TestDeviations::test_is_competitive",
-  "tests.py::TestDeviations::test_profits"
+  "tests.py::TestAuctionData::test_auction_data",
+  "tests.py::TestAuctionData::test_bid_data",
+  "tests.py::TestAuctionData::test_counterfactual_demand",
+  "tests.py::TestAuctionData::test_demand_function",
+  "tests.py::TestAuctionData::test_most_competitive",
+  "tests.py::TestEnvironments::test_generate_environments_cons_0",
+  "tests.py::TestEnvironments::test_generate_environments_cons_1",
+  "tests.py::TestEnvironments::test_generate_environments_cons_2",
+  "tests.py::TestEnvironments::test_generate_environments_no_cons",
+  "tests.py::TestEnvironments::test_generate_raw_environments",
+  "tests.py::TestConstraints::test_info",
+  "tests.py::TestConstraints::test_info_bounds",
+  "tests.py::TestConstraints::test_markup_constraint"
 ]
