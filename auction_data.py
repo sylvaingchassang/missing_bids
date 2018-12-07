@@ -6,9 +6,9 @@ import lazy_property
 
 
 class AuctionData(object):
-    def __init__(self, bidding_data):
+    def __init__(self, bidding_data_path):
         self._raw_data = None
-        self._read_bids(bidding_data)
+        self._read_bids(bidding_data_path)
 
     def _read_bids(self, bidding_data):
         _raw_data = pd.read_csv(bidding_data)

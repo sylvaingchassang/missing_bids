@@ -11,5 +11,7 @@
   "tests.py::TestEnvironments::test_generate_raw_environments",
   "tests.py::TestConstraints::test_info",
   "tests.py::TestConstraints::test_info_bounds",
-  "tests.py::TestConstraints::test_markup_constraint"
+  "tests.py::TestConstraints::test_markup_constraint",
+  "tests.py::TestCollusionMetrics::test_deviation_temptation",
+  "tests.py::TestCollusionMetrics::test_is_non_competitive"
 ]

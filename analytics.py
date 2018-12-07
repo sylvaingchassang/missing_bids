@@ -5,9 +5,13 @@ import abc
 from six import add_metaclass
 
 
+def descending_sort(arr, axis=1):
+    return -np.sort(-np.array(arr), axis=axis)
+
+
 class Environments(object):
 
-    def __init__(self, num_actions, constraints=[]):
+    def __init__(self, num_actions, constraints=None):
         self._num_actions = num_actions
         self._constraints = constraints
 
@@ -23,7 +27,7 @@ class Environments(object):
 
     @staticmethod
     def _descending_sort_beliefs(env):
-        env[:, :-1] = -np.sort(-env[:, :-1], axis=1)
+        env[:, :-1] = descending_sort(env[:, :-1])
         return env
 
     def _apply_constraints(self, env):
@@ -31,7 +35,7 @@ class Environments(object):
         return env
 
     def _aggregate_constraint(self, e):
-        if len(self._constraints) > 0:
+        if self._constraints is not None:
             return all([cstr(e) for cstr in self._constraints])
         else:
             return True
@@ -39,10 +43,6 @@ class Environments(object):
 
 @add_metaclass(abc.ABCMeta)
 class PlausibilityConstraint(object):
-
-    @abc.abstractmethod
-    def __init__(self, *args, **kwargs):
-        pass
 
     @abc.abstractmethod
     def __call__(self, e):
@@ -86,13 +86,21 @@ class MarkupConstraint(PlausibilityConstraint):
 
 class DimensionlessCollusionMetrics(object):
 
-    @property
-    def is_non_competitive(self):
-        pass
+    def __init__(self, deviations):
+        self._deviations = np.sort(list(set([0] + deviations)))
 
-    @property
-    def normalized_deviation_temptation(self):
-        pass
+    @lazy_property.LazyProperty
+    def equilibrium_index(self):
+        return np.where(self._deviations == 0)[0][0]
+
+    def is_non_competitive(self, env):
+        return 1. - 1. * np.isclose(
+            self.normalized_deviation_temptation(env), .0)
+
+    def normalized_deviation_temptation(self, env):
+        beliefs, cost = env[:-1], env[-1]
+        payoffs = np.multiply(beliefs, 1 + self._deviations - cost)
+        return payoffs[self.equilibrium_index] - np.max(payoffs)
 
 
 class MinCollusionSolver(object):

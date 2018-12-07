@@ -6,3 +6,4 @@ lazy-property
 six
 parameterized
 cvxpy
+coverage

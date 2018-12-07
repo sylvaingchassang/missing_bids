@@ -1,16 +1,19 @@
 from numpy.testing import TestCase, assert_array_equal, \
     assert_array_almost_equal
 import numpy as np
-import auction_data
 import os
-import analytics
 from parameterized import parameterized
+from .. import auction_data
+from .. import analytics
 
 
 class TestAuctionData(TestCase):
     def setUp(self):
+        path = os.path.join(
+            os.path.dirname(__file__), 'reference_data', 'tsuchiura_data.csv')
         self.auctions = auction_data.AuctionData(
-            bidding_data=os.path.join('reference_data', 'tsuchiura_data.csv'))
+            bidding_data_path=path
+        )
 
     def test_bid_data(self):
         assert self.auctions.df_bids.shape == (5876, 7)
@@ -107,5 +110,23 @@ class TestConstraints(TestCase):
         assert not self.info([.45, .4, .3, .5])
 
 
+class TestCollusionMetrics(TestCase):
 
+    def setUp(self):
+        self.metrics_no_0 = \
+            analytics.DimensionlessCollusionMetrics([-.02, .02])
+        self.metrics = \
+            analytics.DimensionlessCollusionMetrics([-.2, .0, .02])
+        self.env = [.5, .4, .3, .8]
+
+    def test_is_non_competitive(self):
+        assert self.metrics_no_0.is_non_competitive(self.env)
+        assert not self.metrics.is_non_competitive(self.env)
+
+    def test_deviation_temptation(self):
+        assert_array_almost_equal(
+            [self.metrics_no_0.normalized_deviation_temptation(self.env),
+             self.metrics.normalized_deviation_temptation(self.env)],
+            [-0.01, 0]
+        )
 
