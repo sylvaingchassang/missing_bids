@@ -93,19 +93,37 @@ class DimensionlessCollusionMetrics(object):
     def equilibrium_index(self):
         return np.where(self._deviations == 0)[0][0]
 
-    def is_non_competitive(self, env):
-        return 1. - 1. * np.isclose(
-            self.normalized_deviation_temptation(env), .0)
+    @abc.abstractmethod
+    def __call__(self, env):
+        pass
 
-    def normalized_deviation_temptation(self, env):
+    def _normalized_deviation_temptation(self, env):
         beliefs, cost = env[:-1], env[-1]
         payoffs = np.multiply(beliefs, 1 + self._deviations - cost)
         return payoffs[self.equilibrium_index] - np.max(payoffs)
 
 
+class IsNonCompetitive(DimensionlessCollusionMetrics):
+    def __call__(self, env):
+        return 1. - 1. * np.isclose(
+            self._normalized_deviation_temptation(env), .0)
+
+
+class NormalizedDeviationTemptation(DimensionlessCollusionMetrics):
+
+    def __call__(self, env):
+        return self._normalized_deviation_temptation(env)
+
+
 class MinCollusionSolver(object):
 
-    pass
+    def __init__(self, auction_data, deviations):
+        self.auction_data = auction_data
+        self.metrics = DimensionlessCollusionMetrics(deviations)
+
+    def solve(self):
+        pass
+
 
 
 @add_metaclass(abc.ABCMeta)

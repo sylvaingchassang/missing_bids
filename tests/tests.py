@@ -113,20 +113,21 @@ class TestConstraints(TestCase):
 class TestCollusionMetrics(TestCase):
 
     def setUp(self):
-        self.metrics_no_0 = \
-            analytics.DimensionlessCollusionMetrics([-.02, .02])
-        self.metrics = \
-            analytics.DimensionlessCollusionMetrics([-.2, .0, .02])
         self.env = [.5, .4, .3, .8]
 
-    def test_is_non_competitive(self):
-        assert self.metrics_no_0.is_non_competitive(self.env)
-        assert not self.metrics.is_non_competitive(self.env)
+    @parameterized.expand([
+        [[-.02, .02], True],
+        [[-.2, .0, .02], False]
+    ])
+    def test_is_non_competitive(self, deviations, expected):
+        metric = analytics.IsNonCompetitive(deviations)
+        assert metric(self.env) == expected
 
-    def test_deviation_temptation(self):
-        assert_array_almost_equal(
-            [self.metrics_no_0.normalized_deviation_temptation(self.env),
-             self.metrics.normalized_deviation_temptation(self.env)],
-            [-0.01, 0]
-        )
+    @parameterized.expand([
+        [[-.02, .02], -0.01],
+        [[-.2, .0, .02], 0]
+    ])
+    def test_deviation_temptation(self, deviations, expected):
+        metric = analytics.NormalizedDeviationTemptation(deviations)
+        assert np.isclose(metric(self.env), expected)
 
