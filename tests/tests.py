@@ -54,7 +54,7 @@ class TestEnvironments(TestCase):
     def setUp(self):
         self.constraints = [analytics.MarkupConstraint(.6),
                             analytics.InformationConstraint(.5, [.65, .48])]
-        self.env_no_cons = analytics.Environments(num_actions=2)
+        self.env_no_cons = analytics.Environment(num_actions=2)
 
     def test_generate_raw_environments(self):
         assert_array_almost_equal(
@@ -78,7 +78,7 @@ class TestEnvironments(TestCase):
         [[0, 1], [[0.544883, 0.423655, 0.645894]]]
     ])
     def test_generate_environments_cons(self, cons_id, expected):
-        env = analytics.Environments(
+        env = analytics.Environment(
             num_actions=2,
             constraints=[self.constraints[i] for i in cons_id]
         )
@@ -131,3 +131,47 @@ class TestCollusionMetrics(TestCase):
         metric = analytics.NormalizedDeviationTemptation(deviations)
         assert np.isclose(metric(self.env), expected)
 
+
+class TestMinCollusionSolver(TestCase):
+
+    def setUp(self):
+        path = os.path.join(
+            os.path.dirname(__file__), 'reference_data', 'tsuchiura_data.csv')
+        data = auction_data.AuctionData(bidding_data_path=path)
+        constraints = [analytics.MarkupConstraint(.6),
+                       analytics.InformationConstraint(.5, [.65, .48])]
+        self.solver = analytics.MinCollusionSolver(
+            data, deviations=[-.02, 0], tolerance=.1,
+            metric=analytics.IsNonCompetitive,
+            plausibility_constraints=constraints, num_points=10000, seed=0
+        )
+
+    def test_environment(self):
+        assert_array_almost_equal(
+            [[0.544883, 0.423655, 0.645894]],
+            self.solver.environment.generate_environments(3, 0))
+
+    def test_generate_env_perf(self):
+        assert_array_almost_equal(
+            self.solver._env_with_perf[:3],
+            [[0.544883, 0.423655, 0.645894, 1.],
+             [0.725254, 0.501324, 0.956084, 0.],
+             [0.590873, 0.574325, 0.653201, 0.]])
+
+    def test_extreme_points(self):
+        assert_array_almost_equal(
+            self.solver._epigraph_extreme_points[:3],
+            [[0.590873, 0.574325, 0.653201, 0.],
+             [0.530537, 0.372679, 0.922111, 1.],
+             [0.706872, 0.367475, 0.649534, 1.]])
+
+    def test_belief_extreme_points(self):
+        assert_array_almost_equal(
+            self.solver._belief_extreme_points[:3],
+            [[0.590873, 0.574325],
+             [0.530537, 0.372679],
+             [0.706872, 0.367475]])
+
+    def test_metric_extreme_points(self):
+        assert_array_almost_equal(
+            self.solver._metric_extreme_points[:3], [0., 1., 1.])

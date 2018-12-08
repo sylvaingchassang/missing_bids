@@ -2,5 +2,12 @@
   "test_auction_data.py::TestAuctionData::test_categorize_histories": true,
   "test_auction_data.py::TestAuctionData::test_dist_bid_gap": true,
   "test_auction_data.py::TestAuctionData::test_get_demand": true,
-  "test_auction_data.py::TestAuctionData::test_tied_winners": true
+  "test_auction_data.py::TestAuctionData::test_tied_winners": true,
+  "tests.py::TestAuctionData": true,
+  "tests.py::TestCase": true,
+  "tests.py::TestCollusionMetrics": true,
+  "tests.py::TestConstraints": true,
+  "tests.py::TestEnvironments": true,
+  "tests.py::TestEnvironments::test_generate_environments": true,
+  "tests.py::TestMinCollusionSolver": true
 }

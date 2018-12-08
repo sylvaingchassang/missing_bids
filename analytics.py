@@ -1,22 +1,19 @@
-import pandas as pd
 import numpy as np
 import lazy_property
 import abc
 from six import add_metaclass
+from scipy.spatial import ConvexHull
+import cvxpy
 
 
-def descending_sort(arr, axis=1):
-    return -np.sort(-np.array(arr), axis=axis)
-
-
-class Environments(object):
+class Environment(object):
 
     def __init__(self, num_actions, constraints=None):
         self._num_actions = num_actions
         self._constraints = constraints
 
-    def generate_environments(self, num=1e6, seed=0):
-        raw_environments = self._generate_raw_environments(num, seed)
+    def generate_environments(self, num_points=1e6, seed=0):
+        raw_environments = self._generate_raw_environments(num_points, seed)
         return self._apply_constraints(raw_environments)
 
     def _generate_raw_environments(self, num, seed):
@@ -41,6 +38,10 @@ class Environments(object):
             return True
 
 
+def descending_sort(arr, axis=1):
+    return -np.sort(-np.array(arr), axis=axis)
+
+
 @add_metaclass(abc.ABCMeta)
 class PlausibilityConstraint(object):
 
@@ -56,8 +57,8 @@ class InformationConstraint(PlausibilityConstraint):
         self._sample_demands = sample_demands
 
     @staticmethod
-    def _inverse_llr(D, x):
-        numerator = (D/(1.-D)) * np.exp(x)
+    def _inverse_llr(d, x):
+        numerator = (d / (1. - d)) * np.exp(x)
         return numerator/(1 + numerator)
 
     @lazy_property.LazyProperty
@@ -87,7 +88,7 @@ class MarkupConstraint(PlausibilityConstraint):
 class DimensionlessCollusionMetrics(object):
 
     def __init__(self, deviations):
-        self._deviations = np.sort(list(set([0] + deviations)))
+        self._deviations = _ordered_deviations(deviations)
 
     @lazy_property.LazyProperty
     def equilibrium_index(self):
@@ -101,6 +102,10 @@ class DimensionlessCollusionMetrics(object):
         beliefs, cost = env[:-1], env[-1]
         payoffs = np.multiply(beliefs, 1 + self._deviations - cost)
         return payoffs[self.equilibrium_index] - np.max(payoffs)
+
+
+def _ordered_deviations(deviations):
+    return np.sort(list(set([0] + deviations)))
 
 
 class IsNonCompetitive(DimensionlessCollusionMetrics):
@@ -117,26 +122,51 @@ class NormalizedDeviationTemptation(DimensionlessCollusionMetrics):
 
 class MinCollusionSolver(object):
 
-    def __init__(self, auction_data, deviations):
+    def __init__(self,
+                 auction_data, deviations, tolerance, metric,
+                 plausibility_constraints, num_points=1e6, seed=0):
         self.auction_data = auction_data
-        self.metrics = DimensionlessCollusionMetrics(deviations)
+        self.metric = metric(deviations)
+        self._deviations = _ordered_deviations(deviations)
+        self._constraints = plausibility_constraints
+        self._tolerance = tolerance
+        self._seed = seed
+        self._num_points = num_points
 
-    def solve(self):
+    @property
+    def environment(self):
+        return Environment(
+            len(self._deviations), constraints=self._constraints)
+
+    @lazy_property.LazyProperty
+    def _epigraph_extreme_points(self):
+        env_perf = self._env_with_perf
+        return env_perf[ConvexHull(env_perf).vertices, :]
+
+    @property
+    def _env_with_perf(self):
+        env = self.environment.generate_environments(
+            num_points=self._num_points, seed=self._seed)
+        return np.append(
+            env, np.apply_along_axis(self.metric, 1, env).reshape(-1, 1), 1)
+
+    @property
+    def _belief_extreme_points(self):
+        return self._epigraph_extreme_points[:, :-2]
+
+    @property
+    def _metric_extreme_points(self):
+        return self._epigraph_extreme_points[:, -1]
+
+
+class CvxpySolverWrap(object):
+
+    def __init__(self, metrics, beliefs, demands, tolerance):
+        self._metrics = metrics
+        self._beliefs = beliefs
+        self._demands = demands
+        self._tolerance = tolerance
+
+    def problem(self):
         pass
-
-
-
-@add_metaclass(abc.ABCMeta)
-class SolverWrap(object):
-    pass
-
-
-class ScipySolverWrap(SolverWrap):
-    pass
-
-
-class CvxpySolverWrap(SolverWrap):
-    pass
-
-
 
