@@ -159,7 +159,7 @@ class MinCollusionSolver(object):
         return self._epigraph_extreme_points[:, -1]
 
 
-class CvxpySolverWrap(object):
+class CvxpySolver(object):
 
     def __init__(self, metrics, beliefs, demands, tolerance):
         self._metrics = metrics
@@ -168,5 +168,12 @@ class CvxpySolverWrap(object):
         self._tolerance = tolerance
 
     def problem(self):
-        pass
+        mu = cvxpy.Variable((len(self._metrics), 1))
+        constraints = \
+            [mu >= 0, cvxpy.sum(mu) == 1,
+             cvxpy.sum_squares(cvxpy.matmul(self._beliefs.T, mu)
+                               - self._demands)]
+        objective = cvxpy.Minimize(
+            cvxpy.sum(cvxpy.multiply(mu, self._metrics)))
+        return cvxpy.Problem(objective, constraints)
 
