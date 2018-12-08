@@ -4,6 +4,7 @@ import abc
 from six import add_metaclass
 from scipy.spatial import ConvexHull
 import cvxpy
+import pandas as pd
 
 
 class Environment(object):
@@ -122,10 +123,9 @@ class NormalizedDeviationTemptation(DimensionlessCollusionMetrics):
 
 class MinCollusionSolver(object):
 
-    def __init__(self,
-                 auction_data, deviations, tolerance, metric,
+    def __init__(self, data, deviations, tolerance, metric,
                  plausibility_constraints, num_points=1e6, seed=0):
-        self.auction_data = auction_data
+        self.data = data
         self.metric = metric(deviations)
         self._deviations = _ordered_deviations(deviations)
         self._constraints = plausibility_constraints
@@ -160,18 +160,40 @@ class MinCollusionSolver(object):
 
     @lazy_property.LazyProperty
     def demands(self):
-        pass
+        demands = [self.data.get_counterfactual_demand(rho)
+                   for rho in self._deviations]
+        return np.array(demands)
 
     @lazy_property.LazyProperty
-    def solver(self):
-        return ConvexSolver(
+    def problem(self):
+        return ConvexProblem(
             metrics=self.metric_extreme_points,
             beliefs=self.belief_extreme_points,
-            demands=None,
+            demands=self.demands,
             tolerance=self._tolerance)
 
+    @lazy_property.LazyProperty
+    def solution(self):
+        return self.problem.solution
 
-class ConvexSolver(object):
+    @property
+    def is_solvable(self):
+        return not np.isinf(self.solution)
+
+    @lazy_property.LazyProperty
+    def argmin(self):
+        if self.is_solvable:
+            return pd.DataFrame(
+                data=np.concatenate((self.problem.variable.value,
+                                    self.epigraph_extreme_points), 1),
+                columns=['prob'] +
+                        [str(d) for d in self._deviations] + ['cost', 'metric']
+            )
+        else:
+            raise Exception('Constraints cannot be satisfied')
+
+
+class ConvexProblem(object):
 
     def __init__(self, metrics, beliefs, demands, tolerance):
         self._metrics = np.array(metrics).reshape(-1, 1)
@@ -200,6 +222,7 @@ class ConvexSolver(object):
     def problem(self):
         return cvxpy.Problem(self.objective, self.constraints)
 
-    def solve(self):
-        self.problem.solve()
+    @lazy_property.LazyProperty
+    def solution(self):
+        return self.problem.solve()
 
