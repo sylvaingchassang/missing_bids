@@ -1,0 +1,237 @@
+from numpy.testing import TestCase, assert_array_equal, \
+    assert_array_almost_equal, assert_almost_equal
+import numpy as np
+import os
+from parameterized import parameterized
+from .. import auction_data
+from .. import analytics
+
+
+class TestAuctionData(TestCase):
+    def setUp(self):
+        path = os.path.join(
+            os.path.dirname(__file__), 'reference_data', 'tsuchiura_data.csv')
+        self.auctions = auction_data.AuctionData(
+            bidding_data_path=path
+        )
+
+    def test_bid_data(self):
+        assert self.auctions.df_bids.shape == (5876, 7)
+        assert self.auctions.df_auctions.shape == (1469, 2)
+        assert_array_equal(
+            self.auctions._df_bids.pid.values[:10],
+            np.array([15, 15, 15, 15, 15, 16, 16, 16, 16, 16])
+        )
+
+    def test_auction_data(self):
+        assert_array_almost_equal(
+            self.auctions.df_auctions.lowest.values[:10],
+            np.array([0.89655173, 0.94766617, 0.94867122, 0.69997638,
+                      0.9385258, 0.74189192, 0.7299363, 0.94310075,
+                      0.96039605, 0.97354496])
+        )
+
+    def test_most_competitive(self):
+        assert_array_almost_equal(
+            self.auctions.df_bids.most_competitive.values[10:20],
+            np.array(
+                [0.79662162, 0.74189192, 0.74189192, 0.74189192, 0.74189192,
+                 0.74189192, 0.74189192, 0.74189192, 0.74189192, 0.74189192])
+        )
+
+    def test_counterfactual_demand(self):
+        dmd = self.auctions.get_counterfactual_demand(.05)
+        assert_almost_equal(dmd, 0.02067733151)
+
+    def test_demand_function(self):
+        dmd = self.auctions.demand_function(start=-.01, stop=.01, num=4)
+        assert_array_almost_equal(dmd, [[0.495575], [0.293397], [0.21341],
+                                        [0.105599]])
+
+
+class TestEnvironments(TestCase):
+    def setUp(self):
+        self.constraints = [analytics.MarkupConstraint(.6),
+                            analytics.InformationConstraint(.5, [.65, .48])]
+        self.env_no_cons = analytics.Environment(num_actions=2)
+
+    def test_generate_raw_environments(self):
+        assert_array_almost_equal(
+            self.env_no_cons._generate_raw_environments(3, seed=0),
+            [[0.715189, 0.548814, 0.602763],
+             [0.544883, 0.423655, 0.645894],
+             [0.891773, 0.437587, 0.963663]]
+        )
+
+    def test_generate_environments_no_cons(self):
+        assert_array_almost_equal(
+            self.env_no_cons._generate_raw_environments(3, seed=0),
+            self.env_no_cons.generate_environments(3, seed=0),
+        )
+
+    @parameterized.expand([
+        [[0], [[0.544883, 0.423655, 0.645894],
+               [0.891773, 0.437587, 0.963663]]],
+        [[1], [[0.715189, 0.548814, 0.602763],
+               [0.544883, 0.423655, 0.645894]]],
+        [[0, 1], [[0.544883, 0.423655, 0.645894]]]
+    ])
+    def test_generate_environments_cons(self, cons_id, expected):
+        env = analytics.Environment(
+            num_actions=2,
+            constraints=[self.constraints[i] for i in cons_id]
+        )
+        assert_array_almost_equal(
+            env.generate_environments(3, seed=0),
+            expected
+        )
+
+
+class TestConstraints(TestCase):
+    def setUp(self):
+        self.mkp = analytics.MarkupConstraint(2.)
+        self.info = analytics.InformationConstraint(.01, [.5, .4, .3])
+
+    def test_markup_constraint(self):
+        assert not self.mkp([.5, .6, .33])
+        assert self.mkp([.5, .6, .34])
+
+    def test_info_bounds(self):
+        assert_array_almost_equal(
+            self.info.belief_bounds,
+            [[0.4975, 0.5025], [0.397602, 0.402402], [0.297904, 0.302104]]
+        )
+
+    def test_info(self):
+        assert self.info([.5, .4, .3, .5])
+        assert not self.info([.5, .4, .35, .5])
+        assert not self.info([.45, .4, .3, .5])
+
+
+class TestCollusionMetrics(TestCase):
+    def setUp(self):
+        self.env = [.5, .4, .3, .8]
+
+    @parameterized.expand([
+        [[-.02, .02], True],
+        [[-.2, .0, .02], False]
+    ])
+    def test_is_non_competitive(self, deviations, expected):
+        metric = analytics.IsNonCompetitive(deviations)
+        assert metric(self.env) == expected
+
+    @parameterized.expand([
+        [[-.02, .02], -0.01],
+        [[-.2, .0, .02], 0]
+    ])
+    def test_deviation_temptation(self, deviations, expected):
+        metric = analytics.NormalizedDeviationTemptation(deviations)
+        assert np.isclose(metric(self.env), expected)
+
+
+class TestMinCollusionSolver(TestCase):
+    def setUp(self):
+        path = os.path.join(
+            os.path.dirname(__file__), 'reference_data', 'tsuchiura_data.csv')
+        data = auction_data.AuctionData(bidding_data_path=path)
+        constraints = [analytics.MarkupConstraint(.6),
+                       analytics.InformationConstraint(.5, [.65, .48])]
+        self.solver, self.solver_fail = [
+            analytics.MinCollusionSolver(
+                data, deviations=[-.02], metric=analytics.IsNonCompetitive,
+                tolerance=tol, plausibility_constraints=constraints,
+                num_points=10000, seed=0) for tol in [.0125, .01]]
+
+    def test_deviations(self):
+        assert_array_equal(self.solver._deviations, [-.02, 0])
+
+    def test_demand(self):
+        assert_array_almost_equal(self.solver.demands, [0.693839, 0.25017])
+
+    def test_environment(self):
+        assert_array_almost_equal(
+            [[0.544883, 0.423655, 0.645894]],
+            self.solver.environment.generate_environments(3, 0))
+
+    def test_generate_env_perf(self):
+        assert_array_almost_equal(
+            self.solver._env_with_perf[:3],
+            [[0.544883, 0.423655, 0.645894, 1.],
+             [0.725254, 0.501324, 0.956084, 0.],
+             [0.590873, 0.574325, 0.653201, 0.]])
+
+    def test_extreme_points(self):
+        assert_array_almost_equal(
+            self.solver.epigraph_extreme_points[:3],
+            [[0.590873, 0.574325, 0.653201, 0.],
+             [0.530537, 0.372679, 0.922111, 1.],
+             [0.706872, 0.367475, 0.649534, 1.]])
+
+    def test_belief_extreme_points(self):
+        assert_array_almost_equal(
+            self.solver.belief_extreme_points[:3],
+            [[0.590873, 0.574325],
+             [0.530537, 0.372679],
+             [0.706872, 0.367475]])
+
+    def test_metric_extreme_points(self):
+        assert_array_almost_equal(
+            self.solver.metric_extreme_points[:3], [0., 1., 1.])
+
+    def test_solution(self):
+        assert_almost_equal(self.solver.solution, 0.30337910)
+
+    def test_solvable(self):
+        assert self.solver.is_solvable
+
+    def test_not_solvable(self):
+        assert not self.solver_fail.is_solvable
+        with self.assertRaises(Exception) as context:
+            self.solver_fail.argmin
+        self.assertTrue('Constraints cannot be' in str(context.exception))
+
+    def test_argmin_distribution(self):
+        assert is_distribution(self.solver.argmin['prob'])
+
+    def test_argmin(self):
+        assert_array_equal(
+            self.solver.argmin.columns,
+            ['prob', '-0.02', '0.0', 'cost', 'metric'])
+        assert_array_almost_equal(
+            self.solver.argmin.values[[12, 15]],
+            [[.303378989, .718859179, .360350558, .693249354, 1.0],
+             [.104691195, .625773600, .359648881, .991686340, 0.0]])
+
+
+class TestConvexSolver(TestCase):
+    def setUp(self):
+        metrics = [1., 0, 1, 1, 0]
+        demands = [.5, .4]
+        beliefs = np.array(
+            [[.6, .5], [.45, .4], [.7, .6], [.4, .3], [.4, .2]])
+        tolerance = .0005
+        self.cvx = analytics.ConvexProblem(metrics, beliefs, demands, tolerance)
+        self.res = self.cvx.solution
+        self.argmin = self.cvx.variable.value
+
+    def test_minimal_value(self):
+        assert_almost_equal(self.res, 0.1347556)
+
+    def test_solution(self):
+        assert_array_almost_equal(
+            self.argmin,
+            [[4.35054877e-09], [7.57598639e-01], [1.34755686e-01],
+             [1.52098246e-09], [1.07645669e-01]])
+
+    def test_solution_is_distribution(self):
+        assert is_distribution(self.argmin)
+
+    def test_aggregate_subjective_demand_close_to_target(self):
+        subjective_demand = np.dot(self.cvx._beliefs.T, self.argmin)
+        diff = subjective_demand - self.cvx._demands
+        assert all(np.abs(diff) <= np.sqrt(self.cvx._tolerance))
+        assert_almost_equal(np.sum(np.square(diff)), self.cvx._tolerance)
+
+
+def is_distribution(arr):
+    return all([all(arr >= 0), np.isclose(np.sum(arr), 1.)])

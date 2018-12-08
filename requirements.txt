@@ -3,3 +3,7 @@ pandas
 matplotlib
 seaborn
 lazy-property
+six
+parameterized
+cvxpy
+coverage
