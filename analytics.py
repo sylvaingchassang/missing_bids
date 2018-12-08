@@ -139,7 +139,7 @@ class MinCollusionSolver(object):
             len(self._deviations), constraints=self._constraints)
 
     @lazy_property.LazyProperty
-    def _epigraph_extreme_points(self):
+    def epigraph_extreme_points(self):
         env_perf = self._env_with_perf
         return env_perf[ConvexHull(env_perf).vertices, :]
 
@@ -151,29 +151,55 @@ class MinCollusionSolver(object):
             env, np.apply_along_axis(self.metric, 1, env).reshape(-1, 1), 1)
 
     @property
-    def _belief_extreme_points(self):
-        return self._epigraph_extreme_points[:, :-2]
+    def belief_extreme_points(self):
+        return self.epigraph_extreme_points[:, :-2]
 
     @property
-    def _metric_extreme_points(self):
-        return self._epigraph_extreme_points[:, -1]
+    def metric_extreme_points(self):
+        return self.epigraph_extreme_points[:, -1]
+
+    @lazy_property.LazyProperty
+    def demands(self):
+        pass
+
+    @lazy_property.LazyProperty
+    def solver(self):
+        return ConvexSolver(
+            metrics=self.metric_extreme_points,
+            beliefs=self.belief_extreme_points,
+            demands=None,
+            tolerance=self._tolerance)
 
 
-class CvxpySolver(object):
+class ConvexSolver(object):
 
     def __init__(self, metrics, beliefs, demands, tolerance):
-        self._metrics = metrics
-        self._beliefs = beliefs
-        self._demands = demands
+        self._metrics = np.array(metrics).reshape(-1, 1)
+        self._beliefs = np.array(beliefs)
+        self._demands = np.array(demands).reshape(-1, 1)
         self._tolerance = tolerance
 
+    @lazy_property.LazyProperty
+    def variable(self):
+        return cvxpy.Variable((len(self._metrics), 1))
+
+    @lazy_property.LazyProperty
+    def constraints(self):
+        return [
+            self.variable >= 0,
+            cvxpy.sum(self.variable) == 1,
+            cvxpy.sum_squares(cvxpy.matmul(self._beliefs.T, self.variable)
+                              - self._demands) <= self._tolerance]
+
+    @lazy_property.LazyProperty
+    def objective(self):
+        return cvxpy.Minimize(
+            cvxpy.sum(cvxpy.multiply(self.variable, self._metrics)))
+
+    @lazy_property.LazyProperty
     def problem(self):
-        mu = cvxpy.Variable((len(self._metrics), 1))
-        constraints = \
-            [mu >= 0, cvxpy.sum(mu) == 1,
-             cvxpy.sum_squares(cvxpy.matmul(self._beliefs.T, mu)
-                               - self._demands)]
-        objective = cvxpy.Minimize(
-            cvxpy.sum(cvxpy.multiply(mu, self._metrics)))
-        return cvxpy.Problem(objective, constraints)
+        return cvxpy.Problem(self.objective, self.constraints)
+
+    def solve(self):
+        self.problem.solve()
 

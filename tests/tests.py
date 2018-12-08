@@ -160,18 +160,51 @@ class TestMinCollusionSolver(TestCase):
 
     def test_extreme_points(self):
         assert_array_almost_equal(
-            self.solver._epigraph_extreme_points[:3],
+            self.solver.epigraph_extreme_points[:3],
             [[0.590873, 0.574325, 0.653201, 0.],
              [0.530537, 0.372679, 0.922111, 1.],
              [0.706872, 0.367475, 0.649534, 1.]])
 
     def test_belief_extreme_points(self):
         assert_array_almost_equal(
-            self.solver._belief_extreme_points[:3],
+            self.solver.belief_extreme_points[:3],
             [[0.590873, 0.574325],
              [0.530537, 0.372679],
              [0.706872, 0.367475]])
 
     def test_metric_extreme_points(self):
         assert_array_almost_equal(
-            self.solver._metric_extreme_points[:3], [0., 1., 1.])
+            self.solver.metric_extreme_points[:3], [0., 1., 1.])
+
+
+class TestConvexSolver(TestCase):
+
+    def setUp(self):
+        metrics = [1., 0, 1, 1, 0]
+        demands = [.5, .4]
+        beliefs = np.array(
+            [[.6, .5], [.45, .4], [.7, .6], [.4, .3], [.4, .2]])
+        tolerance = .0005
+        self.cvx = analytics.ConvexSolver(metrics, beliefs, demands, tolerance)
+        self.res = self.cvx.problem.solve()
+        self.solution = self.cvx.variable.value
+
+    def test_minimal_value(self):
+        assert_array_almost_equal(self.res, 0.134756)
+
+    def test_solution(self):
+        assert_array_almost_equal(
+            self.solution,
+            [[4.35054877e-09], [7.57598639e-01], [1.34755686e-01],
+             [1.52098246e-09], [1.07645669e-01]])
+
+    def test_solution_is_distribution(self):
+        assert all(self.solution >= 0)
+        assert_array_almost_equal(sum(self.solution), 1.)
+
+    def test_aggregate_subjective_demand_close_to_target(self):
+        subjective_demand = np.dot(self.cvx._beliefs.T, self.solution)
+        diff = subjective_demand - self.cvx._demands
+        assert all(np.abs(diff) <= np.sqrt(self.cvx._tolerance))
+        assert_array_almost_equal(np.sum(np.square(diff)), self.cvx._tolerance)
+
