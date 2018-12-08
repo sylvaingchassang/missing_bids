@@ -9,9 +9,10 @@ import pandas as pd
 
 class Environment(object):
 
-    def __init__(self, num_actions, constraints=None):
+    def __init__(self, num_actions, constraints=None, project=False):
         self._num_actions = num_actions
         self._constraints = constraints
+        self._project = project
 
     def generate_environments(self, num_points=1e6, seed=0):
         raw_environments = self._generate_raw_environments(num_points, seed)
@@ -29,7 +30,14 @@ class Environment(object):
         return env
 
     def _apply_constraints(self, env):
+        if self._project is True:
+            env = self._project_on_constraint(env)
         env = env[np.apply_along_axis(self._aggregate_constraint, 1, env), :]
+        return env
+
+    def _project_on_constraint(self, env):
+        for constraint in self._constraints:
+            env = constraint.project(env)
         return env
 
     def _aggregate_constraint(self, e):
@@ -48,7 +56,10 @@ class PlausibilityConstraint(object):
 
     @abc.abstractmethod
     def __call__(self, e):
-        pass
+        """"""
+
+    def project(self, e):
+        return e
 
 
 class InformationConstraint(PlausibilityConstraint):
@@ -76,6 +87,14 @@ class InformationConstraint(PlausibilityConstraint):
         ]
         return all(list_constraints)
 
+    def project(self, e):
+        diff_bounds = np.diag(
+            [bound[1] - bound[0] for bound in self.belief_bounds])
+        lower_bounds = \
+            np.array([bound[0] for bound in self.belief_bounds]).reshape(1, -1)
+        e[:, :-1] = np.dot(e[:, :-1], diff_bounds) + lower_bounds
+        return e
+
 
 class MarkupConstraint(PlausibilityConstraint):
 
@@ -84,6 +103,10 @@ class MarkupConstraint(PlausibilityConstraint):
 
     def __call__(self, e):
         return e[-1] >= self._min_cost_ratio
+
+    def project(self, e):
+        e[:, -1] = self._min_cost_ratio + e[:, -1] * (1 - self._min_cost_ratio)
+        return e
 
 
 class DimensionlessCollusionMetrics(object):
@@ -124,7 +147,8 @@ class NormalizedDeviationTemptation(DimensionlessCollusionMetrics):
 class MinCollusionSolver(object):
 
     def __init__(self, data, deviations, tolerance, metric,
-                 plausibility_constraints, num_points=1e6, seed=0):
+                 plausibility_constraints, num_points=1e6, seed=0,
+                 project=False):
         self.data = data
         self.metric = metric(deviations)
         self._deviations = _ordered_deviations(deviations)
@@ -132,11 +156,15 @@ class MinCollusionSolver(object):
         self._tolerance = tolerance
         self._seed = seed
         self._num_points = num_points
+        self._project = project
 
     @property
     def environment(self):
         return Environment(
-            len(self._deviations), constraints=self._constraints)
+            len(self._deviations),
+            constraints=self._constraints,
+            project=self._project
+        )
 
     @lazy_property.LazyProperty
     def epigraph_extreme_points(self):

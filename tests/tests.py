@@ -12,7 +12,7 @@ class TestAuctionData(TestCase):
         path = os.path.join(
             os.path.dirname(__file__), 'reference_data', 'tsuchiura_data.csv')
         self.auctions = auction_data.AuctionData(
-            bidding_data_path=path
+            bidding_data_or_path=path
         )
 
     def test_bid_data(self):
@@ -22,6 +22,11 @@ class TestAuctionData(TestCase):
             self.auctions._df_bids.pid.values[:10],
             np.array([15, 15, 15, 15, 15, 16, 16, 16, 16, 16])
         )
+
+    def test_read_frame(self):
+        data = auction_data.AuctionData(self.auctions._raw_data)
+        assert_array_almost_equal(
+            data._raw_data.norm_bid, self.auctions._raw_data.norm_bid)
 
     def test_auction_data(self):
         assert_array_almost_equal(
@@ -79,28 +84,44 @@ class TestEnvironments(TestCase):
     def test_generate_environments_cons(self, cons_id, expected):
         env = analytics.Environment(
             num_actions=2,
-            constraints=[self.constraints[i] for i in cons_id]
-        )
+            constraints=[self.constraints[i] for i in cons_id])
         assert_array_almost_equal(
             env.generate_environments(3, seed=0),
-            expected
-        )
+            expected)
+
+    def test_generate_environment_with_projection(self):
+        env = analytics.Environment(
+            num_actions=2, constraints=self.constraints, project=True)
+        assert_array_almost_equal(
+            env.generate_environments(3, seed=1),
+            [[0.691139, 0.460906, 0.625043],
+             [0.597473, 0.394812, 0.659627],
+             [0.60716, 0.404473, 0.773788]])
 
 
 class TestConstraints(TestCase):
     def setUp(self):
         self.mkp = analytics.MarkupConstraint(2.)
         self.info = analytics.InformationConstraint(.01, [.5, .4, .3])
+        self.ref_environments = np.array([[.8, .4, .3, .1],
+                                          [.9, .3, .1, .8]])
 
     def test_markup_constraint(self):
         assert not self.mkp([.5, .6, .33])
         assert self.mkp([.5, .6, .34])
+        assert_array_almost_equal(
+            self.mkp.project(self.ref_environments),
+            [[0.8, 0.4, 0.3, 0.4],
+             [0.9, 0.3, 0.1, 0.866667]])
 
     def test_info_bounds(self):
         assert_array_almost_equal(
             self.info.belief_bounds,
-            [[0.4975, 0.5025], [0.397602, 0.402402], [0.297904, 0.302104]]
-        )
+            [[0.4975, 0.5025], [0.397602, 0.402402], [0.297904, 0.302104]])
+        assert_array_almost_equal(
+            self.info.project(self.ref_environments),
+            [[0.5015, 0.399522, 0.299164, 0.1],
+             [0.502, 0.399042, 0.298324, 0.8]])
 
     def test_info(self):
         assert self.info([.5, .4, .3, .5])
@@ -133,14 +154,15 @@ class TestMinCollusionSolver(TestCase):
     def setUp(self):
         path = os.path.join(
             os.path.dirname(__file__), 'reference_data', 'tsuchiura_data.csv')
-        data = auction_data.AuctionData(bidding_data_path=path)
+        data = auction_data.AuctionData(bidding_data_or_path=path)
         constraints = [analytics.MarkupConstraint(.6),
                        analytics.InformationConstraint(.5, [.65, .48])]
-        self.solver, self.solver_fail = [
+        self.solver, self.solver_fail, self.solver_project = [
             analytics.MinCollusionSolver(
                 data, deviations=[-.02], metric=analytics.IsNonCompetitive,
                 tolerance=tol, plausibility_constraints=constraints,
-                num_points=10000, seed=0) for tol in [.0125, .01]]
+                num_points=10000, seed=0, project=project)
+            for tol, project in [(.0125, False), (.01, False), (.0125, True)]]
 
     def test_deviations(self):
         assert_array_equal(self.solver._deviations, [-.02, 0])
@@ -201,6 +223,23 @@ class TestMinCollusionSolver(TestCase):
             self.solver.argmin.values[[12, 15]],
             [[.303378989, .718859179, .360350558, .693249354, 1.0],
              [.104691195, .625773600, .359648881, .991686340, 0.0]])
+
+    def test_constraint_project_environments(self):
+        assert_array_equal(
+            self.solver._env_with_perf.shape,
+            [384, 4])
+        assert_array_equal(
+            self.solver_project._env_with_perf.shape,
+            [10000, 4])
+
+    def test_constraint_project_extreme_points(self):
+        assert_array_equal(
+            self.solver.epigraph_extreme_points.shape, [80, 4])
+        assert_array_equal(
+            self.solver_project.epigraph_extreme_points.shape, [193, 4])
+
+    def test_constraint_project_solution(self):
+        assert_almost_equal(self.solver_project.solution, .0)
 
 
 class TestConvexSolver(TestCase):
