@@ -142,7 +142,7 @@ class TestCollusionMetrics(TestCase):
         assert metric(self.env) == expected
 
     @parameterized.expand([
-        [[-.02, .02], -0.01],
+        [[-.02, .02], 0.01],
         [[-.2, .0, .02], 0]
     ])
     def test_deviation_temptation(self, deviations, expected):
