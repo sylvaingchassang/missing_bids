@@ -1,5 +1,6 @@
 from numpy.testing import TestCase, assert_array_equal, \
     assert_array_almost_equal, assert_almost_equal
+import pandas as pd
 import numpy as np
 import os
 from parameterized import parameterized
@@ -15,18 +16,25 @@ class TestAuctionData(TestCase):
             bidding_data_or_path=path
         )
 
-    def test_bid_data(self):
-        assert self.auctions.df_bids.shape == (5876, 7)
+    def test_bids(self):
+        df = self.auctions.df_bids
+        assert df.shape == (5876, 7)
         assert self.auctions.df_auctions.shape == (1469, 2)
-        assert_array_equal(
-            self.auctions._df_bids.pid.values[:10],
-            np.array([15, 15, 15, 15, 15, 16, 16, 16, 16, 16])
+        cols = ["norm_bid", "most_competitive", "lowest", "second_lowest"]
+        expected = pd.DataFrame(
+            [[0.973545, 0.97619, 0.973545, 0.97619],
+             [0.978836, 0.973545, 0.973545, 0.97619],
+             [0.986772, 0.973545, 0.973545, 0.97619],
+             [0.976190, 0.973545,  0.973545, 0.97619],
+             [0.978836, 0.973545,  0.973545, 0.97619]],
+            columns=cols
         )
+        assert_array_almost_equal(expected, df[df["pid"] == 15][cols])
 
     def test_read_frame(self):
-        data = auction_data.AuctionData(self.auctions._raw_data)
+        data = auction_data.AuctionData(self.auctions.raw_data)
         assert_array_almost_equal(
-            data._raw_data.norm_bid, self.auctions._raw_data.norm_bid)
+            data.raw_data.norm_bid, self.auctions.raw_data.norm_bid)
 
     def test_auction_data(self):
         assert_array_almost_equal(
@@ -34,14 +42,6 @@ class TestAuctionData(TestCase):
             np.array([0.89655173, 0.94766617, 0.94867122, 0.69997638,
                       0.9385258, 0.74189192, 0.7299363, 0.94310075,
                       0.96039605, 0.97354496])
-        )
-
-    def test_most_competitive(self):
-        assert_array_almost_equal(
-            self.auctions.df_bids.most_competitive.values[10:20],
-            np.array(
-                [0.79662162, 0.74189192, 0.74189192, 0.74189192, 0.74189192,
-                 0.74189192, 0.74189192, 0.74189192, 0.74189192, 0.74189192])
         )
 
     def test_counterfactual_demand(self):
@@ -209,18 +209,17 @@ class TestMinCollusionSolver(TestCase):
     def test_not_solvable(self):
         assert not self.solver_fail.is_solvable
         with self.assertRaises(Exception) as context:
-            self.solver_fail.argmin
-        self.assertTrue('Constraints cannot be' in str(context.exception))
+            _ = self.solver_fail.argmin
+        assert 'Constraints cannot be' in str(context.exception)
 
     def test_argmin_distribution(self):
         assert is_distribution(self.solver.argmin['prob'])
 
     def test_argmin(self):
-        assert_array_equal(
-            self.solver.argmin.columns,
-            ['prob', '-0.02', '0.0', 'cost', 'metric'])
+        cols = ['prob', '-0.02', '0.0', 'cost', 'metric']
+        df = self.solver.argmin[cols]
         assert_array_almost_equal(
-            self.solver.argmin.values[[12, 15]],
+            df.iloc[[12, 15]],
             [[.303378989, .718859179, .360350558, .693249354, 1.0],
              [.104691195, .625773600, .359648881, .991686340, 0.0]])
 

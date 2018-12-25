@@ -30,7 +30,7 @@ class Environment(object):
         return env
 
     def _apply_constraints(self, env):
-        if self._project is True:
+        if self._project:
             env = self._project_on_constraint(env)
         env = env[np.apply_along_axis(self._aggregate_constraint, 1, env), :]
         return env
@@ -41,10 +41,7 @@ class Environment(object):
         return env
 
     def _aggregate_constraint(self, e):
-        if self._constraints is not None:
-            return all([cstr(e) for cstr in self._constraints])
-        else:
-            return True
+        return not self._constraints or all(f(e) for f in self._constraints)
 
 
 def descending_sort(arr, axis=1):
@@ -75,23 +72,22 @@ class InformationConstraint(PlausibilityConstraint):
 
     @lazy_property.LazyProperty
     def belief_bounds(self):
-        return [[self._inverse_llr(d, -self._k),
-                 self._inverse_llr(d, self._k)]
-                for d in self._sample_demands]
+        bounds = np.array([
+            [self._inverse_llr(d, -self._k), self._inverse_llr(d, self._k)]
+            for d in self._sample_demands
+        ])
+        print(bounds)
+        return bounds
 
     def __call__(self, e):
         beliefs = e[:-1]
-        list_constraints = [
-            bound[0] <= belief <= bound[1]
-            for bound, belief in zip(self.belief_bounds, beliefs)
-        ]
-        return all(list_constraints)
+        return np.all(self.belief_bounds[:, 0] <= beliefs) and \
+            np.all(self.belief_bounds[:, 1] >= beliefs)
 
     def project(self, e):
         diff_bounds = np.diag(
-            [bound[1] - bound[0] for bound in self.belief_bounds])
-        lower_bounds = \
-            np.array([bound[0] for bound in self.belief_bounds]).reshape(1, -1)
+            self.belief_bounds[:, 1] - self.belief_bounds[:, 0])
+        lower_bounds = self.belief_bounds[:, 0]
         e[:, :-1] = np.dot(e[:, :-1], diff_bounds) + lower_bounds
         return e
 
@@ -120,7 +116,7 @@ class DimensionlessCollusionMetrics(object):
 
     @abc.abstractmethod
     def __call__(self, env):
-        pass
+        """"""
 
     def _normalized_deviation_temptation(self, env):
         beliefs, cost = env[:-1], env[-1]
@@ -134,8 +130,7 @@ def _ordered_deviations(deviations):
 
 class IsNonCompetitive(DimensionlessCollusionMetrics):
     def __call__(self, env):
-        return 1. - 1. * np.isclose(
-            self._normalized_deviation_temptation(env), .0)
+        return ~np.isclose(self._normalized_deviation_temptation(env), .0)
 
 
 class NormalizedDeviationTemptation(DimensionlessCollusionMetrics):
@@ -148,7 +143,8 @@ class MinCollusionSolver(object):
 
     def __init__(self, data, deviations, tolerance, metric,
                  plausibility_constraints, num_points=1e6, seed=0,
-                 project=False):
+                 project=False,
+                 solver_type=cvxpy.CVXOPT):
         self.data = data
         self.metric = metric(deviations)
         self._deviations = _ordered_deviations(deviations)
@@ -157,6 +153,7 @@ class MinCollusionSolver(object):
         self._seed = seed
         self._num_points = num_points
         self._project = project
+        self._solver_type = solver_type
 
     @property
     def environment(self):
@@ -171,7 +168,7 @@ class MinCollusionSolver(object):
         env_perf = self._env_with_perf
         return env_perf[ConvexHull(env_perf).vertices, :]
 
-    @property
+    @lazy_property.LazyProperty
     def _env_with_perf(self):
         env = self.environment.generate_environments(
             num_points=self._num_points, seed=self._seed)
@@ -186,11 +183,12 @@ class MinCollusionSolver(object):
     def metric_extreme_points(self):
         return self.epigraph_extreme_points[:, -1]
 
-    @lazy_property.LazyProperty
+    @property
     def demands(self):
-        demands = [self.data.get_counterfactual_demand(rho)
-                   for rho in self._deviations]
-        return np.array(demands)
+        return np.array([
+            self.data.get_counterfactual_demand(rho)
+            for rho in self._deviations
+        ])
 
     @lazy_property.LazyProperty
     def problem(self):
@@ -198,7 +196,9 @@ class MinCollusionSolver(object):
             metrics=self.metric_extreme_points,
             beliefs=self.belief_extreme_points,
             demands=self.demands,
-            tolerance=self._tolerance)
+            tolerance=self._tolerance,
+            solver_type=self._solver_type
+        )
 
     @lazy_property.LazyProperty
     def solution(self):
@@ -211,23 +211,24 @@ class MinCollusionSolver(object):
     @lazy_property.LazyProperty
     def argmin(self):
         if self.is_solvable:
-            return pd.DataFrame(
-                data=np.concatenate((self.problem.variable.value,
-                                    self.epigraph_extreme_points), 1),
-                columns=['prob'] +
-                        [str(d) for d in self._deviations] + ['cost', 'metric']
+            df = pd.DataFrame(
+                self.epigraph_extreme_points,
+                columns=[str(d) for d in self._deviations] + ['cost', 'metric']
             )
+            df["prob"] = self.problem.variable.value
+            return df
         else:
             raise Exception('Constraints cannot be satisfied')
 
 
 class ConvexProblem(object):
 
-    def __init__(self, metrics, beliefs, demands, tolerance):
+    def __init__(self, metrics, beliefs, demands, tolerance, solver_type):
         self._metrics = np.array(metrics).reshape(-1, 1)
         self._beliefs = np.array(beliefs)
         self._demands = np.array(demands).reshape(-1, 1)
         self._tolerance = tolerance
+        self._solver_type = solver_type
 
     @lazy_property.LazyProperty
     def variable(self):
@@ -238,13 +239,16 @@ class ConvexProblem(object):
         return [
             self.variable >= 0,
             cvxpy.sum(self.variable) == 1,
-            cvxpy.sum_squares(cvxpy.matmul(self._beliefs.T, self.variable)
-                              - self._demands) <= self._tolerance]
+            cvxpy.sum_squares(
+                cvxpy.matmul(self._beliefs.T, self.variable) - self._demands
+            ) <= self._tolerance  # IC
+        ]
 
     @lazy_property.LazyProperty
     def objective(self):
         return cvxpy.Minimize(
-            cvxpy.sum(cvxpy.multiply(self.variable, self._metrics)))
+            cvxpy.sum(cvxpy.multiply(self.variable, self._metrics))
+        )
 
     @lazy_property.LazyProperty
     def problem(self):
@@ -252,5 +256,11 @@ class ConvexProblem(object):
 
     @lazy_property.LazyProperty
     def solution(self):
-        return self.problem.solve()
+        installed_solvers = cvxpy.installed_solvers()
+        if self._solver_type in installed_solvers:
+            return self.problem.solve(solver=self._solver_type, verbose=True)
+        else:
+            print('Using a default solver')
+            return self.problem.solve()
+
 
