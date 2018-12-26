@@ -144,7 +144,7 @@ class MinCollusionSolver(object):
     def __init__(self, data, deviations, tolerance, metric,
                  plausibility_constraints, num_points=1e6, seed=0,
                  project=False,
-                 solver_type=cvxpy.CVXOPT):
+                 solver_type=''):
         self.data = data
         self.metric = metric(deviations)
         self._deviations = _ordered_deviations(deviations)
@@ -223,7 +223,7 @@ class MinCollusionSolver(object):
 
 class ConvexProblem(object):
 
-    def __init__(self, metrics, beliefs, demands, tolerance, solver_type):
+    def __init__(self, metrics, beliefs, demands, tolerance, solver_type=''):
         self._metrics = np.array(metrics).reshape(-1, 1)
         self._beliefs = np.array(beliefs)
         self._demands = np.array(demands).reshape(-1, 1)
