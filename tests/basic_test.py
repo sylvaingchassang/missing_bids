@@ -3,6 +3,7 @@ from numpy.testing import TestCase, assert_array_equal, \
 import pandas as pd
 import numpy as np
 import os
+import cvxpy
 from parameterized import parameterized
 from .. import auction_data
 from .. import analytics
@@ -59,6 +60,7 @@ class TestEnvironments(TestCase):
         self.constraints = [analytics.MarkupConstraint(.6),
                             analytics.InformationConstraint(.5, [.65, .48])]
         self.env_no_cons = analytics.Environment(num_actions=2)
+        self.env_with_seeded_points = analytics.Environment(num_actions=2, seeded_points=np.array([[0.7, 0.5, 0.6]]))
 
     def test_generate_raw_environments(self):
         assert_array_almost_equal(
@@ -66,6 +68,16 @@ class TestEnvironments(TestCase):
             [[0.715189, 0.548814, 0.602763],
              [0.544883, 0.423655, 0.645894],
              [0.891773, 0.437587, 0.963663]]
+        )
+
+    def test_generate_environments_with_seeded_points(self):
+        tmp = self.env_with_seeded_points.generate_environments(num_points=3, seed=0)
+        assert_array_almost_equal(
+            self.env_with_seeded_points.generate_environments(num_points=3, seed=0),
+            [[0.715189, 0.548814, 0.602763],
+             [0.544883, 0.423655, 0.645894],
+             [0.891773, 0.437587, 0.963663],
+             [0.7, 0.5, 0.6]]
         )
 
     def test_generate_environments_no_cons(self):
@@ -82,16 +94,13 @@ class TestEnvironments(TestCase):
         [[0, 1], [[0.544883, 0.423655, 0.645894]]]
     ])
     def test_generate_environments_cons(self, cons_id, expected):
-        env = analytics.Environment(
-            num_actions=2,
-            constraints=[self.constraints[i] for i in cons_id])
+        env = analytics.Environment(num_actions=2, constraints=[self.constraints[i] for i in cons_id])
         assert_array_almost_equal(
             env.generate_environments(3, seed=0),
             expected)
 
     def test_generate_environment_with_projection(self):
-        env = analytics.Environment(
-            num_actions=2, constraints=self.constraints, project=True)
+        env = analytics.Environment(num_actions=2, constraints=self.constraints, project=True)
         assert_array_almost_equal(
             env.generate_environments(3, seed=1),
             [[0.691139, 0.460906, 0.625043],
@@ -163,6 +172,14 @@ class TestMinCollusionSolver(TestCase):
                 tolerance=tol, plausibility_constraints=constraints,
                 num_points=10000, seed=0, project=project)
             for tol, project in [(.0125, False), (.01, False), (.0125, True)]]
+        self.solver_ECOS = analytics.MinCollusionSolver(
+                data, deviations=[-.02], metric=analytics.IsNonCompetitive,
+                tolerance=.0125, plausibility_constraints=constraints,
+                num_points=10000, seed=0, project=True, solver_type=cvxpy.CVXOPT)
+        self.solver_CVXOPT = analytics.MinCollusionSolver(
+                data, deviations=[-.02], metric=analytics.IsNonCompetitive,
+                tolerance=.0125, plausibility_constraints=constraints,
+                num_points=10000, seed=0, project=True, solver_type=cvxpy.CVXOPT)
 
     def test_deviations(self):
         assert_array_equal(self.solver._deviations, [-.02, 0])
@@ -202,6 +219,13 @@ class TestMinCollusionSolver(TestCase):
 
     def test_solution(self):
         assert_almost_equal(self.solver.solution, 0.30337910)
+
+    def test_solution_ECOS(self):
+        print(cvxpy.installed_solvers())
+        assert_almost_equal(self.solver_ECOS.solution, 0.0)
+
+    def test_solution_CVXOPT(self):
+        assert_almost_equal(self.solver_CVXOPT.solution, 0.0)
 
     def test_solvable(self):
         assert self.solver.is_solvable
