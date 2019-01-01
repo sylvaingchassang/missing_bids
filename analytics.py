@@ -9,14 +9,19 @@ import pandas as pd
 
 class Environment(object):
 
-    def __init__(self, num_actions, constraints=None, project=False):
+    def __init__(self, num_actions, constraints=None, project=False, seeded_points=np.array([])):
         self._num_actions = num_actions
         self._constraints = constraints
         self._project = project
+        self._seeded_points = seeded_points
 
     def generate_environments(self, num_points=1e6, seed=0):
         raw_environments = self._generate_raw_environments(num_points, seed)
-        return self._apply_constraints(raw_environments)
+        constrained_environments = self._apply_constraints(raw_environments)
+        if self._seeded_points.size == 0:
+            return constrained_environments
+        else:
+            return np.concatenate((constrained_environments, self._seeded_points), axis=0)
 
     def _generate_raw_environments(self, num, seed):
         np.random.seed(seed)
@@ -76,7 +81,6 @@ class InformationConstraint(PlausibilityConstraint):
             [self._inverse_llr(d, -self._k), self._inverse_llr(d, self._k)]
             for d in self._sample_demands
         ])
-        print(bounds)
         return bounds
 
     def __call__(self, e):
@@ -103,6 +107,11 @@ class MarkupConstraint(PlausibilityConstraint):
     def project(self, e):
         e[:, -1] = self._min_cost_ratio + e[:, -1] * (1 - self._min_cost_ratio)
         return e
+
+    @lazy_property.LazyProperty
+    def belief_bounds(self):
+        bounds = np.array([self._min_cost_ratio, 1])
+        return bounds
 
 
 class DimensionlessCollusionMetrics(object):
@@ -144,7 +153,8 @@ class MinCollusionSolver(object):
     def __init__(self, data, deviations, tolerance, metric,
                  plausibility_constraints, num_points=1e6, seed=0,
                  project=False,
-                 solver_type=''):
+                 solver_type='',
+                 seeded_points=np.array([])):
         self.data = data
         self.metric = metric(deviations)
         self._deviations = _ordered_deviations(deviations)
@@ -154,13 +164,15 @@ class MinCollusionSolver(object):
         self._num_points = num_points
         self._project = project
         self._solver_type = solver_type
+        self._seeded_points = seeded_points
 
     @property
     def environment(self):
         return Environment(
             len(self._deviations),
             constraints=self._constraints,
-            project=self._project
+            project=self._project,
+            seeded_points=self._seeded_points
         )
 
     @lazy_property.LazyProperty
@@ -258,9 +270,9 @@ class ConvexProblem(object):
     def solution(self):
         installed_solvers = cvxpy.installed_solvers()
         if self._solver_type in installed_solvers:
-            return self.problem.solve(solver=self._solver_type, verbose=True)
+            print('Using {} solver'.format(self._solver_type))
+            return self.problem.solve(solver=self._solver_type, verbose=False)
         else:
-            print('Using a default solver')
             return self.problem.solve()
 
 
