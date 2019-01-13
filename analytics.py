@@ -26,7 +26,7 @@ class Environment(object):
             return constrained_environments
         else:
             return np.concatenate((constrained_environments,
-                                   self.initial_guesses), axis=0)
+                                   self._initial_guesses), axis=0)
 
     def _generate_raw_environments(self, num, seed):
         np.random.seed(seed)
