@@ -9,19 +9,23 @@ import pandas as pd
 
 class Environment(object):
 
-    def __init__(self, num_actions, constraints=None, project=False, seeded_points=np.array([])):
+    def __init__(self,
+                 num_actions,
+                 constraints=None,
+                 project=False,
+                 initial_guesses=np.array([])):
         self._num_actions = num_actions
         self._constraints = constraints
         self._project = project
-        self._seeded_points = seeded_points
+        self._initial_guesses = initial_guesses
 
     def generate_environments(self, num_points=1e6, seed=0):
         raw_environments = self._generate_raw_environments(num_points, seed)
         constrained_environments = self._apply_constraints(raw_environments)
-        if self._seeded_points.size == 0:
+        if self._initial_guesses.size == 0:
             return constrained_environments
         else:
-            return np.concatenate((constrained_environments, self._seeded_points), axis=0)
+            return np.concatenate((constrained_environments, self.initial_guesses), axis=0)
 
     def _generate_raw_environments(self, num, seed):
         np.random.seed(seed)
@@ -164,7 +168,7 @@ class MinCollusionSolver(object):
         self._num_points = num_points
         self._project = project
         self._solver_type = solver_type
-        self._seeded_points = seeded_points
+        self._initial_guesses = initial_guesses
 
     @property
     def environment(self):
@@ -172,7 +176,7 @@ class MinCollusionSolver(object):
             len(self._deviations),
             constraints=self._constraints,
             project=self._project,
-            seeded_points=self._seeded_points
+            initial_guesses=self._initial_guesses
         )
 
     @lazy_property.LazyProperty
