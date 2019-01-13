@@ -25,7 +25,8 @@ class Environment(object):
         if self._initial_guesses.size == 0:
             return constrained_environments
         else:
-            return np.concatenate((constrained_environments, self.initial_guesses), axis=0)
+            return np.concatenate((constrained_environments,
+                                   self.initial_guesses), axis=0)
 
     def _generate_raw_environments(self, num, seed):
         np.random.seed(seed)
@@ -158,7 +159,7 @@ class MinCollusionSolver(object):
                  plausibility_constraints, num_points=1e6, seed=0,
                  project=False,
                  solver_type='',
-                 seeded_points=np.array([])):
+                 initial_guesses=np.array([])):
         self.data = data
         self.metric = metric(deviations)
         self._deviations = _ordered_deviations(deviations)
