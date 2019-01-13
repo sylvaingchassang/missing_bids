@@ -144,7 +144,8 @@ def _ordered_deviations(deviations):
 
 class IsNonCompetitive(DimensionlessCollusionMetrics):
     def __call__(self, env):
-        return ~np.isclose(self._normalized_deviation_temptation(env), .0)
+        return 1. - 1. * np.isclose(
+            self._normalized_deviation_temptation(env), .0)
 
 
 class NormalizedDeviationTemptation(DimensionlessCollusionMetrics):
