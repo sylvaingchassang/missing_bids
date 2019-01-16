@@ -5,6 +5,7 @@ from six import add_metaclass
 from scipy.spatial import ConvexHull
 import cvxpy
 import pandas as pd
+import matplotlib.pyplot as plt
 
 
 class Environment(object):
@@ -78,7 +79,7 @@ class InformationConstraint(PlausibilityConstraint):
     @staticmethod
     def _inverse_llr(d, x):
         numerator = (d / (1. - d)) * np.exp(x)
-        return numerator/(1 + numerator)
+        return numerator / (1 + numerator)
 
     @lazy_property.LazyProperty
     def belief_bounds(self):
@@ -91,7 +92,7 @@ class InformationConstraint(PlausibilityConstraint):
     def __call__(self, e):
         beliefs = e[:-1]
         return np.all(self.belief_bounds[:, 0] <= beliefs) and \
-            np.all(self.belief_bounds[:, 1] >= beliefs)
+               np.all(self.belief_bounds[:, 1] >= beliefs)
 
     def project(self, e):
         diff_bounds = np.diag(
@@ -104,7 +105,7 @@ class InformationConstraint(PlausibilityConstraint):
 class MarkupConstraint(PlausibilityConstraint):
 
     def __init__(self, max_markup=.5):
-        self._min_cost_ratio = 1/(1. + max_markup)
+        self._min_cost_ratio = 1 / (1. + max_markup)
 
     def __call__(self, e):
         return e[-1] >= self._min_cost_ratio
@@ -172,7 +173,7 @@ class MinCollusionSolver(object):
         self._solver_type = solver_type
         self._initial_guesses = initial_guesses
 
-    @property
+    @lazy_property.LazyProperty
     def environment(self):
         return Environment(
             len(self._deviations),
@@ -193,15 +194,15 @@ class MinCollusionSolver(object):
         return np.append(
             env, np.apply_along_axis(self.metric, 1, env).reshape(-1, 1), 1)
 
-    @property
+    @lazy_property.LazyProperty
     def belief_extreme_points(self):
         return self.epigraph_extreme_points[:, :-2]
 
-    @property
+    @lazy_property.LazyProperty
     def metric_extreme_points(self):
         return self.epigraph_extreme_points[:, -1]
 
-    @property
+    @lazy_property.LazyProperty
     def demands(self):
         return np.array([
             self.data.get_counterfactual_demand(rho)
@@ -222,7 +223,7 @@ class MinCollusionSolver(object):
     def solution(self):
         return self.problem.solution
 
-    @property
+    @lazy_property.LazyProperty
     def is_solvable(self):
         return not np.isinf(self.solution)
 
@@ -276,9 +277,84 @@ class ConvexProblem(object):
     def solution(self):
         installed_solvers = cvxpy.installed_solvers()
         if self._solver_type in installed_solvers:
-            print('Using {} solver'.format(self._solver_type))
             return self.problem.solve(solver=self._solver_type, verbose=False)
         else:
             return self.problem.solve()
 
 
+class MinCollusionIterativeSolver(object):
+
+    def __init__(self, data, deviations, tolerance, metric,
+                 plausibility_constraints, num_points=1e6, first_seed=0,
+                 project=False,
+                 solver_type='',
+                 initial_guesses=np.array([]),
+                 number_iterations=1,
+                 solution_threshold=0.005):
+        self.data = data
+        self._metric = metric
+        self._deviations = deviations
+        self._constraints = plausibility_constraints
+        self._tolerance = tolerance
+        self._first_seed = first_seed
+        self._num_points = num_points
+        self._project = project
+        self._solver_type = solver_type
+        self._initial_guesses = initial_guesses
+        self._number_iterations = number_iterations
+        self._solution_threshold = solution_threshold
+
+    @lazy_property.LazyProperty
+    def solution(self):
+        best_solutions = None
+        min_share_of_collusive_hist = []
+
+        initial_guesses = self._initial_guesses
+        installed_solvers = cvxpy.installed_solvers()
+
+        if self._solver_type in installed_solvers:
+            print('Using {} solver'.format(self._solver_type))
+            try:
+                for seed in range(self._number_iterations):
+
+                    min_collusion_solver = \
+                        MinCollusionSolver(
+                            data=self.data,
+                            deviations=self._deviations,
+                            tolerance=self._tolerance,
+                            metric=self._metric,
+                            plausibility_constraints=self._constraints,
+                            num_points=self._num_points,
+                            seed=seed + self._first_seed,
+                            project=self._project,
+                            solver_type=self._solver_type,
+                            initial_guesses=initial_guesses
+                        )
+                    result = min_collusion_solver.solution
+                    print('   Seed {}, result {}'.format(seed + self._first_seed, result))
+                    min_share_of_collusive_hist.append(result)
+
+                    sorted_solution = \
+                        min_collusion_solver.argmin.sort_values("prob", ascending=False)
+                    best_sol_idx = \
+                        np.where(np.cumsum(sorted_solution.prob) > 1 - self._solution_threshold)[0][0]
+                    sorted_solution.drop(['prob', 'metric'], axis=1, inplace=True)
+
+                    if best_solutions is not None:
+                        best_solutions = pd.concat([best_solutions, sorted_solution.loc[:best_sol_idx + 1]])
+                    else:
+                        best_solutions = sorted_solution.loc[:best_sol_idx + 1]
+
+                    initial_guesses = best_solutions.values
+
+
+            except Exception as e:
+                print('Solver error: {}'.format(e))
+        else:
+            raise Exception('Requested solver {} is unavailable'.format(self._solver_type))
+
+            # print(best_solutions)
+        plt.plot(range(0, self._number_iterations), min_share_of_collusive_hist, '-o')
+        plt.show()
+
+        return min_share_of_collusive_hist
