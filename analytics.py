@@ -160,7 +160,6 @@ class MinCollusionSolver(object):
     def __init__(self, data, deviations, tolerance, metric,
                  plausibility_constraints, num_points=1e6, seed=0,
                  project=False,
-                 solver_type='',
                  initial_guesses=np.array([])):
         self.data = data
         self.metric = metric(deviations)
@@ -170,7 +169,6 @@ class MinCollusionSolver(object):
         self._seed = seed
         self._num_points = num_points
         self._project = project
-        self._solver_type = solver_type
         self._initial_guesses = initial_guesses
 
     @lazy_property.LazyProperty
@@ -216,7 +214,6 @@ class MinCollusionSolver(object):
             beliefs=self.belief_extreme_points,
             demands=self.demands,
             tolerance=self._tolerance,
-            solver_type=self._solver_type
         )
 
     @lazy_property.LazyProperty
@@ -242,12 +239,11 @@ class MinCollusionSolver(object):
 
 class ConvexProblem(object):
 
-    def __init__(self, metrics, beliefs, demands, tolerance, solver_type=''):
+    def __init__(self, metrics, beliefs, demands, tolerance):
         self._metrics = np.array(metrics).reshape(-1, 1)
         self._beliefs = np.array(beliefs)
         self._demands = np.array(demands).reshape(-1, 1)
         self._tolerance = tolerance
-        self._solver_type = solver_type
 
     @lazy_property.LazyProperty
     def variable(self):
@@ -275,11 +271,7 @@ class ConvexProblem(object):
 
     @lazy_property.LazyProperty
     def solution(self):
-        installed_solvers = cvxpy.installed_solvers()
-        if self._solver_type in installed_solvers:
-            return self.problem.solve(solver=self._solver_type, verbose=False)
-        else:
-            return self.problem.solve()
+        return self.problem.solve()
 
 
 class MinCollusionIterativeSolver(object):
@@ -287,10 +279,10 @@ class MinCollusionIterativeSolver(object):
     def __init__(self, data, deviations, tolerance, metric,
                  plausibility_constraints, num_points=1e6, first_seed=0,
                  project=False,
-                 solver_type='',
                  initial_guesses=np.array([]),
                  number_iterations=1,
-                 solution_threshold=0.005):
+                 solution_threshold=0.005,
+                 show_graph=True):
         self.data = data
         self._metric = metric
         self._deviations = deviations
@@ -299,10 +291,10 @@ class MinCollusionIterativeSolver(object):
         self._first_seed = first_seed
         self._num_points = num_points
         self._project = project
-        self._solver_type = solver_type
         self._initial_guesses = initial_guesses
         self._number_iterations = number_iterations
         self._solution_threshold = solution_threshold
+        self._show_graph = show_graph
 
     @lazy_property.LazyProperty
     def solution(self):
@@ -310,51 +302,44 @@ class MinCollusionIterativeSolver(object):
         min_share_of_collusive_hist = []
 
         initial_guesses = self._initial_guesses
-        installed_solvers = cvxpy.installed_solvers()
 
-        if self._solver_type in installed_solvers:
-            print('Using {} solver'.format(self._solver_type))
-            try:
-                for seed in range(self._number_iterations):
+        try:
+            for seed in range(self._number_iterations):
 
-                    min_collusion_solver = \
-                        MinCollusionSolver(
-                            data=self.data,
-                            deviations=self._deviations,
-                            tolerance=self._tolerance,
-                            metric=self._metric,
-                            plausibility_constraints=self._constraints,
-                            num_points=self._num_points,
-                            seed=seed + self._first_seed,
-                            project=self._project,
-                            solver_type=self._solver_type,
-                            initial_guesses=initial_guesses
-                        )
-                    result = min_collusion_solver.solution
-                    print('   Seed {}, result {}'.format(seed + self._first_seed, result))
-                    min_share_of_collusive_hist.append(result)
+                min_collusion_solver = \
+                    MinCollusionSolver(
+                        data=self.data,
+                        deviations=self._deviations,
+                        tolerance=self._tolerance,
+                        metric=self._metric,
+                        plausibility_constraints=self._constraints,
+                        num_points=self._num_points,
+                        seed=seed + self._first_seed,
+                        project=self._project,
+                        initial_guesses=initial_guesses
+                    )
+                result = min_collusion_solver.solution
+                print('   Seed {}, result {}'.format(seed + self._first_seed, result))
+                min_share_of_collusive_hist.append(result)
 
-                    sorted_solution = \
-                        min_collusion_solver.argmin.sort_values("prob", ascending=False)
-                    best_sol_idx = \
-                        np.where(np.cumsum(sorted_solution.prob) > 1 - self._solution_threshold)[0][0]
-                    sorted_solution.drop(['prob', 'metric'], axis=1, inplace=True)
+                sorted_solution = \
+                    min_collusion_solver.argmin.sort_values("prob", ascending=False)
+                best_sol_idx = \
+                    np.where(np.cumsum(sorted_solution.prob) > 1 - self._solution_threshold)[0][0]
+                sorted_solution.drop(['prob', 'metric'], axis=1, inplace=True)
 
-                    if best_solutions is not None:
-                        best_solutions = pd.concat([best_solutions, sorted_solution.loc[:best_sol_idx + 1]])
-                    else:
-                        best_solutions = sorted_solution.loc[:best_sol_idx + 1]
+                if best_solutions is not None:
+                    best_solutions = pd.concat([best_solutions, sorted_solution.loc[:best_sol_idx + 1]])
+                else:
+                    best_solutions = sorted_solution.loc[:best_sol_idx + 1]
 
-                    initial_guesses = best_solutions.values
+                initial_guesses = best_solutions.values
 
+        except Exception as e:
+            print('Solver error: {}'.format(e))
 
-            except Exception as e:
-                print('Solver error: {}'.format(e))
-        else:
-            raise Exception('Requested solver {} is unavailable'.format(self._solver_type))
-
-            # print(best_solutions)
-        plt.plot(range(0, self._number_iterations), min_share_of_collusive_hist, '-o')
-        plt.show()
+        if self._show_graph:
+            plt.plot(range(0, self._number_iterations), min_share_of_collusive_hist, '-o')
+            plt.show()
 
         return min_share_of_collusive_hist
