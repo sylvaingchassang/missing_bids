@@ -329,7 +329,8 @@ class MinCollusionIterativeSolver(object):
                 sorted_solution.drop(['prob', 'metric'], axis=1, inplace=True)
 
                 if best_solutions is not None:
-                    best_solutions = pd.concat([best_solutions, sorted_solution.loc[:best_sol_idx + 1]])
+                    best_solutions = \
+                        pd.concat([best_solutions, sorted_solution.loc[:best_sol_idx + 1]])
                 else:
                     best_solutions = sorted_solution.loc[:best_sol_idx + 1]
 
