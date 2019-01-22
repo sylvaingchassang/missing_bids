@@ -183,13 +183,13 @@ class MinCollusionSolver:
         return np.append(
             env, np.apply_along_axis(self.metric, 1, env).reshape(-1, 1), 1)
 
-    @property
-    def belief_extreme_points(self):
-        return self.epigraph_extreme_points[:, :-2]
+    @staticmethod
+    def belief_extreme_points(epigraph):
+        return epigraph[:, :-2]
 
-    @property
-    def metric_extreme_points(self):
-        return self.epigraph_extreme_points[:, -1]
+    @staticmethod
+    def metric_extreme_points(epigraph):
+        return epigraph[:, -1]
 
     @property
     def demands(self):
@@ -200,9 +200,10 @@ class MinCollusionSolver:
 
     @property
     def problem(self):
+        epigraph = self.epigraph_extreme_points
         return ConvexProblem(
-            metrics=self.metric_extreme_points,
-            beliefs=self.belief_extreme_points,
+            metrics=self.metric_extreme_points(epigraph),
+            beliefs=self.belief_extreme_points(epigraph),
             demands=self.demands,
             tolerance=self._tolerance,
         )
@@ -262,6 +263,7 @@ class MinCollusionResult:
         self._epigraph_extreme_points = epigraph_extreme_points
         self._deviations = deviations
         self._variable = problem.variable.value
+        self._solver_data = []
 
     @property
     def solution(self):
@@ -296,28 +298,36 @@ class MinCollusionIterativeSolver(MinCollusionSolver):
         )
         self._number_iterations = number_iterations
 
-    @lazy_property.LazyProperty
-    def solution(self):
-        best_solutions = None
-        min_share_of_collusive_hist = []
+    @property
+    def _interim_result(self):
+        return MinCollusionResult(
+            self.problem, self.epigraph_extreme_points, self._deviations)
+
+    @property
+    def result(self):
+        selected_guesses = None
+        list_solutions = []
 
         for seed_delta in range(self._number_iterations):
-            result = self.result.solution
-            min_share_of_collusive_hist.append(result)
-            sorted_solution = self.result.argmin.sort_values(
-                "prob", ascending=False)
-            best_sol_idx = np.where(np.cumsum(sorted_solution.prob)
-                                    > 1 - self._solution_threshold)[0][0]
-            sorted_solution.drop(['prob', 'metric'], axis=1, inplace=True)
+            interim_result = self._interim_result
+            list_solutions.append(interim_result.solution)
+            selected_guesses = self._get_new_guesses(
+                interim_result, selected_guesses)
+            self._set_guesses_and_seed(selected_guesses, seed_delta)
+        interim_result._solver_data = {'iterated_solutions': list_solutions}
+        return interim_result
 
-            if best_solutions is not None:
-                best_solutions = \
-                    pd.concat([best_solutions,
-                               sorted_solution.loc[:best_sol_idx + 1]])
-            else:
-                best_solutions = sorted_solution.loc[:best_sol_idx + 1]
+    def _get_new_guesses(self, interim_result, selected_guesses):
+        sorted_argmin = interim_result.argmin.sort_values(
+            "prob", ascending=False)
+        best_sol_idx = np.where(np.cumsum(sorted_argmin.prob)
+                                > 1 - self._solution_threshold)[0][0]
+        sorted_argmin.drop(['prob', 'metric'], axis=1, inplace=True)
+        selected_argmin = sorted_argmin.loc[:best_sol_idx + 1]
 
-            self.set_initial_guesses(best_solutions.values)
-            self.set_seed(self._seed + seed_delta + 1)
+        return pd.concat([selected_guesses, selected_argmin]) if \
+            selected_guesses is not None else selected_argmin
 
-        return min_share_of_collusive_hist
+    def _set_guesses_and_seed(self, selected_guesses, seed_delta):
+        self.set_initial_guesses(selected_guesses.values)
+        self.set_seed(self._seed + seed_delta + 1)

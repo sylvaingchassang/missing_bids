@@ -211,15 +211,17 @@ class TestMinCollusionSolver(TestCase):
              [0.706872, 0.367475, 0.649534, 1.]])
 
     def test_belief_extreme_points(self):
+        epigraph = self.solver.epigraph_extreme_points
         assert_array_almost_equal(
-            self.solver.belief_extreme_points[:3],
+            self.solver.belief_extreme_points(epigraph)[:3],
             [[0.590873, 0.574325],
              [0.530537, 0.372679],
              [0.706872, 0.367475]])
 
     def test_metric_extreme_points(self):
+        epigraph = self.solver.epigraph_extreme_points
         assert_array_almost_equal(
-            self.solver.metric_extreme_points[:3], [0., 1., 1.])
+            self.solver.metric_extreme_points(epigraph)[:3], [0., 1., 1.])
 
     def test_solution(self):
         assert_almost_equal(self.solver.result.solution, 0.30337910)
@@ -262,9 +264,10 @@ class TestMinCollusionSolver(TestCase):
         assert_almost_equal(self.solver_project.result.solution, .0)
 
     def test_iter(self):
-        assert_almost_equal(self.iter_solver1.solution, 0.30337910)
-        assert_almost_equal(self.iter_solver2.solution,
-                            [.303378989, -1.9551292724687417e-10])
+        assert_almost_equal(self.iter_solver1.result.solution, 0.30337910)
+        assert_almost_equal(
+            self.iter_solver2.result._solver_data['iterated_solutions'],
+            [.303378989, -1.9551292724687417e-10])
 
 
 class TestConvexSolver(TestCase):
