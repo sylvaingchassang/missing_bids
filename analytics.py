@@ -294,7 +294,6 @@ class MinCollusionIterativeSolver(object):
         self._initial_guesses = initial_guesses
         self._number_iterations = number_iterations
         self._solution_threshold = solution_threshold
-        self._show_graph = show_graph
 
     @lazy_property.LazyProperty
     def solution(self):
@@ -340,10 +339,5 @@ class MinCollusionIterativeSolver(object):
 
         except Exception as e:
             print('Solver error: {}'.format(e))
-
-        if self._show_graph:
-            plt.plot(range(0, self._number_iterations),
-                     min_share_of_collusive_hist, '-o')
-            plt.show()
 
         return min_share_of_collusive_hist
