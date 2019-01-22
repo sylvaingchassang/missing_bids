@@ -1,5 +1,6 @@
 from numpy.testing import TestCase, assert_array_equal, \
     assert_array_almost_equal, assert_almost_equal
+import pandas as pd
 import numpy as np
 import os
 from parameterized import parameterized
@@ -15,18 +16,25 @@ class TestAuctionData(TestCase):
             bidding_data_or_path=path
         )
 
-    def test_bid_data(self):
-        assert self.auctions.df_bids.shape == (5876, 7)
+    def test_bids(self):
+        df = self.auctions.df_bids
+        assert df.shape == (5876, 7)
         assert self.auctions.df_auctions.shape == (1469, 2)
-        assert_array_equal(
-            self.auctions._df_bids.pid.values[:10],
-            np.array([15, 15, 15, 15, 15, 16, 16, 16, 16, 16])
+        cols = ["norm_bid", "most_competitive", "lowest", "second_lowest"]
+        expected = pd.DataFrame(
+            [[0.973545, 0.97619, 0.973545, 0.97619],
+             [0.978836, 0.973545, 0.973545, 0.97619],
+             [0.986772, 0.973545, 0.973545, 0.97619],
+             [0.976190, 0.973545,  0.973545, 0.97619],
+             [0.978836, 0.973545,  0.973545, 0.97619]],
+            columns=cols
         )
+        assert_array_almost_equal(expected, df[df["pid"] == 15][cols])
 
     def test_read_frame(self):
-        data = auction_data.AuctionData(self.auctions._raw_data)
+        data = auction_data.AuctionData(self.auctions.raw_data)
         assert_array_almost_equal(
-            data._raw_data.norm_bid, self.auctions._raw_data.norm_bid)
+            data.raw_data.norm_bid, self.auctions.raw_data.norm_bid)
 
     def test_auction_data(self):
         assert_array_almost_equal(
@@ -34,14 +42,6 @@ class TestAuctionData(TestCase):
             np.array([0.89655173, 0.94766617, 0.94867122, 0.69997638,
                       0.9385258, 0.74189192, 0.7299363, 0.94310075,
                       0.96039605, 0.97354496])
-        )
-
-    def test_most_competitive(self):
-        assert_array_almost_equal(
-            self.auctions.df_bids.most_competitive.values[10:20],
-            np.array(
-                [0.79662162, 0.74189192, 0.74189192, 0.74189192, 0.74189192,
-                 0.74189192, 0.74189192, 0.74189192, 0.74189192, 0.74189192])
         )
 
     def test_counterfactual_demand(self):
@@ -59,6 +59,9 @@ class TestEnvironments(TestCase):
         self.constraints = [analytics.MarkupConstraint(.6),
                             analytics.InformationConstraint(.5, [.65, .48])]
         self.env_no_cons = analytics.Environment(num_actions=2)
+        self.env_with_initial_guesses = \
+            analytics.Environment(num_actions=2,
+                                  initial_guesses=np.array([[0.7, 0.5, 0.6]]))
 
     def test_generate_raw_environments(self):
         assert_array_almost_equal(
@@ -66,6 +69,16 @@ class TestEnvironments(TestCase):
             [[0.715189, 0.548814, 0.602763],
              [0.544883, 0.423655, 0.645894],
              [0.891773, 0.437587, 0.963663]]
+        )
+
+    def test_generate_environments_with_initial_guesses(self):
+        assert_array_almost_equal(
+            self.env_with_initial_guesses.generate_environments(
+                num_points=3, seed=0),
+            [[0.715189, 0.548814, 0.602763],
+             [0.544883, 0.423655, 0.645894],
+             [0.891773, 0.437587, 0.963663],
+             [0.7, 0.5, 0.6]]
         )
 
     def test_generate_environments_no_cons(self):
@@ -83,15 +96,15 @@ class TestEnvironments(TestCase):
     ])
     def test_generate_environments_cons(self, cons_id, expected):
         env = analytics.Environment(
-            num_actions=2,
-            constraints=[self.constraints[i] for i in cons_id])
+            num_actions=2, constraints=[self.constraints[i] for i in cons_id])
         assert_array_almost_equal(
             env.generate_environments(3, seed=0),
             expected)
 
     def test_generate_environment_with_projection(self):
         env = analytics.Environment(
-            num_actions=2, constraints=self.constraints, project=True)
+            num_actions=2, constraints=self.constraints,
+            project_constraint=True)
         assert_array_almost_equal(
             env.generate_environments(3, seed=1),
             [[0.691139, 0.460906, 0.625043],
@@ -164,6 +177,14 @@ class TestMinCollusionSolver(TestCase):
                 num_points=10000, seed=0, project=project)
             for tol, project in [(.0125, False), (.01, False), (.0125, True)]]
 
+        self.iter_solver1, self.iter_solver2 = [
+            analytics.MinCollusionIterativeSolver(
+                data, deviations=[-.02], metric=analytics.IsNonCompetitive,
+                tolerance=0.0125, plausibility_constraints=constraints,
+                num_points=10000, seed=0, project=False,
+                number_iterations=num) for num in [1, 2]
+        ]
+
     def test_deviations(self):
         assert_array_equal(self.solver._deviations, [-.02, 0])
 
@@ -190,37 +211,38 @@ class TestMinCollusionSolver(TestCase):
              [0.706872, 0.367475, 0.649534, 1.]])
 
     def test_belief_extreme_points(self):
+        epigraph = self.solver.epigraph_extreme_points
         assert_array_almost_equal(
-            self.solver.belief_extreme_points[:3],
+            self.solver.belief_extreme_points(epigraph)[:3],
             [[0.590873, 0.574325],
              [0.530537, 0.372679],
              [0.706872, 0.367475]])
 
     def test_metric_extreme_points(self):
+        epigraph = self.solver.epigraph_extreme_points
         assert_array_almost_equal(
-            self.solver.metric_extreme_points[:3], [0., 1., 1.])
+            self.solver.metric_extreme_points(epigraph)[:3], [0., 1., 1.])
 
     def test_solution(self):
-        assert_almost_equal(self.solver.solution, 0.30337910)
+        assert_almost_equal(self.solver.result.solution, 0.30337910)
 
     def test_solvable(self):
-        assert self.solver.is_solvable
+        assert self.solver.result.is_solvable
 
     def test_not_solvable(self):
-        assert not self.solver_fail.is_solvable
+        assert not self.solver_fail.result.is_solvable
         with self.assertRaises(Exception) as context:
-            self.solver_fail.argmin
-        self.assertTrue('Constraints cannot be' in str(context.exception))
+            _ = self.solver_fail.result.argmin
+        assert 'Constraints cannot be' in str(context.exception)
 
     def test_argmin_distribution(self):
-        assert is_distribution(self.solver.argmin['prob'])
+        assert is_distribution(self.solver.result.argmin['prob'])
 
     def test_argmin(self):
-        assert_array_equal(
-            self.solver.argmin.columns,
-            ['prob', '-0.02', '0.0', 'cost', 'metric'])
+        cols = ['prob', '-0.02', '0.0', 'cost', 'metric']
+        df = self.solver.result.argmin[cols]
         assert_array_almost_equal(
-            self.solver.argmin.values[[12, 15]],
+            df.iloc[[12, 15]],
             [[.303378989, .718859179, .360350558, .693249354, 1.0],
              [.104691195, .625773600, .359648881, .991686340, 0.0]])
 
@@ -239,7 +261,13 @@ class TestMinCollusionSolver(TestCase):
             self.solver_project.epigraph_extreme_points.shape, [193, 4])
 
     def test_constraint_project_solution(self):
-        assert_almost_equal(self.solver_project.solution, .0)
+        assert_almost_equal(self.solver_project.result.solution, .0)
+
+    def test_iter(self):
+        assert_almost_equal(self.iter_solver1.result.solution, 0.30337910)
+        assert_almost_equal(
+            self.iter_solver2.result._solver_data['iterated_solutions'],
+            [.303378989, -1.9551292724687417e-10])
 
 
 class TestConvexSolver(TestCase):
@@ -249,7 +277,8 @@ class TestConvexSolver(TestCase):
         beliefs = np.array(
             [[.6, .5], [.45, .4], [.7, .6], [.4, .3], [.4, .2]])
         tolerance = .0005
-        self.cvx = analytics.ConvexProblem(metrics, beliefs, demands, tolerance)
+        self.cvx = analytics.ConvexProblem(
+            metrics, beliefs, demands, tolerance)
         self.res = self.cvx.solution
         self.argmin = self.cvx.variable.value
 

@@ -7,15 +7,18 @@ import cvxpy
 import pandas as pd
 
 
-class Environment(object):
+class Environment:
 
-    def __init__(self, num_actions, constraints=None, project=False):
+    def __init__(self, num_actions, constraints=None,
+                 project_constraint=False, initial_guesses=np.array([])):
         self._num_actions = num_actions
         self._constraints = constraints
-        self._project = project
+        self._project_constraint = project_constraint
+        self._initial_guesses = initial_guesses
 
     def generate_environments(self, num_points=1e6, seed=0):
         raw_environments = self._generate_raw_environments(num_points, seed)
+        raw_environments = self._append_initial_guesses(raw_environments)
         return self._apply_constraints(raw_environments)
 
     def _generate_raw_environments(self, num, seed):
@@ -29,8 +32,12 @@ class Environment(object):
         env[:, :-1] = descending_sort(env[:, :-1])
         return env
 
+    def _append_initial_guesses(self, environments):
+        return environments if self._initial_guesses.size == 0 \
+            else np.concatenate((environments, self._initial_guesses), axis=0)
+
     def _apply_constraints(self, env):
-        if self._project is True:
+        if self._project_constraint:
             env = self._project_on_constraint(env)
         env = env[np.apply_along_axis(self._aggregate_constraint, 1, env), :]
         return env
@@ -41,10 +48,7 @@ class Environment(object):
         return env
 
     def _aggregate_constraint(self, e):
-        if self._constraints is not None:
-            return all([cstr(e) for cstr in self._constraints])
-        else:
-            return True
+        return not self._constraints or all(f(e) for f in self._constraints)
 
 
 def descending_sort(arr, axis=1):
@@ -71,35 +75,32 @@ class InformationConstraint(PlausibilityConstraint):
     @staticmethod
     def _inverse_llr(d, x):
         numerator = (d / (1. - d)) * np.exp(x)
-        return numerator/(1 + numerator)
+        return numerator / (1 + numerator)
 
     @lazy_property.LazyProperty
     def belief_bounds(self):
-        return [[self._inverse_llr(d, -self._k),
-                 self._inverse_llr(d, self._k)]
-                for d in self._sample_demands]
+        bounds = np.array([
+            [self._inverse_llr(d, -self._k), self._inverse_llr(d, self._k)]
+            for d in self._sample_demands
+        ])
+        return bounds
 
     def __call__(self, e):
         beliefs = e[:-1]
-        list_constraints = [
-            bound[0] <= belief <= bound[1]
-            for bound, belief in zip(self.belief_bounds, beliefs)
-        ]
-        return all(list_constraints)
+        return np.all(self.belief_bounds[:, 0] <= beliefs) and \
+               np.all(self.belief_bounds[:, 1] >= beliefs)
 
     def project(self, e):
         diff_bounds = np.diag(
-            [bound[1] - bound[0] for bound in self.belief_bounds])
-        lower_bounds = \
-            np.array([bound[0] for bound in self.belief_bounds]).reshape(1, -1)
+            self.belief_bounds[:, 1] - self.belief_bounds[:, 0])
+        lower_bounds = self.belief_bounds[:, 0]
         e[:, :-1] = np.dot(e[:, :-1], diff_bounds) + lower_bounds
         return e
 
 
 class MarkupConstraint(PlausibilityConstraint):
-
     def __init__(self, max_markup=.5):
-        self._min_cost_ratio = 1/(1. + max_markup)
+        self._min_cost_ratio = 1 / (1. + max_markup)
 
     def __call__(self, e):
         return e[-1] >= self._min_cost_ratio
@@ -108,9 +109,13 @@ class MarkupConstraint(PlausibilityConstraint):
         e[:, -1] = self._min_cost_ratio + e[:, -1] * (1 - self._min_cost_ratio)
         return e
 
+    @lazy_property.LazyProperty
+    def belief_bounds(self):
+        bounds = np.array([self._min_cost_ratio, 1])
+        return bounds
 
-class DimensionlessCollusionMetrics(object):
 
+class DimensionlessCollusionMetrics:
     def __init__(self, deviations):
         self._deviations = _ordered_deviations(deviations)
 
@@ -120,7 +125,7 @@ class DimensionlessCollusionMetrics(object):
 
     @abc.abstractmethod
     def __call__(self, env):
-        pass
+        """"""
 
     def _normalized_deviation_temptation(self, env):
         beliefs, cost = env[:-1], env[-1]
@@ -139,13 +144,11 @@ class IsNonCompetitive(DimensionlessCollusionMetrics):
 
 
 class NormalizedDeviationTemptation(DimensionlessCollusionMetrics):
-
     def __call__(self, env):
         return self._normalized_deviation_temptation(env)
 
 
-class MinCollusionSolver(object):
-
+class MinCollusionSolver:
     def __init__(self, data, deviations, tolerance, metric,
                  plausibility_constraints, num_points=1e6, seed=0,
                  project=False):
@@ -157,16 +160,18 @@ class MinCollusionSolver(object):
         self._seed = seed
         self._num_points = num_points
         self._project = project
+        self._initial_guesses = np.array([])
 
     @property
     def environment(self):
         return Environment(
             len(self._deviations),
             constraints=self._constraints,
-            project=self._project
+            project_constraint=self._project,
+            initial_guesses=self._initial_guesses
         )
 
-    @lazy_property.LazyProperty
+    @property
     def epigraph_extreme_points(self):
         env_perf = self._env_with_perf
         return env_perf[ConvexHull(env_perf).vertices, :]
@@ -178,51 +183,45 @@ class MinCollusionSolver(object):
         return np.append(
             env, np.apply_along_axis(self.metric, 1, env).reshape(-1, 1), 1)
 
-    @property
-    def belief_extreme_points(self):
-        return self.epigraph_extreme_points[:, :-2]
+    @staticmethod
+    def belief_extreme_points(epigraph):
+        return epigraph[:, :-2]
+
+    @staticmethod
+    def metric_extreme_points(epigraph):
+        return epigraph[:, -1]
 
     @property
-    def metric_extreme_points(self):
-        return self.epigraph_extreme_points[:, -1]
-
-    @lazy_property.LazyProperty
     def demands(self):
-        demands = [self.data.get_counterfactual_demand(rho)
-                   for rho in self._deviations]
-        return np.array(demands)
-
-    @lazy_property.LazyProperty
-    def problem(self):
-        return ConvexProblem(
-            metrics=self.metric_extreme_points,
-            beliefs=self.belief_extreme_points,
-            demands=self.demands,
-            tolerance=self._tolerance)
-
-    @lazy_property.LazyProperty
-    def solution(self):
-        return self.problem.solution
+        return np.array([
+            self.data.get_counterfactual_demand(rho)
+            for rho in self._deviations
+        ])
 
     @property
-    def is_solvable(self):
-        return not np.isinf(self.solution)
+    def problem(self):
+        epigraph = self.epigraph_extreme_points
+        return ConvexProblem(
+            metrics=self.metric_extreme_points(epigraph),
+            beliefs=self.belief_extreme_points(epigraph),
+            demands=self.demands,
+            tolerance=self._tolerance,
+        )
 
-    @lazy_property.LazyProperty
-    def argmin(self):
-        if self.is_solvable:
-            return pd.DataFrame(
-                data=np.concatenate((self.problem.variable.value,
-                                    self.epigraph_extreme_points), 1),
-                columns=['prob'] +
-                        [str(d) for d in self._deviations] + ['cost', 'metric']
-            )
-        else:
-            raise Exception('Constraints cannot be satisfied')
+    @property
+    def result(self):
+        return MinCollusionResult(
+            self.problem, self.epigraph_extreme_points, self._deviations
+        )
+
+    def set_initial_guesses(self, guesses):
+        self._initial_guesses = guesses
+
+    def set_seed(self, seed):
+        self._seed = seed
 
 
-class ConvexProblem(object):
-
+class ConvexProblem:
     def __init__(self, metrics, beliefs, demands, tolerance):
         self._metrics = np.array(metrics).reshape(-1, 1)
         self._beliefs = np.array(beliefs)
@@ -238,13 +237,16 @@ class ConvexProblem(object):
         return [
             self.variable >= 0,
             cvxpy.sum(self.variable) == 1,
-            cvxpy.sum_squares(cvxpy.matmul(self._beliefs.T, self.variable)
-                              - self._demands) <= self._tolerance]
+            cvxpy.sum_squares(
+                cvxpy.matmul(self._beliefs.T, self.variable) - self._demands
+            ) <= self._tolerance  # IC
+        ]
 
     @lazy_property.LazyProperty
     def objective(self):
         return cvxpy.Minimize(
-            cvxpy.sum(cvxpy.multiply(self.variable, self._metrics)))
+            cvxpy.sum(cvxpy.multiply(self.variable, self._metrics))
+        )
 
     @lazy_property.LazyProperty
     def problem(self):
@@ -254,3 +256,78 @@ class ConvexProblem(object):
     def solution(self):
         return self.problem.solve()
 
+
+class MinCollusionResult:
+    def __init__(self, problem, epigraph_extreme_points, deviations):
+        self._solution = problem.solution
+        self._epigraph_extreme_points = epigraph_extreme_points
+        self._deviations = deviations
+        self._variable = problem.variable.value
+        self._solver_data = []
+
+    @property
+    def solution(self):
+        return self._solution
+
+    @property
+    def is_solvable(self):
+        return not np.isinf(self.solution)
+
+    @property
+    def argmin(self):
+        if self.is_solvable:
+            df = pd.DataFrame(
+                self._epigraph_extreme_points,
+                columns=[str(d) for d in self._deviations] + ['cost', 'metric']
+            )
+            df["prob"] = self._variable
+            return df
+        else:
+            raise Exception('Constraints cannot be satisfied')
+
+
+class MinCollusionIterativeSolver(MinCollusionSolver):
+    _solution_threshold = 0.005
+
+    def __init__(self, data, deviations, tolerance, metric,
+                 plausibility_constraints, num_points=1e6, seed=0,
+                 project=False, number_iterations=1):
+        super(MinCollusionIterativeSolver, self).__init__(
+            data, deviations, tolerance, metric, plausibility_constraints,
+            num_points=num_points, seed=seed, project=project
+        )
+        self._number_iterations = number_iterations
+
+    @property
+    def _interim_result(self):
+        return MinCollusionResult(
+            self.problem, self.epigraph_extreme_points, self._deviations)
+
+    @property
+    def result(self):
+        selected_guesses = None
+        list_solutions = []
+
+        for seed_delta in range(self._number_iterations):
+            interim_result = self._interim_result
+            list_solutions.append(interim_result.solution)
+            selected_guesses = self._get_new_guesses(
+                interim_result, selected_guesses)
+            self._set_guesses_and_seed(selected_guesses, seed_delta)
+        interim_result._solver_data = {'iterated_solutions': list_solutions}
+        return interim_result
+
+    def _get_new_guesses(self, interim_result, selected_guesses):
+        sorted_argmin = interim_result.argmin.sort_values(
+            "prob", ascending=False)
+        best_sol_idx = np.where(np.cumsum(sorted_argmin.prob)
+                                > 1 - self._solution_threshold)[0][0]
+        sorted_argmin.drop(['prob', 'metric'], axis=1, inplace=True)
+        selected_argmin = sorted_argmin.loc[:best_sol_idx + 1]
+
+        return pd.concat([selected_guesses, selected_argmin]) if \
+            selected_guesses is not None else selected_argmin
+
+    def _set_guesses_and_seed(self, selected_guesses, seed_delta):
+        self.set_initial_guesses(selected_guesses.values)
+        self.set_seed(self._seed + seed_delta + 1)
