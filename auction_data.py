@@ -65,6 +65,24 @@ class AuctionData:
         )
 
 
+class FilterTies:
+    def __init__(self, tolerance=.0001):
+        self.tolerance = tolerance
+
+    def __call__(self, auction_data):
+        original_data = auction_data.raw_data.copy()
+        ties = self.get_ties(auction_data)
+        original_data = original_data.loc[~ties]
+        return AuctionData(original_data)
+
+    def get_ties(self, auction_data):
+        return np.isclose(
+            auction_data.df_bids['lowest'],
+            auction_data.df_bids['second_lowest'],
+            atol=self.tolerance
+        )
+
+
 def hist_plot(df, title=''):
     plt.figure(figsize=(10, 6))
     sns.distplot(
