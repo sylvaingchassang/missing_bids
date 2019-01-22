@@ -214,23 +214,23 @@ class TestMinCollusionSolver(TestCase):
             self.solver.metric_extreme_points[:3], [0., 1., 1.])
 
     def test_solution(self):
-        assert_almost_equal(self.solver.solution, 0.30337910)
+        assert_almost_equal(self.solver.result.solution, 0.30337910)
 
     def test_solvable(self):
-        assert self.solver.is_solvable
+        assert self.solver.result.is_solvable
 
     def test_not_solvable(self):
-        assert not self.solver_fail.is_solvable
+        assert not self.solver_fail.result.is_solvable
         with self.assertRaises(Exception) as context:
-            _ = self.solver_fail.argmin
+            _ = self.solver_fail.result.argmin
         assert 'Constraints cannot be' in str(context.exception)
 
     def test_argmin_distribution(self):
-        assert is_distribution(self.solver.argmin['prob'])
+        assert is_distribution(self.solver.result.argmin['prob'])
 
     def test_argmin(self):
         cols = ['prob', '-0.02', '0.0', 'cost', 'metric']
-        df = self.solver.argmin[cols]
+        df = self.solver.result.argmin[cols]
         assert_array_almost_equal(
             df.iloc[[12, 15]],
             [[.303378989, .718859179, .360350558, .693249354, 1.0],
@@ -251,7 +251,7 @@ class TestMinCollusionSolver(TestCase):
             self.solver_project.epigraph_extreme_points.shape, [193, 4])
 
     def test_constraint_project_solution(self):
-        assert_almost_equal(self.solver_project.solution, .0)
+        assert_almost_equal(self.solver_project.result.solution, .0)
 
 
 class TestConvexSolver(TestCase):
@@ -299,19 +299,18 @@ class TestMinCollusionIterativeSolver(TestCase):
             data, deviations=[-.02], metric=analytics.IsNonCompetitive,
             tolerance=0.0125, plausibility_constraints=constraints,
             num_points=10000, first_seed=0, project=False,
-            number_iterations=1, show_graph=False)
+            number_iterations=1)
 
         self.solver_multiple = analytics.MinCollusionIterativeSolver(
             data, deviations=[-.02], metric=analytics.IsNonCompetitive,
             tolerance=0.0125, plausibility_constraints=constraints,
             num_points=10000, first_seed=0, project=False,
-            number_iterations=2, show_graph=False)
+            number_iterations=2)
 
     def test_solution_single(self):
         assert_almost_equal(self.solver_single.solution, 0.30337910)
 
     def test_solution_multiple(self):
-        print(self.solver_multiple.solution)
         assert_almost_equal(
             self.solver_multiple.solution,
             [.303378989, -1.9551292724687417e-10]

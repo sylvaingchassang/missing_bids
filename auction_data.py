@@ -12,7 +12,7 @@ def _read_bids(bidding_data_or_path):
     return df.loc[~df.norm_bid.isnull()]
 
 
-class AuctionData(object):
+class AuctionData:
     def __init__(self, bidding_data_or_path):
         self.raw_data = _read_bids(bidding_data_or_path)
         self.data = self._drop_auction_with_too_few_data()
