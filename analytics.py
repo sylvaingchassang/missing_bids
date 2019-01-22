@@ -291,40 +291,20 @@ class MinCollusionIterativeSolver(MinCollusionSolver):
                  plausibility_constraints, num_points=1e6, seed=0,
                  project=False, number_iterations=1):
         super(MinCollusionIterativeSolver, self).__init__(
-            data, deviations, tolerance, metric,
-            plausibility_constraints, num_points=1e6, seed=0, project=False
+            data, deviations, tolerance, metric, plausibility_constraints,
+            num_points=num_points, seed=seed, project=project
         )
-        self.data = data
-        self._metric = metric
-        self._deviations = deviations
-        self._constraints = plausibility_constraints
-        self._tolerance = tolerance
-        self._seed = seed
-        self._num_points = num_points
-        self._project = project
         self._number_iterations = number_iterations
 
     @lazy_property.LazyProperty
     def solution(self):
         best_solutions = None
         min_share_of_collusive_hist = []
-        min_collusion_solver = \
-            MinCollusionSolver(
-                data=self.data,
-                deviations=self._deviations,
-                tolerance=self._tolerance,
-                metric=self._metric,
-                plausibility_constraints=self._constraints,
-                num_points=self._num_points,
-                seed=self._seed,
-                project=self._project
-            )
 
         for seed_delta in range(self._number_iterations):
-            result = min_collusion_solver.result.solution
+            result = self.result.solution
             min_share_of_collusive_hist.append(result)
-            sorted_solution = \
-                min_collusion_solver.result.argmin.sort_values(
+            sorted_solution = self.result.argmin.sort_values(
                 "prob", ascending=False)
             best_sol_idx = np.where(np.cumsum(sorted_solution.prob)
                                     > 1 - self._solution_threshold)[0][0]
@@ -337,7 +317,7 @@ class MinCollusionIterativeSolver(MinCollusionSolver):
             else:
                 best_solutions = sorted_solution.loc[:best_sol_idx + 1]
 
-            min_collusion_solver.set_initial_guesses(best_solutions.values)
-            min_collusion_solver.set_seed(self._seed + seed_delta + 1)
+            self.set_initial_guesses(best_solutions.values)
+            self.set_seed(self._seed + seed_delta + 1)
 
         return min_share_of_collusive_hist

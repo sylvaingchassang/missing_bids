@@ -177,6 +177,14 @@ class TestMinCollusionSolver(TestCase):
                 num_points=10000, seed=0, project=project)
             for tol, project in [(.0125, False), (.01, False), (.0125, True)]]
 
+        self.iter_solver1, self.iter_solver2 = [
+            analytics.MinCollusionIterativeSolver(
+                data, deviations=[-.02], metric=analytics.IsNonCompetitive,
+                tolerance=0.0125, plausibility_constraints=constraints,
+                num_points=10000, seed=0, project=False,
+                number_iterations=num) for num in [1, 2]
+        ]
+
     def test_deviations(self):
         assert_array_equal(self.solver._deviations, [-.02, 0])
 
@@ -253,6 +261,11 @@ class TestMinCollusionSolver(TestCase):
     def test_constraint_project_solution(self):
         assert_almost_equal(self.solver_project.result.solution, .0)
 
+    def test_iter(self):
+        assert_almost_equal(self.iter_solver1.solution, 0.30337910)
+        assert_almost_equal(self.iter_solver2.solution,
+                            [.303378989, -1.9551292724687417e-10])
+
 
 class TestConvexSolver(TestCase):
     def setUp(self):
@@ -261,7 +274,8 @@ class TestConvexSolver(TestCase):
         beliefs = np.array(
             [[.6, .5], [.45, .4], [.7, .6], [.4, .3], [.4, .2]])
         tolerance = .0005
-        self.cvx = analytics.ConvexProblem(metrics, beliefs, demands, tolerance)
+        self.cvx = analytics.ConvexProblem(
+            metrics, beliefs, demands, tolerance)
         self.res = self.cvx.solution
         self.argmin = self.cvx.variable.value
 
@@ -286,32 +300,3 @@ class TestConvexSolver(TestCase):
 
 def is_distribution(arr):
     return all([all(arr >= 0), np.isclose(np.sum(arr), 1.)])
-
-
-class TestMinCollusionIterativeSolver(TestCase):
-    def setUp(self):
-        path = os.path.join(
-            os.path.dirname(__file__), 'reference_data', 'tsuchiura_data.csv')
-        data = auction_data.AuctionData(bidding_data_or_path=path)
-        constraints = [analytics.MarkupConstraint(.6),
-                       analytics.InformationConstraint(.5, [.65, .48])]
-        self.solver_single = analytics.MinCollusionIterativeSolver(
-            data, deviations=[-.02], metric=analytics.IsNonCompetitive,
-            tolerance=0.0125, plausibility_constraints=constraints,
-            num_points=10000, first_seed=0, project=False,
-            number_iterations=1)
-
-        self.solver_multiple = analytics.MinCollusionIterativeSolver(
-            data, deviations=[-.02], metric=analytics.IsNonCompetitive,
-            tolerance=0.0125, plausibility_constraints=constraints,
-            num_points=10000, first_seed=0, project=False,
-            number_iterations=2)
-
-    def test_solution_single(self):
-        assert_almost_equal(self.solver_single.solution, 0.30337910)
-
-    def test_solution_multiple(self):
-        assert_almost_equal(
-            self.solver_multiple.solution,
-            [.303378989, -1.9551292724687417e-10]
-        )
