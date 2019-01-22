@@ -13,21 +13,17 @@ class Environment(object):
     def __init__(self,
                  num_actions,
                  constraints=None,
-                 project=False,
+                 project_constraint=False,
                  initial_guesses=np.array([])):
         self._num_actions = num_actions
         self._constraints = constraints
-        self._project = project
+        self._project_constraint = project_constraint
         self._initial_guesses = initial_guesses
 
     def generate_environments(self, num_points=1e6, seed=0):
         raw_environments = self._generate_raw_environments(num_points, seed)
-        constrained_environments = self._apply_constraints(raw_environments)
-        if self._initial_guesses.size == 0:
-            return constrained_environments
-        else:
-            return np.concatenate((constrained_environments,
-                                   self._initial_guesses), axis=0)
+        raw_environments = self._append_initial_guesses(raw_environments)
+        return self._apply_constraints(raw_environments)
 
     def _generate_raw_environments(self, num, seed):
         np.random.seed(seed)
@@ -40,8 +36,12 @@ class Environment(object):
         env[:, :-1] = descending_sort(env[:, :-1])
         return env
 
+    def _append_initial_guesses(self, environments):
+        return environments if self._initial_guesses.size == 0 \
+            else np.concatenate((environments, self._initial_guesses), axis=0)
+
     def _apply_constraints(self, env):
-        if self._project:
+        if self._project_constraint:
             env = self._project_on_constraint(env)
         env = env[np.apply_along_axis(self._aggregate_constraint, 1, env), :]
         return env
@@ -176,7 +176,7 @@ class MinCollusionSolver(object):
         return Environment(
             len(self._deviations),
             constraints=self._constraints,
-            project=self._project,
+            project_constraint=self._project,
             initial_guesses=self._initial_guesses
         )
 
@@ -319,18 +319,20 @@ class MinCollusionIterativeSolver(object):
                         initial_guesses=initial_guesses
                     )
                 result = min_collusion_solver.solution
-                print('   Seed {}, result {}'.format(seed + self._first_seed, result))
+                print('   Seed {}, result {}'.format(
+                    seed + self._first_seed, result))
                 min_share_of_collusive_hist.append(result)
 
-                sorted_solution = \
-                    min_collusion_solver.argmin.sort_values("prob", ascending=False)
-                best_sol_idx = \
-                    np.where(np.cumsum(sorted_solution.prob) > 1 - self._solution_threshold)[0][0]
+                sorted_solution = min_collusion_solver.argmin.sort_values(
+                    "prob", ascending=False)
+                best_sol_idx = np.where(np.cumsum(sorted_solution.prob)
+                                        > 1 - self._solution_threshold)[0][0]
                 sorted_solution.drop(['prob', 'metric'], axis=1, inplace=True)
 
                 if best_solutions is not None:
                     best_solutions = \
-                        pd.concat([best_solutions, sorted_solution.loc[:best_sol_idx + 1]])
+                        pd.concat([best_solutions,
+                                   sorted_solution.loc[:best_sol_idx + 1]])
                 else:
                     best_solutions = sorted_solution.loc[:best_sol_idx + 1]
 
@@ -340,7 +342,8 @@ class MinCollusionIterativeSolver(object):
             print('Solver error: {}'.format(e))
 
         if self._show_graph:
-            plt.plot(range(0, self._number_iterations), min_share_of_collusive_hist, '-o')
+            plt.plot(range(0, self._number_iterations),
+                     min_share_of_collusive_hist, '-o')
             plt.show()
 
         return min_share_of_collusive_hist

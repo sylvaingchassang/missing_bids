@@ -3,7 +3,6 @@ from numpy.testing import TestCase, assert_array_equal, \
 import pandas as pd
 import numpy as np
 import os
-import cvxpy
 from parameterized import parameterized
 from .. import auction_data
 from .. import analytics
@@ -73,9 +72,9 @@ class TestEnvironments(TestCase):
         )
 
     def test_generate_environments_with_initial_guesses(self):
-        tmp = self.env_with_initial_guesses.generate_environments(num_points=3, seed=0)
         assert_array_almost_equal(
-            self.env_with_initial_guesses.generate_environments(num_points=3, seed=0),
+            self.env_with_initial_guesses.generate_environments(
+                num_points=3, seed=0),
             [[0.715189, 0.548814, 0.602763],
              [0.544883, 0.423655, 0.645894],
              [0.891773, 0.437587, 0.963663],
@@ -96,13 +95,16 @@ class TestEnvironments(TestCase):
         [[0, 1], [[0.544883, 0.423655, 0.645894]]]
     ])
     def test_generate_environments_cons(self, cons_id, expected):
-        env = analytics.Environment(num_actions=2, constraints=[self.constraints[i] for i in cons_id])
+        env = analytics.Environment(
+            num_actions=2, constraints=[self.constraints[i] for i in cons_id])
         assert_array_almost_equal(
             env.generate_environments(3, seed=0),
             expected)
 
     def test_generate_environment_with_projection(self):
-        env = analytics.Environment(num_actions=2, constraints=self.constraints, project=True)
+        env = analytics.Environment(
+            num_actions=2, constraints=self.constraints,
+            project_constraint=True)
         assert_array_almost_equal(
             env.generate_environments(3, seed=1),
             [[0.691139, 0.460906, 0.625043],
@@ -294,21 +296,23 @@ class TestMinCollusionIterativeSolver(TestCase):
         constraints = [analytics.MarkupConstraint(.6),
                        analytics.InformationConstraint(.5, [.65, .48])]
         self.solver_single = analytics.MinCollusionIterativeSolver(
-                data, deviations=[-.02], metric=analytics.IsNonCompetitive,
-                tolerance=0.0125, plausibility_constraints=constraints,
-                num_points=10000, first_seed=0, project=False, number_iterations=1, show_graph=False)
+            data, deviations=[-.02], metric=analytics.IsNonCompetitive,
+            tolerance=0.0125, plausibility_constraints=constraints,
+            num_points=10000, first_seed=0, project=False,
+            number_iterations=1, show_graph=False)
 
         self.solver_multiple = analytics.MinCollusionIterativeSolver(
-                data, deviations=[-.02], metric=analytics.IsNonCompetitive,
-                tolerance=0.0125, plausibility_constraints=constraints,
-                num_points=10000, first_seed=0, project=False, number_iterations=2, show_graph=False)
+            data, deviations=[-.02], metric=analytics.IsNonCompetitive,
+            tolerance=0.0125, plausibility_constraints=constraints,
+            num_points=10000, first_seed=0, project=False,
+            number_iterations=2, show_graph=False)
 
     def test_solution_single(self):
         assert_almost_equal(self.solver_single.solution, 0.30337910)
 
     def test_solution_multiple(self):
         print(self.solver_multiple.solution)
-        assert_almost_equal(self.solver_multiple.solution, [.303378989, -1.9551292724687417e-10])
-
-
-
+        assert_almost_equal(
+            self.solver_multiple.solution,
+            [.303378989, -1.9551292724687417e-10]
+        )
