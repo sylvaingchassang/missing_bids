@@ -5,7 +5,7 @@ from scipy.spatial import ConvexHull
 import cvxpy
 import pandas as pd
 
-from .environments import Environment
+from . import environments
 
 
 class DimensionlessCollusionMetrics:
@@ -58,7 +58,7 @@ class MinCollusionSolver:
 
     @property
     def environment(self):
-        return Environment(
+        return environments.Environment(
             len(self._deviations),
             constraints=self._constraints,
             project_constraint=self._project,
