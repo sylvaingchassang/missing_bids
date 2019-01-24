@@ -23,4 +23,4 @@ tested under Python 3.6.6, and ubuntu 16.04/18.04
     
     from inside the `missing_bids/notebooks/` folder
     
-    make sure the folder containing `missing_bids` is included in your `PYTHONPATH`
+    make sure the folder containing `missing_bids/` is included in your `PYTHONPATH`
