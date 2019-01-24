@@ -96,17 +96,18 @@ class InformationConstraint(PlausibilityConstraint):
 
 
 class MarkupConstraint(PlausibilityConstraint):
-    def __init__(self, max_markup=.5):
-        self._min_cost_ratio = 1 / (1. + max_markup)
+    def __init__(self, max_markup=.5, min_markup=.0):
+        self._max_cost = self._cost_ratio(min_markup)
+        self._min_cost = self._cost_ratio(max_markup)
 
     def __call__(self, e):
-        return e[-1] >= self._min_cost_ratio
+        return self._min_cost <= e[-1] <= self._max_cost
+
+    @staticmethod
+    def _cost_ratio(markup):
+        return 1. / (1. + markup)
 
     def project(self, e):
-        e[:, -1] = self._min_cost_ratio + e[:, -1] * (1 - self._min_cost_ratio)
+        e[:, -1] = self._min_cost + e[:, -1] * (
+            self._max_cost - self._min_cost)
         return e
-
-    @lazy_property.LazyProperty
-    def belief_bounds(self):
-        bounds = np.array([self._min_cost_ratio, 1])
-        return bounds

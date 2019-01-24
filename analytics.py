@@ -195,10 +195,11 @@ class MinCollusionIterativeSolver(MinCollusionSolver):
 
     def __init__(self, data, deviations, tolerance, metric,
                  plausibility_constraints, num_points=1e6, seed=0,
-                 project=False, number_iterations=1):
+                 project=False, filter_ties=None, number_iterations=1):
         super(MinCollusionIterativeSolver, self).__init__(
             data, deviations, tolerance, metric, plausibility_constraints,
-            num_points=num_points, seed=seed, project=project
+            num_points=num_points, seed=seed, project=project,
+            filter_ties=filter_ties
         )
         self._number_iterations = number_iterations
 

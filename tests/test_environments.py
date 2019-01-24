@@ -68,6 +68,7 @@ class TestEnvironments(TestCase):
 class TestConstraints(TestCase):
     def setUp(self):
         self.mkp = environments.MarkupConstraint(2.)
+        self.mkp_lower = environments.MarkupConstraint(2., 1.)
         self.info = environments.InformationConstraint(.01, [.5, .4, .3])
         self.ref_environments = np.array([[.8, .4, .3, .1],
                                           [.9, .3, .1, .8]])
@@ -79,6 +80,14 @@ class TestConstraints(TestCase):
             self.mkp.project(self.ref_environments),
             [[0.8, 0.4, 0.3, 0.4],
              [0.9, 0.3, 0.1, 0.866667]])
+
+    def test_markup_lower_bound(self):
+        assert not self.mkp_lower([.5, .6, .51])
+        assert self.mkp_lower([.5, .6, .49])
+        assert_array_almost_equal(
+            self.mkp_lower.project(self.ref_environments),
+            [[0.8, 0.4, 0.3, 0.35],
+             [0.9, 0.3, 0.1, 0.466667]])
 
     def test_info_bounds(self):
         assert_array_almost_equal(
