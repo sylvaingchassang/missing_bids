@@ -143,7 +143,7 @@ class ConvexProblem:
             cvxpy.sum(self.variable) == 1,
             cvxpy.sum_squares(
                 cvxpy.matmul(self._beliefs.T, self.variable) - self._demands
-            ) <= self._tolerance  # IC
+            ) <= self._tolerance
         ]
 
     @lazy_property.LazyProperty
@@ -185,13 +185,14 @@ class MinCollusionResult:
                 columns=[str(d) for d in self._deviations] + ['cost', 'metric']
             )
             df["prob"] = self._variable
-            return df
+            df = df.sort_values("prob", ascending=False)
+            return df.reset_index(drop=True)
         else:
             raise Exception('Constraints cannot be satisfied')
 
 
 class MinCollusionIterativeSolver(MinCollusionSolver):
-    _solution_threshold = 0.005
+    _solution_threshold = 0.01
 
     def __init__(self, data, deviations, tolerance, metric,
                  plausibility_constraints, num_points=1e6, seed=0,
@@ -223,12 +224,11 @@ class MinCollusionIterativeSolver(MinCollusionSolver):
         return interim_result
 
     def _get_new_guesses(self, interim_result, selected_guesses):
-        sorted_argmin = interim_result.argmin.sort_values(
-            "prob", ascending=False)
-        best_sol_idx = np.where(np.cumsum(sorted_argmin.prob)
+        argmin = interim_result.argmin
+        best_sol_idx = np.where(np.cumsum(argmin.prob)
                                 > 1 - self._solution_threshold)[0][0]
-        sorted_argmin.drop(['prob', 'metric'], axis=1, inplace=True)
-        selected_argmin = sorted_argmin.loc[:best_sol_idx + 1]
+        argmin.drop(['prob', 'metric'], axis=1, inplace=True)
+        selected_argmin = argmin.loc[:best_sol_idx + 1]
 
         return pd.concat([selected_guesses, selected_argmin]) if \
             selected_guesses is not None else selected_argmin

@@ -114,9 +114,9 @@ class TestMinCollusionSolver(TestCase):
         cols = ['prob', '-0.02', '0.0', 'cost', 'metric']
         df = self.solver.result.argmin[cols]
         assert_array_almost_equal(
-            df.iloc[[12, 15]],
-            [[.303378989, .718859179, .360350558, .693249354, 1.0],
-             [.104691195, .625773600, .359648881, .991686340, 0.0]])
+            df.iloc[:2],
+            [[0.59193, 0.68217, 0.362903, 0.962636, 0.],
+             [0.303379, 0.718859, 0.360351, 0.693249, 1.]])
 
     def test_constraint_project_environments(self):
         assert_array_equal(
