@@ -43,10 +43,12 @@ class TestMinCollusionSolver(TestCase):
          self.solver_project, self.solver_moments) = \
             [self._get_solver(args) for args in
              [[.0125, False], [.0125, False, FilterTies()], [.01, False],
-              [.0125, True], [.01, False, None, _moment_matrix(2)]]]
-        (self.iter_solver1, self.iter_solver2) = [
-            self._get_solver(args, MinCollusionIterativeSolver) for
-            args in [[.0125, False, None, None, n] for n in [1, 2]]]
+              [.0125, True], [.0125, False, None, _moment_matrix(2)]]]
+        (self.iter_solver1, self.iter_solver2, self.iter_moment) = [
+            self._get_solver(args, MinCollusionIterativeSolver) for args in
+            [[.0125, False, None, None, n] for n in [1, 2]] +
+            [[.007, False, None, _moment_matrix(2), 2]]
+        ]
 
     def _get_solver(self, args, solver=None):
         solver = MinCollusionSolver if solver is None else solver
@@ -88,9 +90,7 @@ class TestMinCollusionSolver(TestCase):
         epigraph = self.solver.epigraph_extreme_points
         assert_array_almost_equal(
             self.solver.belief_extreme_points(epigraph)[:3],
-            [[0.590873, 0.574325],
-             [0.530537, 0.372679],
-             [0.706872, 0.367475]])
+            [[0.590873, 0.574325], [0.530537, 0.372679], [0.706872, 0.367475]])
 
     def test_metric_extreme_points(self):
         epigraph = self.solver.epigraph_extreme_points
@@ -146,10 +146,22 @@ class TestMinCollusionSolver(TestCase):
             self.filtered_solver.result.solution, 0.3421390, decimal=5)
 
     def test_moments(self):
-        pass
+        cols = ['prob', '-0.02', '0.0']
+        assert_almost_equal(
+            self.solver_moments.result.solution, 0.180774, decimal=5)
+        assert_array_almost_equal(
+            self.solver_moments.result.argmin[cols].iloc[:2],
+            [[0.81923, 0.68217, 0.3629], [0.18077, 0.75245, 0.36346]],
+            decimal=5)
 
     def test_moments_iterated(self):
-        pass
+        cols = ['prob', '-0.02', '0.0']
+        assert_almost_equal(
+            self.iter_moment.result.solution, 0.61708711, decimal=5)
+        assert_array_almost_equal(
+            self.iter_moment.result.argmin[cols].iloc[:2],
+            [[0.55712, 0.72525, 0.36095], [0.37061, 0.75192, 0.37151]],
+            decimal=5)
 
 
 class TestConvexSolver(TestCase):
