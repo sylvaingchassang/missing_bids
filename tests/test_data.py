@@ -57,7 +57,7 @@ class TestAuctionData(TestCase):
         assert filter_ties(self.auctions).df_bids.shape == (5714, 7)
 
     def test_bootstrap(self):
-        assert_almost_equal(
+        assert_array_almost_equal(
             self.auctions.bootstrap_demand_sample([-.01, 0, .01], 4),
             [[0.4952349, 0.2451498, 0.1017699],
              [0.4902995, 0.2423417, 0.1021103],
@@ -65,6 +65,17 @@ class TestAuctionData(TestCase):
              [0.4989789, 0.2570626, 0.1050885]])
 
     def test_single_bootstrap(self):
-        assert_almost_equal(
+        assert_array_almost_equal(
             self.auctions._single_bootstrap((20, 0, [-.01, 0, .01])),
             [0.25, 0.2, 0.15])
+
+    def test_moment_matrix(self):
+        assert_array_almost_equal(
+            auction_data._moment_matrix(3),
+            [[1,  -1,  0], [0,  1,  -1], [0, 0,  1]])
+
+    def test_moment_distance(self):
+        candidate = [.3, .2, .1]
+        target = [.25, .14, .03]
+        assert_almost_equal(
+            auction_data.moment_distance(candidate, target, [1, 2, 3]), 0.003)
