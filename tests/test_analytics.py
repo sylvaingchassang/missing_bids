@@ -149,16 +149,22 @@ class TestMinCollusionSolver(TestCase):
         assert_almost_equal(
             self.filtered_solver.result.solution, 0.3421390, decimal=5)
 
+    def test_moments(self):
+        pass
+
+    def test_moments_iterated(self):
+        pass
+
 
 class TestConvexSolver(TestCase):
     def setUp(self):
-        metrics = [1., 0, 1, 1, 0]
-        demands = [.5, .4]
-        beliefs = np.array(
+        self.metrics = [1., 0, 1, 1, 0]
+        self.demands = [.5, .4]
+        self.beliefs = np.array(
             [[.6, .5], [.45, .4], [.7, .6], [.4, .3], [.4, .2]])
         tolerance = .0005
         self.cvx = analytics.ConvexProblem(
-            metrics, beliefs, demands, tolerance)
+            self.metrics, self.beliefs, self.demands, tolerance)
         self.res = self.cvx.solution
         self.argmin = self.cvx.variable.value
 
@@ -169,7 +175,7 @@ class TestConvexSolver(TestCase):
         assert_array_almost_equal(
             self.argmin,
             [[4.35054877e-09], [7.57598639e-01], [1.34755686e-01],
-             [1.52098246e-09], [1.07645669e-01]])
+             [1.52098246e-09], [1.07645669e-01]], decimal=5)
 
     def test_solution_is_distribution(self):
         assert is_distribution(self.argmin)
@@ -179,6 +185,18 @@ class TestConvexSolver(TestCase):
         diff = subjective_demand - self.cvx._demands
         assert all(np.abs(diff) <= np.sqrt(self.cvx._tolerance))
         assert_almost_equal(np.sum(np.square(diff)), self.cvx._tolerance)
+
+    @parameterized.expand([
+        [[1, 0], 0.199974275, [1, 2], [[0.8000232], [0.1999726]]],
+        [[0, 1], 0, [1, 4], [[0.6666672], [0.3333328]]]
+    ])
+    def test_moments_weights(self, weights, solution, selection, argmin):
+        mat = auction_data._moment_matrix(2)
+        pbm = analytics.ConvexProblem(
+            self.metrics, self.beliefs, self.demands, tolerance=0,
+            moment_weights=weights, moment_matrix=mat)
+        assert_almost_equal(pbm.solution, solution)
+        assert_almost_equal(pbm.variable.value[selection, :], argmin)
 
 
 def is_distribution(arr):

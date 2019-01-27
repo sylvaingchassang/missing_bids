@@ -85,13 +85,13 @@ class AuctionData:
 
 
 def _moment_matrix(n):
-    return np.diag(n * [1], 0) - np.diag((n-1) * [1], 1)
+    return np.diag(n * [1], 0) - np.diag((n-1) * [1], -1)
 
 
 def moment_distance(candidate_demand, target_demand, weights, mat=None):
     mat = mat if mat is not None else _moment_matrix(len(candidate_demand))
     candidate_moment, target_moment = \
-        [np.dot(np.array(d), mat) for d in (candidate_demand, target_demand)]
+        [np.dot(np.array(d), mat.T) for d in (candidate_demand, target_demand)]
     return np.dot(np.array(weights),
                   np.square(candidate_moment - target_moment))
 

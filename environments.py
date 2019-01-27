@@ -5,7 +5,6 @@ from six import add_metaclass
 
 
 class Environment:
-
     def __init__(self, num_actions, constraints=None,
                  project_constraint=False, initial_guesses=np.array([])):
         self._num_actions = num_actions
@@ -62,6 +61,7 @@ class PlausibilityConstraint(object):
     @abc.abstractmethod
     def project(self, e):
         """"""
+
 
 class InformationConstraint(PlausibilityConstraint):
 

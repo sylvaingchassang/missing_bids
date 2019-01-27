@@ -149,20 +149,23 @@ class ConvexProblem:
 
     @lazy_property.LazyProperty
     def constraints(self):
+        return self._is_distribution + self._moment_constraint
+
+    @property
+    def _is_distribution(self):
+        return [self.variable >= 0, cvxpy.sum(self.variable) == 1]
+
+    @property
+    def _moment_constraint(self):
         delta = cvxpy.matmul(self._beliefs.T, self.variable) - self._demands
         moment = cvxpy.matmul(self._moment_matrix, delta)
-        return [
-            self.variable >= 0,
-            cvxpy.sum(self.variable) == 1,
-            cvxpy.matmul(self._moment_weights, cvxpy.square(moment)) <=
-            self._tolerance
-        ]
+        return [cvxpy.matmul(
+            self._moment_weights, cvxpy.square(moment)) <= self._tolerance]
 
     @lazy_property.LazyProperty
     def objective(self):
         return cvxpy.Minimize(
-            cvxpy.sum(cvxpy.multiply(self.variable, self._metrics))
-        )
+            cvxpy.sum(cvxpy.multiply(self.variable, self._metrics)))
 
     @lazy_property.LazyProperty
     def problem(self):
@@ -208,11 +211,13 @@ class MinCollusionIterativeSolver(MinCollusionSolver):
 
     def __init__(self, data, deviations, tolerance, metric,
                  plausibility_constraints, num_points=1e6, seed=0,
-                 project=False, filter_ties=None, number_iterations=1):
+                 project=False, filter_ties=None, number_iterations=1,
+                 moment_matrix=None, moment_weights=None):
         super(MinCollusionIterativeSolver, self).__init__(
             data, deviations, tolerance, metric, plausibility_constraints,
             num_points=num_points, seed=seed, project=project,
-            filter_ties=filter_ties
+            filter_ties=filter_ties, moment_matrix=moment_matrix,
+            moment_weights=moment_weights
         )
         self._number_iterations = number_iterations
 
