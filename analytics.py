@@ -4,9 +4,10 @@ import abc
 from scipy.spatial import ConvexHull
 import cvxpy
 import pandas as pd
+import multiprocessing
 
 from . import environments
-from .auction_data import _moment_matrix
+from . import auction_data
 
 
 class DimensionlessCollusionMetrics:
@@ -43,10 +44,10 @@ class NormalizedDeviationTemptation(DimensionlessCollusionMetrics):
 
 
 class MinCollusionSolver:
-    def __init__(self, data, deviations, tolerance, metric,
-                 plausibility_constraints, num_points=1e6, seed=0,
-                 project=False, filter_ties=None, moment_matrix=None,
-                 moment_weights=None):
+    def __init__(self, data, deviations, metric, plausibility_constraints,
+                 tolerance=None, num_points=1e6, seed=0, project=False,
+                 filter_ties=None, moment_matrix=None, moment_weights=None,
+                 confidence_level=.95):
         self._data = data
         self.metric = metric(deviations)
         self._deviations = _ordered_deviations(deviations)
@@ -58,7 +59,9 @@ class MinCollusionSolver:
         self._filter_ties = filter_ties
         self._initial_guesses = np.array([])
         self._moment_matrix = moment_matrix
-        self._moment_weights = moment_weights
+        self._moment_weights = moment_weights if moment_weights is not None \
+            else np.ones_like(self._deviations)
+        self._confidence_level = confidence_level
 
     @property
     def environment(self):
@@ -96,7 +99,7 @@ class MinCollusionSolver:
             for rho in self._deviations])
 
     @property
-    def filtered_data(self):
+    def filtered_data(self) -> auction_data.AuctionData:
         if self._filter_ties is not None:
             return self._filter_ties(self._data)
         return self._data
@@ -113,10 +116,25 @@ class MinCollusionSolver:
             metrics=self.metric_extreme_points(epigraph),
             beliefs=self.belief_extreme_points(epigraph),
             demands=self.demands,
-            tolerance=self._tolerance,
+            tolerance=self.tolerance,
             moment_matrix=self._moment_matrix,
             moment_weights=self._moment_weights
         )
+
+    @property
+    def tolerance(self):
+        if self._tolerance is None:
+            self._tolerance = self._compute_tolerance()
+        return self._tolerance
+
+    def _compute_tolerance(self):
+        bootstrap_demand_sample = self.filtered_data.bootstrap_demand_sample(
+            self._deviations, num_samples=100)
+        target_demands = np.array(self.demands).reshape(1, -1)
+        delta = np.add(bootstrap_demand_sample, -target_demands)
+        moments_delta = np.dot(self._moment_matrix, delta.T)
+        distances = np.dot(self._moment_weights, np.square(moments_delta))
+        return np.percentile(distances, 100 * self._confidence_level)
 
     @property
     def result(self):
@@ -209,16 +227,15 @@ class MinCollusionResult:
 class MinCollusionIterativeSolver(MinCollusionSolver):
     _solution_threshold = 0.01
 
-    def __init__(self, data, deviations, tolerance, metric,
-                 plausibility_constraints, num_points=1e6, seed=0,
-                 project=False, filter_ties=None, number_iterations=1,
-                 moment_matrix=None, moment_weights=None):
+    def __init__(self, data, deviations, metric, plausibility_constraints,
+                 tolerance=None, num_points=1e6, seed=0, project=False,
+                 filter_ties=None, number_iterations=1, moment_matrix=None,
+                 moment_weights=None):
         super(MinCollusionIterativeSolver, self).__init__(
-            data, deviations, tolerance, metric, plausibility_constraints,
-            num_points=num_points, seed=seed, project=project,
-            filter_ties=filter_ties, moment_matrix=moment_matrix,
-            moment_weights=moment_weights
-        )
+            data, deviations, metric, plausibility_constraints,
+            tolerance=tolerance, num_points=num_points, seed=seed,
+            project=project, filter_ties=filter_ties,
+            moment_matrix=moment_matrix, moment_weights=moment_weights)
         self._number_iterations = number_iterations
 
     @property

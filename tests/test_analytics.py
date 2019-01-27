@@ -163,6 +163,15 @@ class TestMinCollusionSolver(TestCase):
             [[0.55712, 0.72525, 0.36095], [0.37061, 0.75192, 0.37151]],
             decimal=5)
 
+    def test_compute_tolerance(self):
+        assert_almost_equal(
+            self.solver_moments._compute_tolerance(), 0.00027320)
+
+    def test_tolerance(self):
+        args = [None, False, None, _moment_matrix(2), None]
+        solver = self._get_solver(args)
+        assert_almost_equal(solver.tolerance, 0.00027320)
+
 
 class TestConvexSolver(TestCase):
     def setUp(self):
