@@ -59,9 +59,9 @@ class PlausibilityConstraint(object):
     def __call__(self, e):
         """"""
 
+    @abc.abstractmethod
     def project(self, e):
-        return e
-
+        """"""
 
 class InformationConstraint(PlausibilityConstraint):
 

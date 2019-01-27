@@ -3,6 +3,7 @@ import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 import lazy_property
+import multiprocessing
 
 
 def _read_bids(bidding_data_or_path):
@@ -52,9 +53,13 @@ class AuctionData:
         return df_bids.reset_index()
 
     def get_counterfactual_demand(self, rho):
-        new_bids = self.df_bids.norm_bid * (1 + rho)
-        wins = (new_bids < self.df_bids.most_competitive).mean()
-        ties = .5 * (new_bids == self.df_bids.most_competitive).mean()
+        return self._get_counterfactual_demand(self.df_bids, rho)
+
+    @staticmethod
+    def _get_counterfactual_demand(df_bids, rho):
+        new_bids = df_bids.norm_bid * (1 + rho)
+        wins = (new_bids < df_bids.most_competitive).mean()
+        ties = .5 * (new_bids == df_bids.most_competitive).mean()
         return wins + ties
 
     def demand_function(self, start, stop, num=500):
@@ -63,6 +68,20 @@ class AuctionData:
             list(map(self.get_counterfactual_demand, range_rho)),
             index=range_rho, columns=['counterfactual demand']
         )
+
+    def bootstrap_demand_sample(self, list_rhos, num_samples=100):
+        pool = multiprocessing.Pool()
+        sample_size = self.df_bids.shape[0]
+        return pd.DataFrame(pool.map(
+            self._single_bootstrap,
+            [(sample_size, i, list_rhos) for i in range(num_samples)]))
+
+    def _single_bootstrap(self, args):
+        sample_size, random_state, list_rhos = args
+        resampled_bids = self.df_bids.sample(
+            sample_size, replace=True, random_state=random_state)
+        return [self._get_counterfactual_demand(resampled_bids, rho)
+                for rho in list_rhos]
 
 
 class FilterTies:

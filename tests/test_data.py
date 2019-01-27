@@ -55,3 +55,16 @@ class TestAuctionData(TestCase):
         filter_ties = auction_data.FilterTies(.0001)
         assert np.sum(filter_ties.get_ties(self.auctions)) == 61
         assert filter_ties(self.auctions).df_bids.shape == (5714, 7)
+
+    def test_bootstrap(self):
+        assert_almost_equal(
+            self.auctions.bootstrap_demand_sample([-.01, 0, .01], 4),
+            [[0.4952349, 0.2451498, 0.1017699],
+             [0.4902995, 0.2423417, 0.1021103],
+             [0.4913206, 0.2441287, 0.0949626],
+             [0.4989789, 0.2570626, 0.1050885]])
+
+    def test_single_bootstrap(self):
+        assert_almost_equal(
+            self.auctions._single_bootstrap((20, 0, [-.01, 0, .01])),
+            [0.25, 0.2, 0.15])
