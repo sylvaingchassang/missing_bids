@@ -5,8 +5,10 @@ import os
 from parameterized import parameterized
 
 from .. import environments
-from .. import auction_data
-from .. import analytics
+from ..auction_data import AuctionData, _moment_matrix, FilterTies
+from ..analytics import (
+    IsNonCompetitive, NormalizedDeviationTemptation, MinCollusionSolver,
+    MinCollusionIterativeSolver, ConvexProblem)
 
 
 class TestCollusionMetrics(TestCase):
@@ -18,7 +20,7 @@ class TestCollusionMetrics(TestCase):
         [[-.2, .0, .02], False]
     ])
     def test_is_non_competitive(self, deviations, expected):
-        metric = analytics.IsNonCompetitive(deviations)
+        metric = IsNonCompetitive(deviations)
         assert metric(self.env) == expected
 
     @parameterized.expand([
@@ -26,7 +28,7 @@ class TestCollusionMetrics(TestCase):
         [[-.2, .0, .02], 0]
     ])
     def test_deviation_temptation(self, deviations, expected):
-        metric = analytics.NormalizedDeviationTemptation(deviations)
+        metric = NormalizedDeviationTemptation(deviations)
         assert np.isclose(metric(self.env), expected)
 
 
@@ -34,28 +36,28 @@ class TestMinCollusionSolver(TestCase):
     def setUp(self):
         path = os.path.join(
             os.path.dirname(__file__), 'reference_data', 'tsuchiura_data.csv')
-        data = auction_data.AuctionData(bidding_data_or_path=path)
-        constraints = [environments.MarkupConstraint(.6),
-                       environments.InformationConstraint(.5, [.65, .48])]
-        self.solver, self.solver_fail, self.solver_project = [
-            analytics.MinCollusionSolver(
-                data, deviations=[-.02], metric=analytics.IsNonCompetitive,
-                tolerance=tol, plausibility_constraints=constraints,
-                num_points=10000, seed=0, project=project)
-            for tol, project in [(.0125, False), (.01, False), (.0125, True)]]
+        self.data = AuctionData(bidding_data_or_path=path)
+        self.constraints = [environments.MarkupConstraint(.6),
+                            environments.InformationConstraint(.5, [.65, .48])]
+        (self.solver, self.filtered_solver, self.solver_fail,
+         self.solver_project, self.solver_moments) = \
+            [self._get_solver(args) for args in
+             [[.0125, False], [.0125, False, FilterTies()], [.01, False],
+              [.0125, True], [.01, False, None, _moment_matrix(2)]]]
+        (self.iter_solver1, self.iter_solver2) = [
+            self._get_solver(args, MinCollusionIterativeSolver) for
+            args in [[.0125, False, None, None, n] for n in [1, 2]]]
 
-        self.iter_solver1, self.iter_solver2 = [
-            analytics.MinCollusionIterativeSolver(
-                data, deviations=[-.02], metric=analytics.IsNonCompetitive,
-                tolerance=0.0125, plausibility_constraints=constraints,
-                num_points=10000, seed=0, project=False,
-                number_iterations=num) for num in [1, 2]]
-
-        self.filtered_solver = analytics.MinCollusionSolver(
-            data, deviations=[-.02], metric=analytics.IsNonCompetitive,
-            tolerance=0.0125, plausibility_constraints=constraints,
-            num_points=10000, seed=0, project=False,
-            filter_ties=auction_data.FilterTies())
+    def _get_solver(self, args, solver=None):
+        solver = MinCollusionSolver if solver is None else solver
+        tol, proj, _filt, mom_mat, num = args + [None] * (5 - len(args))
+        arg_dict = dict(
+            deviations=[-.02], metric=IsNonCompetitive, project=proj,
+            tolerance=tol, plausibility_constraints=self.constraints, seed=0,
+            num_points=10000, filter_ties=_filt, moment_matrix=mom_mat)
+        if solver == MinCollusionIterativeSolver:
+            arg_dict.update({'number_iterations': num})
+        return solver(self.data, **arg_dict)
 
     def test_deviations(self):
         assert_array_equal(self.solver._deviations, [-.02, 0])
@@ -96,7 +98,7 @@ class TestMinCollusionSolver(TestCase):
             self.solver.metric_extreme_points(epigraph)[:3], [0., 1., 1.])
 
     def test_solution(self):
-        assert_almost_equal(self.solver.result.solution, 0.30337910, decimal=5)
+        assert_almost_equal(self.solver.result.solution, 0.303379, decimal=5)
 
     def test_solvable(self):
         assert self.solver.result.is_solvable
@@ -115,22 +117,16 @@ class TestMinCollusionSolver(TestCase):
         df = self.solver.result.argmin[cols]
         assert_array_almost_equal(
             df.iloc[:2],
-            [[0.59193, 0.68217, 0.362903, 0.962636, 0.],
-             [0.303379, 0.718859, 0.360351, 0.693249, 1.]],
-            decimal=4
-        )
+            [[0.5919, 0.6822, 0.3629, 0.9626, 0.],
+             [0.303379, 0.718859, 0.360351, 0.693249, 1.]], decimal=4)
 
     def test_constraint_project_environments(self):
+        assert_array_equal(self.solver._env_with_perf.shape, [384, 4])
         assert_array_equal(
-            self.solver._env_with_perf.shape,
-            [384, 4])
-        assert_array_equal(
-            self.solver_project._env_with_perf.shape,
-            [10000, 4])
+            self.solver_project._env_with_perf.shape, [10000, 4])
 
     def test_constraint_project_extreme_points(self):
-        assert_array_equal(
-            self.solver.epigraph_extreme_points.shape, [80, 4])
+        assert_array_equal(self.solver.epigraph_extreme_points.shape, [80, 4])
         assert_array_equal(
             self.solver_project.epigraph_extreme_points.shape, [193, 4])
 
@@ -141,7 +137,7 @@ class TestMinCollusionSolver(TestCase):
         assert_almost_equal(self.iter_solver1.result.solution, 0.30337910)
         assert_almost_equal(
             self.iter_solver2.result._solver_data['iterated_solutions'],
-            [.303378989, -1.9551292724687417e-10], decimal=5)
+            [.3033789, 0], decimal=5)
 
     def test_filter(self):
         assert self.solver.share_of_ties == 0
@@ -163,7 +159,7 @@ class TestConvexSolver(TestCase):
         self.beliefs = np.array(
             [[.6, .5], [.45, .4], [.7, .6], [.4, .3], [.4, .2]])
         tolerance = .0005
-        self.cvx = analytics.ConvexProblem(
+        self.cvx = ConvexProblem(
             self.metrics, self.beliefs, self.demands, tolerance)
         self.res = self.cvx.solution
         self.argmin = self.cvx.variable.value
@@ -173,9 +169,7 @@ class TestConvexSolver(TestCase):
 
     def test_solution(self):
         assert_array_almost_equal(
-            self.argmin,
-            [[4.35054877e-09], [7.57598639e-01], [1.34755686e-01],
-             [1.52098246e-09], [1.07645669e-01]], decimal=5)
+            self.argmin, [[0], [.75759], [.13475], [0], [.10764]], decimal=5)
 
     def test_solution_is_distribution(self):
         assert is_distribution(self.argmin)
@@ -191,10 +185,9 @@ class TestConvexSolver(TestCase):
         [[0, 1], 0, [1, 4], [[0.6666672], [0.3333328]]]
     ])
     def test_moments_weights(self, weights, solution, selection, argmin):
-        mat = auction_data._moment_matrix(2)
-        pbm = analytics.ConvexProblem(
+        pbm = ConvexProblem(
             self.metrics, self.beliefs, self.demands, tolerance=0,
-            moment_weights=weights, moment_matrix=mat)
+            moment_weights=weights, moment_matrix=_moment_matrix(2))
         assert_almost_equal(pbm.solution, solution)
         assert_almost_equal(pbm.variable.value[selection, :], argmin)
 
