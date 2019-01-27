@@ -96,7 +96,7 @@ class TestMinCollusionSolver(TestCase):
             self.solver.metric_extreme_points(epigraph)[:3], [0., 1., 1.])
 
     def test_solution(self):
-        assert_almost_equal(self.solver.result.solution, 0.30337910)
+        assert_almost_equal(self.solver.result.solution, 0.30337910, decimal=5)
 
     def test_solvable(self):
         assert self.solver.result.is_solvable
@@ -116,7 +116,9 @@ class TestMinCollusionSolver(TestCase):
         assert_array_almost_equal(
             df.iloc[:2],
             [[0.59193, 0.68217, 0.362903, 0.962636, 0.],
-             [0.303379, 0.718859, 0.360351, 0.693249, 1.]])
+             [0.303379, 0.718859, 0.360351, 0.693249, 1.]],
+            decimal=4
+        )
 
     def test_constraint_project_environments(self):
         assert_array_equal(
@@ -139,12 +141,13 @@ class TestMinCollusionSolver(TestCase):
         assert_almost_equal(self.iter_solver1.result.solution, 0.30337910)
         assert_almost_equal(
             self.iter_solver2.result._solver_data['iterated_solutions'],
-            [.303378989, -1.9551292724687417e-10])
+            [.303378989, -1.9551292724687417e-10], decimal=5)
 
     def test_filter(self):
         assert self.solver.share_of_ties == 0
         assert_almost_equal(self.filtered_solver.share_of_ties, 0.02756977)
-        assert_almost_equal(self.filtered_solver.result.solution, 0.3421390)
+        assert_almost_equal(
+            self.filtered_solver.result.solution, 0.3421390, decimal=5)
 
 
 class TestConvexSolver(TestCase):

@@ -6,6 +6,7 @@ import cvxpy
 import pandas as pd
 
 from . import environments
+from .auction_data import _moment_matrix
 
 
 class DimensionlessCollusionMetrics:
@@ -44,7 +45,8 @@ class NormalizedDeviationTemptation(DimensionlessCollusionMetrics):
 class MinCollusionSolver:
     def __init__(self, data, deviations, tolerance, metric,
                  plausibility_constraints, num_points=1e6, seed=0,
-                 project=False, filter_ties=None):
+                 project=False, filter_ties=None, moment_matrix=None,
+                 moment_weights=None):
         self._data = data
         self.metric = metric(deviations)
         self._deviations = _ordered_deviations(deviations)
@@ -55,6 +57,8 @@ class MinCollusionSolver:
         self._project = project
         self._filter_ties = filter_ties
         self._initial_guesses = np.array([])
+        self._moment_matrix = moment_matrix
+        self._moment_weights = moment_weights
 
     @property
     def environment(self):
@@ -110,6 +114,8 @@ class MinCollusionSolver:
             beliefs=self.belief_extreme_points(epigraph),
             demands=self.demands,
             tolerance=self._tolerance,
+            moment_matrix=self._moment_matrix,
+            moment_weights=self._moment_weights
         )
 
     @property
@@ -126,11 +132,16 @@ class MinCollusionSolver:
 
 
 class ConvexProblem:
-    def __init__(self, metrics, beliefs, demands, tolerance):
+    def __init__(self, metrics, beliefs, demands, tolerance,
+                 moment_matrix=None, moment_weights=None):
         self._metrics = np.array(metrics).reshape(-1, 1)
         self._beliefs = np.array(beliefs)
         self._demands = np.array(demands).reshape(-1, 1)
         self._tolerance = tolerance
+        self._moment_matrix = np.identity(len(demands)) \
+            if moment_matrix is None else moment_matrix
+        self._moment_weights = np.ones_like(demands) if \
+            moment_weights is None else moment_weights
 
     @lazy_property.LazyProperty
     def variable(self):
@@ -138,12 +149,13 @@ class ConvexProblem:
 
     @lazy_property.LazyProperty
     def constraints(self):
+        delta = cvxpy.matmul(self._beliefs.T, self.variable) - self._demands
+        moment = cvxpy.matmul(self._moment_matrix, delta)
         return [
             self.variable >= 0,
             cvxpy.sum(self.variable) == 1,
-            cvxpy.sum_squares(
-                cvxpy.matmul(self._beliefs.T, self.variable) - self._demands
-            ) <= self._tolerance
+            cvxpy.matmul(self._moment_weights, cvxpy.square(moment)) <=
+            self._tolerance
         ]
 
     @lazy_property.LazyProperty
