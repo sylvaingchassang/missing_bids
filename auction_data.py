@@ -84,12 +84,16 @@ class AuctionData:
                 for rho in list_rhos]
 
 
-def _moment_matrix(n):
-    return np.diag(n * [1], 0) - np.diag((n-1) * [1], -1)
+def moment_matrix(n, option='slope'):
+    n = n if isinstance(n, int) else len(n)
+    if option.lower() == 'slope':
+        return np.diag(n * [1], 0) - np.diag((n-1) * [1], -1)
+    elif option.lower() == 'level':
+        return np.identity(n)
 
 
 def moment_distance(candidate_demand, target_demand, weights, mat=None):
-    mat = mat if mat is not None else _moment_matrix(len(candidate_demand))
+    mat = mat if mat is not None else moment_matrix(len(candidate_demand))
     candidate_moment, target_moment = \
         [np.dot(np.array(d), mat.T) for d in (candidate_demand, target_demand)]
     return np.dot(np.array(weights),

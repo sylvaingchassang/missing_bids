@@ -5,7 +5,7 @@ import os
 from parameterized import parameterized
 
 from .. import environments
-from ..auction_data import AuctionData, _moment_matrix, FilterTies
+from ..auction_data import AuctionData, moment_matrix, FilterTies
 from ..analytics import (
     IsNonCompetitive, NormalizedDeviationTemptation, MinCollusionSolver,
     MinCollusionIterativeSolver, ConvexProblem)
@@ -43,11 +43,11 @@ class TestMinCollusionSolver(TestCase):
          self.solver_project, self.solver_moments) = \
             [self._get_solver(args) for args in
              [[.0125, False], [.0125, False, FilterTies()], [.01, False],
-              [.0125, True], [.0125, False, None, _moment_matrix(2)]]]
+              [.0125, True], [.0125, False, None, moment_matrix(2)]]]
         (self.iter_solver1, self.iter_solver2, self.iter_moment) = [
             self._get_solver(args, MinCollusionIterativeSolver) for args in
             [[.0125, False, None, None, n] for n in [1, 2]] +
-            [[.007, False, None, _moment_matrix(2), 2]]
+            [[.007, False, None, moment_matrix(2), 2]]
         ]
 
     def _get_solver(self, args, solver=None):
@@ -168,7 +168,7 @@ class TestMinCollusionSolver(TestCase):
             self.solver_moments._compute_tolerance(), 0.00027320)
 
     def test_tolerance(self):
-        args = [None, False, None, _moment_matrix(2), None]
+        args = [None, False, None, moment_matrix(2), None]
         solver = self._get_solver(args)
         assert_almost_equal(solver.tolerance, 0.00027320)
 
@@ -208,7 +208,7 @@ class TestConvexSolver(TestCase):
     def test_moments_weights(self, weights, solution, selection, argmin):
         pbm = ConvexProblem(
             self.metrics, self.beliefs, self.demands, tolerance=0,
-            moment_weights=weights, moment_matrix=_moment_matrix(2))
+            moment_weights=weights, moment_matrix=moment_matrix(2))
         assert_almost_equal(pbm.solution, solution)
         assert_almost_equal(pbm.variable.value[selection, :], argmin)
 

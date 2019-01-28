@@ -58,7 +58,8 @@ class MinCollusionSolver:
         self._project = project
         self._filter_ties = filter_ties
         self._initial_guesses = np.array([])
-        self._moment_matrix = moment_matrix
+        self._moment_matrix = moment_matrix if moment_matrix is not None \
+            else auction_data.moment_matrix(len(self._deviations), 'level')
         self._moment_weights = moment_weights if moment_weights is not None \
             else np.ones_like(self._deviations)
         self._confidence_level = confidence_level
@@ -125,7 +126,7 @@ class MinCollusionSolver:
     def tolerance(self):
         if self._tolerance is None:
             self._tolerance = self._compute_tolerance()
-        return self._tolerance
+        return max(self._tolerance, 5e-6)
 
     def _compute_tolerance(self):
         bootstrap_demand_sample = self.filtered_data.bootstrap_demand_sample(
@@ -156,8 +157,8 @@ class ConvexProblem:
         self._beliefs = np.array(beliefs)
         self._demands = np.array(demands).reshape(-1, 1)
         self._tolerance = tolerance
-        self._moment_matrix = np.identity(len(demands)) \
-            if moment_matrix is None else moment_matrix
+        self._moment_matrix = moment_matrix if moment_matrix is not None else \
+            auction_data.moment_matrix(len(demands), 'level')
         self._moment_weights = np.ones_like(demands) if \
             moment_weights is None else moment_weights
 
@@ -230,12 +231,13 @@ class MinCollusionIterativeSolver(MinCollusionSolver):
     def __init__(self, data, deviations, metric, plausibility_constraints,
                  tolerance=None, num_points=1e6, seed=0, project=False,
                  filter_ties=None, number_iterations=1, moment_matrix=None,
-                 moment_weights=None):
+                 moment_weights=None, confidence_level=.95):
         super(MinCollusionIterativeSolver, self).__init__(
             data, deviations, metric, plausibility_constraints,
             tolerance=tolerance, num_points=num_points, seed=seed,
             project=project, filter_ties=filter_ties,
-            moment_matrix=moment_matrix, moment_weights=moment_weights)
+            moment_matrix=moment_matrix, moment_weights=moment_weights,
+            confidence_level=confidence_level)
         self._number_iterations = number_iterations
 
     @property

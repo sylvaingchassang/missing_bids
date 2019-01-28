@@ -72,7 +72,7 @@ class TestAuctionData(TestCase):
 
     def test_moment_matrix(self):
         assert_array_almost_equal(
-            auction_data._moment_matrix(3),
+            auction_data.moment_matrix(3),
             [[1,  0,  0], [-1,  1,  0], [0, -1,  1]])
 
     def test_moment_distance(self):
