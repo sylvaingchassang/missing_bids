@@ -43,6 +43,14 @@ class NormalizedDeviationTemptation(DimensionlessCollusionMetrics):
         return self._normalized_deviation_temptation(env)
 
 
+class DeviationTemptationOverProfits(DimensionlessCollusionMetrics):
+    def __call__(self, env):
+        cost = env[-1]
+        eq_belief = env[self.equilibrium_index]
+        return self._normalized_deviation_temptation(env) / (
+            eq_belief * (1 - cost))
+
+
 class MinCollusionSolver:
     def __init__(self, data, deviations, metric, plausibility_constraints,
                  tolerance=None, num_points=1e6, seed=0, project=False,

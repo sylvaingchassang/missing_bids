@@ -8,7 +8,7 @@ from .. import environments
 from ..auction_data import AuctionData, moment_matrix, FilterTies
 from ..analytics import (
     IsNonCompetitive, NormalizedDeviationTemptation, MinCollusionSolver,
-    MinCollusionIterativeSolver, ConvexProblem)
+    MinCollusionIterativeSolver, ConvexProblem, DeviationTemptationOverProfits)
 
 
 class TestCollusionMetrics(TestCase):
@@ -16,8 +16,8 @@ class TestCollusionMetrics(TestCase):
         self.env = [.5, .4, .3, .8]
 
     @parameterized.expand([
-        [[-.02, .02], True],
-        [[-.2, .0, .02], False]
+        [[-.02, .02], 1],
+        [[-.2, .0, .02], 0]
     ])
     def test_is_non_competitive(self, deviations, expected):
         metric = IsNonCompetitive(deviations)
@@ -29,6 +29,14 @@ class TestCollusionMetrics(TestCase):
     ])
     def test_deviation_temptation(self, deviations, expected):
         metric = NormalizedDeviationTemptation(deviations)
+        assert np.isclose(metric(self.env), expected)
+
+    @parameterized.expand([
+        [[-.02, .02], 0.125],
+        [[-.2, .0, .02], 0]
+    ])
+    def test_temptation_over_profits(self, deviations, expected):
+        metric = DeviationTemptationOverProfits(deviations)
         assert np.isclose(metric(self.env), expected)
 
 
