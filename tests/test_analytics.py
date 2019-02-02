@@ -149,9 +149,9 @@ class TestMinCollusionSolver(TestCase):
 
     def test_filter(self):
         assert self.solver.share_of_ties == 0
-        assert_almost_equal(self.filtered_solver.share_of_ties, 0.02756977)
+        assert_almost_equal(self.filtered_solver.share_of_ties, 0.01038121)
         assert_almost_equal(
-            self.filtered_solver.result.solution, 0.3421390, decimal=5)
+            self.filtered_solver.result.solution, 0.2250626, decimal=5)
 
     def test_moments(self):
         cols = ['prob', '-0.02', '0.0']

@@ -111,7 +111,7 @@ class FilterTies:
         self.tolerance = tolerance
 
     def __call__(self, auction_data):
-        original_data = auction_data.raw_data.copy()
+        original_data = auction_data.data.copy()
         ties = self.get_ties(auction_data)
         original_data = original_data.loc[~ties]
         return AuctionData(original_data)

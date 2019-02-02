@@ -60,7 +60,7 @@ class TestAuctionData(TestCase):
     def test_filter(self):
         filter_ties = auction_data.FilterTies(.0001)
         assert np.sum(filter_ties.get_ties(self.auctions)) == 61
-        assert filter_ties(self.auctions).df_bids.shape == (5714, 7)
+        assert filter_ties(self.auctions).df_bids.shape == (5815, 7)
 
     def test_bootstrap(self):
         assert_array_almost_equal(
@@ -92,3 +92,10 @@ class TestAuctionData(TestCase):
         df_bids = df_bids.loc[self.auctions.data.bidder == 'muramatsu']
         auction_from_bids = auction_data.AuctionData.from_clean_bids(df_bids)
         assert_array_almost_equal(auction_from_bids.df_bids, df_bids)
+
+    def test_filtering_correct(self):
+        filter_ties = auction_data.FilterTies(tolerance=.0001)
+        assert_almost_equal(
+            filter_ties.get_ties(self.auctions).mean(), 0.01038121)
+        filtered_data = filter_ties(self.auctions)
+        assert_almost_equal(filter_ties.get_ties(filtered_data).mean(), 0)
