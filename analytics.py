@@ -4,7 +4,6 @@ import abc
 from scipy.spatial import ConvexHull
 import cvxpy
 import pandas as pd
-import multiprocessing
 
 from . import environments
 from . import auction_data
