@@ -29,6 +29,12 @@ class TestAuctionData(TestCase):
         )
         assert_array_almost_equal(expected, df[df["pid"] == 15][cols])
 
+    def test_bids_and_data_share_index(self):
+        assert_array_almost_equal(
+            self.auctions.df_bids.norm_bid,
+            self.auctions.data.loc[self.auctions.df_bids.index].norm_bid
+        )
+
     def test_read_frame(self):
         data = auction_data.AuctionData(self.auctions.raw_data)
         assert_array_almost_equal(
@@ -80,3 +86,9 @@ class TestAuctionData(TestCase):
         target = [.25, .14, .03]
         assert_almost_equal(
             auction_data.moment_distance(candidate, target, [1, 2, 3]), 0.003)
+
+    def test_from_clean_bids(self):
+        df_bids = self.auctions.df_bids
+        df_bids = df_bids.loc[self.auctions.data.bidder == 'muramatsu']
+        auction_from_bids = auction_data.AuctionData.from_clean_bids(df_bids)
+        assert_array_almost_equal(auction_from_bids.df_bids, df_bids)

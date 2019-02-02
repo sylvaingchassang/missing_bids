@@ -14,14 +14,20 @@ def _read_bids(bidding_data_or_path):
 
 
 class AuctionData:
-    def __init__(self, bidding_data_or_path):
+    def __init__(self, bidding_data_or_path, clean=True):
         self.raw_data = _read_bids(bidding_data_or_path)
-        self.data = self._drop_auction_with_too_few_data()
+        self.data = self._drop_auction_with_too_few_data(clean)
 
-    def _drop_auction_with_too_few_data(self):
+    def _drop_auction_with_too_few_data(self, clean):
         bids_count = self.raw_data.groupby("pid").norm_bid.count()
-        df = self.raw_data.set_index("pid").loc[bids_count > 1]
+        df = self.raw_data.set_index("pid").loc[bids_count > 1 * clean]
         return df.reset_index()
+
+    @classmethod
+    def from_clean_bids(cls, df_bids):
+        auction_data = cls(df_bids)
+        auction_data._df_bids = df_bids
+        return auction_data
 
     @lazy_property.LazyProperty
     def df_auctions(self):
