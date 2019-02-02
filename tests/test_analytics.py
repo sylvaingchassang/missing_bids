@@ -131,12 +131,12 @@ class TestMinCollusionSolver(TestCase):
     def test_constraint_project_environments(self):
         assert_array_equal(self.solver._env_with_perf.shape, [384, 4])
         assert_array_equal(
-            self.solver_project._env_with_perf.shape, [10000, 4])
+            self.solver_project._env_with_perf.shape, [10021, 4])
 
     def test_constraint_project_extreme_points(self):
         assert_array_equal(self.solver.epigraph_extreme_points.shape, [80, 4])
         assert_array_equal(
-            self.solver_project.epigraph_extreme_points.shape, [193, 4])
+            self.solver_project.epigraph_extreme_points.shape, [194, 4])
 
     def test_constraint_project_solution(self):
         assert_almost_equal(self.solver_project.result.solution, .0)
@@ -179,6 +179,22 @@ class TestMinCollusionSolver(TestCase):
         args = [None, False, None, moment_matrix(2), None]
         solver = self._get_solver(args)
         assert_almost_equal(solver.tolerance, 0.00027320)
+
+    def test_get_interior(self):
+        array = np.array([[1, 2], [1.00001, 1]])
+        assert_array_almost_equal(
+            self.solver._get_interior_dimensions(array),
+            [[2], [1]]
+        )
+
+    def test_degenerate_constraints(self):
+        constraints = [environments.MarkupConstraint(.6),
+                       environments.InformationConstraint(.001, [.65, .48])]
+        solver = MinCollusionIterativeSolver(
+            data=self.data, deviations=[-.02], metric=IsNonCompetitive,
+            plausibility_constraints=constraints, num_points=100.0,
+            tolerance=.3, project=True)
+        assert solver.result.is_solvable
 
 
 class TestConvexSolver(TestCase):

@@ -51,6 +51,8 @@ class DeviationTemptationOverProfits(DimensionlessCollusionMetrics):
 
 
 class MinCollusionSolver:
+    _precision = .0001
+
     def __init__(self, data, deviations, metric, plausibility_constraints,
                  tolerance=None, num_points=1e6, seed=0, project=False,
                  filter_ties=None, moment_matrix=None, moment_weights=None,
@@ -64,12 +66,16 @@ class MinCollusionSolver:
         self._num_points = num_points
         self._project = project
         self._filter_ties = filter_ties
-        self._initial_guesses = np.array([])
+        self._initial_guesses = self._environments_from_demand(21)
         self._moment_matrix = moment_matrix if moment_matrix is not None \
             else auction_data.moment_matrix(len(self._deviations), 'level')
         self._moment_weights = moment_weights if moment_weights is not None \
             else np.ones_like(self._deviations)
         self._confidence_level = confidence_level
+
+    def _environments_from_demand(self, n):
+        return np.array([
+            list(self.demands) + [c] for c in np.linspace(0, 1, n)])
 
     @property
     def environment(self):
@@ -83,7 +89,8 @@ class MinCollusionSolver:
     @property
     def epigraph_extreme_points(self):
         env_perf = self._env_with_perf
-        return env_perf[ConvexHull(env_perf).vertices, :]
+        interior_env_perf = self._get_interior_dimensions(env_perf)
+        return env_perf[ConvexHull(interior_env_perf).vertices, :]
 
     @property
     def _env_with_perf(self):
@@ -91,6 +98,11 @@ class MinCollusionSolver:
             num_points=self._num_points, seed=self._seed)
         return np.append(
             env, np.apply_along_axis(self.metric, 1, env).reshape(-1, 1), 1)
+
+    def _get_interior_dimensions(self, env_perf):
+        variability = np.std(env_perf, axis=0)
+        full_dimensions = variability > self._precision
+        return env_perf[:, full_dimensions]
 
     @staticmethod
     def belief_extreme_points(epigraph):
