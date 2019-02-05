@@ -145,7 +145,7 @@ class MinCollusionSolver:
     def tolerance(self):
         if self._tolerance is None:
             self._tolerance = self._compute_tolerance()
-        return max(self._tolerance, 5e-6)
+        return max(self._tolerance, 1e-7)
 
     def _compute_tolerance(self):
         bootstrap_demand_sample = self.filtered_data.bootstrap_demand_sample(
@@ -195,10 +195,12 @@ class ConvexProblem:
 
     @property
     def _moment_constraint(self):
-        delta = cvxpy.matmul(self._beliefs.T, self.variable) - self._demands
-        moment = cvxpy.matmul(self._moment_matrix, delta)
+        delta = cvxpy.matmul(self._beliefs.T, self.variable) - \
+                self._demands
+        moment = 1e2 * cvxpy.matmul(self._moment_matrix, delta)
         return [cvxpy.matmul(
-            self._moment_weights, cvxpy.square(moment)) <= self._tolerance]
+            self._moment_weights, cvxpy.square(moment)) <= 1e4 *
+                self._tolerance]
 
     @lazy_property.LazyProperty
     def objective(self):

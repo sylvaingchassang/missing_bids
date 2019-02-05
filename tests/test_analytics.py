@@ -168,7 +168,7 @@ class TestMinCollusionSolver(TestCase):
             self.iter_moment.result.solution, 0.61708711, decimal=5)
         assert_array_almost_equal(
             self.iter_moment.result.argmin[cols].iloc[:2],
-            [[0.55712, 0.72525, 0.36095], [0.37061, 0.75192, 0.37151]],
+            [[0.55727, 0.72525, 0.36095], [0.37046, 0.75192, 0.37151]],
             decimal=5)
 
     def test_compute_tolerance(self):
@@ -233,9 +233,10 @@ class TestConvexSolver(TestCase):
         pbm = ConvexProblem(
             self.metrics, self.beliefs, self.demands, tolerance=0,
             moment_weights=weights, moment_matrix=moment_matrix(2))
-        assert_almost_equal(pbm.solution, solution)
-        assert_almost_equal(pbm.variable.value[selection, :], argmin)
+        assert_almost_equal(pbm.solution, solution, decimal=4)
+        assert_almost_equal(pbm.variable.value[selection, :], argmin,
+                            decimal=4)
 
 
 def is_distribution(arr):
-    return all([all(arr >= 0), np.isclose(np.sum(arr), 1.)])
+    return all([all(arr >= -1e-9), np.isclose(np.sum(arr), 1.)])
