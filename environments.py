@@ -15,7 +15,7 @@ class Environment:
     def generate_environments(self, num_points=1e6, seed=0):
         raw_environments = self._generate_raw_environments(num_points, seed)
         raw_environments = self._append_initial_guesses(raw_environments)
-        return self._apply_constraints(raw_environments)
+        return self._apply_constraints(raw_environments).round(9)
 
     def _generate_raw_environments(self, num, seed):
         np.random.seed(seed)
