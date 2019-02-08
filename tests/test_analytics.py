@@ -131,12 +131,12 @@ class TestMinCollusionSolver(TestCase):
     def test_constraint_project_environments(self):
         assert_array_equal(self.solver._env_with_perf.shape, [384, 4])
         assert_array_equal(
-            self.solver_project._env_with_perf.shape, [10021, 4])
+            self.solver_project._env_with_perf.shape, [10000, 4])
 
     def test_constraint_project_extreme_points(self):
         assert_array_equal(self.solver.epigraph_extreme_points.shape, [80, 4])
         assert_array_equal(
-            self.solver_project.epigraph_extreme_points.shape, [194, 4])
+            self.solver_project.epigraph_extreme_points.shape, [193, 4])
 
     def test_constraint_project_solution(self):
         assert_almost_equal(self.solver_project.result.solution, .0)
@@ -195,6 +195,18 @@ class TestMinCollusionSolver(TestCase):
             plausibility_constraints=constraints, num_points=100.0,
             tolerance=.3, project=True)
         assert solver.result.is_solvable
+
+    def test_multidimensional_moment_constraint(self):
+        constraints = [environments.MarkupConstraint(.6),
+                       environments.InformationConstraint(.1, [.69, .25])]
+        solver = MinCollusionSolver(
+            data=self.data, deviations=[-.02], metric=IsNonCompetitive,
+            plausibility_constraints=constraints, num_points=100.0,
+            project=True, moment_matrix=moment_matrix(2),
+            moment_weights=np.identity(2), confidence_level=.95)
+        assert_almost_equal(solver.tolerance, [[0.0001724], [0.0001399]])
+        assert_almost_equal(solver.result.solution, 0)
+        assert_almost_equal(solver.joint_confidence, .9)
 
 
 class TestConvexSolver(TestCase):

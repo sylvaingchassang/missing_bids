@@ -14,8 +14,8 @@ class Environment:
 
     def generate_environments(self, num_points=1e6, seed=0):
         raw_environments = self._generate_raw_environments(num_points, seed)
-        raw_environments = self._append_initial_guesses(raw_environments)
-        return self._apply_constraints(raw_environments).round(9)
+        raw_environments = self._apply_constraints(raw_environments)
+        return self._append_initial_guesses(raw_environments).round(9)
 
     def _generate_raw_environments(self, num, seed):
         np.random.seed(seed)
@@ -29,11 +29,15 @@ class Environment:
         return env
 
     def _append_initial_guesses(self, environments):
-        return environments if self._initial_guesses.size == 0 \
-            else np.concatenate((environments, self._initial_guesses), axis=0)
+        if self._initial_guesses.size == 0:
+            return environments
+        else:
+            guesses = self._apply_constraints(self._initial_guesses, False)
+            return np.concatenate((environments, guesses), axis=0)
 
-    def _apply_constraints(self, env):
-        if self._project_constraint:
+    def _apply_constraints(self, env, proj=None):
+        proj = self._project_constraint if proj is None else proj
+        if proj:
             env = self._project_on_constraint(env)
         env = env[np.apply_along_axis(self._aggregate_constraint, 1, env), :]
         return env

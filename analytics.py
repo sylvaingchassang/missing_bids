@@ -61,7 +61,7 @@ class MinCollusionSolver:
         self.metric = metric(deviations)
         self._deviations = _ordered_deviations(deviations)
         self._constraints = plausibility_constraints
-        self._tolerance = tolerance
+        self._tolerance = None if tolerance is None else np.array(tolerance)
         self._seed = seed
         self._num_points = num_points
         self._project = project
@@ -145,16 +145,26 @@ class MinCollusionSolver:
     def tolerance(self):
         if self._tolerance is None:
             self._tolerance = self._compute_tolerance()
-        return max(self._tolerance, 1e-7)
+        return np.maximum(self._tolerance, 1e-7).reshape(-1, 1)
 
     def _compute_tolerance(self):
+        distances = self._moment_distances
+        return np.percentile(distances, 100 * self._confidence_level,
+                             axis=distances.ndim-1)
+
+    @property
+    def _moment_distances(self):
         bootstrap_demand_sample = self.filtered_data.bootstrap_demand_sample(
             self._deviations, num_samples=100)
         target_demands = np.array(self.demands).reshape(1, -1)
         delta = np.add(bootstrap_demand_sample, -target_demands)
         moments_delta = np.dot(self._moment_matrix, delta.T)
-        distances = np.dot(self._moment_weights, np.square(moments_delta))
-        return np.percentile(distances, 100 * self._confidence_level)
+        return np.dot(self._moment_weights, np.square(moments_delta))
+
+    @property
+    def joint_confidence(self):
+        return np.mean(np.min(
+            self._moment_distances <= self.tolerance, axis=0))
 
     @property
     def result(self):
