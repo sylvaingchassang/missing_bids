@@ -52,7 +52,7 @@ class AuctionData:
         df_bids["lowest"] = self.df_auctions["lowest"]
         df_bids["second_lowest"] = self.df_auctions["second_lowest"]
 
-        df_bids["most_competitive"] = df_bids["lowest"]
+        df_bids["most_competitive"] = np.minimum(df_bids["lowest"], 1)
         is_bid_lowest = np.isclose(df_bids["norm_bid"], df_bids["lowest"])
         df_bids.loc[is_bid_lowest, "most_competitive"] = df_bids.loc[
             is_bid_lowest, "second_lowest"]
