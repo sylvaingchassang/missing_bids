@@ -21,18 +21,22 @@ solutions_all_deviations, share_ties = compute_minimization_solution(
     tsuchiura_before_min_price, all_deviations, .25)
 solutions_up_deviations, _ = compute_minimization_solution(
     tsuchiura_before_min_price, up_deviations, .25)
+share_comp_all_deviations = 1 - solutions_all_deviations
+share_comp_up_deviations = 1 - solutions_up_deviations
 
-solutions_all_deviations_w_ties = solutions_all_deviations * (1 - share_ties)
-solutions_up_deviations_w_ties = solutions_up_deviations * (1 - share_ties)
-solutions_up_deviations_wo_ties = solutions_up_deviations + share_ties * (
-    1 - solutions_up_deviations)
+
+share_comp_all_deviations_w_ties = share_comp_all_deviations * (
+    1 - share_ties)
+share_comp_up_deviations_w_ties = share_comp_up_deviations * (1 - share_ties)
+share_comp_up_deviations_wo_ties = share_comp_up_deviations + \
+                                  share_ties * solutions_up_deviations
 
 print('saving plot\n')
 pretty_plot(
     'Tsuchiura -- Share of Competitive Histories',
-    [solutions_up_deviations_wo_ties,
-     solutions_up_deviations_w_ties,
-     solutions_all_deviations_w_ties],
+    [share_comp_up_deviations_wo_ties,
+     share_comp_up_deviations_w_ties,
+     share_comp_all_deviations_w_ties],
     ['upward dev.', 'upward dev. and ties',
      'upward, downward deviations and ties'],
     ['k.:', 'k.--', 'k.-']
@@ -56,4 +60,5 @@ print('saving plot\n')
 pretty_plot('Tsuchiura -- Deviation Gain', [dev_gain],
             ['before minimum price'],
             list_ks=[0.01, 0.5, 1, 1.5],
-            ylabel='deviation temptation as a share of profits')
+            ylabel='deviation temptation as a share of profits',
+            max_y=.03)

@@ -74,8 +74,8 @@ class ComputeMinimizationSolution:
                 moment_weights=np.array((len(deviations)-1) * [0] + [1])
             )
 
-            share_collusive = this_solver.result.solution
-            solutions.append(1 - share_collusive)
+            collusion_metric = this_solver.result.solution
+            solutions.append(collusion_metric)
             del this_solver
         del filtered_data
         return np.array(solutions), _share_ties

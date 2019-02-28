@@ -28,6 +28,6 @@ for industry, file, deviations in list_data_sets:
     print('saving plot\n')
     pretty_plot(
         industry,
-        np.array([solutions_before, solutions_after]),
+        np.array([1 - solutions_before, 1 - solutions_after]),
         np.array(["before investigation", "after investigation"])
     )
