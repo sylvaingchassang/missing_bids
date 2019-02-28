@@ -2,6 +2,9 @@ from scripts.figures_import_helper import *
 
 # illustrating impact of different IC constraints, using city data
 
+print('data located at \n\t{}'.format(path_data))
+print('plots saved at \n\t{}\n'.format(path_figures))
+
 print('='*20 + '\n' + 'Tsuchiura (before min. price)')
 print('collecting and processing data')
 tsuchiura_data = auction_data.AuctionData(
@@ -26,7 +29,7 @@ solutions_up_deviations_wo_ties = solutions_up_deviations + share_ties * (
 
 print('saving plot\n')
 pretty_plot(
-    'Tsuchiura (before min price)',
+    'Tsuchiura -- Share of Competitive Histories',
     [solutions_up_deviations_wo_ties,
      solutions_up_deviations_w_ties,
      solutions_all_deviations_w_ties],
@@ -49,8 +52,8 @@ print('solving for min temptation')
 dev_gain, _ = min_deviation_temptation_solver(
     tsuchiura_before_min_price, all_deviations)
 
-print('saving plot')
-pretty_plot('Tsuchiura', [dev_gain],
+print('saving plot\n')
+pretty_plot('Tsuchiura -- Deviation Gain', [dev_gain],
             ['before minimum price'],
             list_ks=[0.01, 0.5, 1, 1.5],
             ylabel='deviation temptation as a share of profits')

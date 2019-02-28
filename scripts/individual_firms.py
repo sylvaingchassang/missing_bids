@@ -11,6 +11,7 @@ filter_ties = auction_data.FilterTies(tolerance=.0001)
 filtered_data = filter_ties(national_data)
 share_competitive = []
 
+print('solving minimization problem for each firm')
 for rank in range(10):
     print('firm {}'.format(rank + 1))
     filtered_data_firm = auction_data.AuctionData.from_clean_bids(
@@ -26,11 +27,11 @@ for rank in range(10):
         deviations=deviations,
         metric=analytics.IsNonCompetitive,
         plausibility_constraints=constraints,
-        num_points=30000.0,
+        num_points=num_points,
         seed=0,
         project=False,
         filter_ties=None,
-        number_iterations=500,
+        number_iterations=number_iterations_individual_firms,
         confidence_level=.95,
         moment_matrix=auction_data.moment_matrix(deviations, 'slope'),
         moment_weights=np.array([0, 0, 1])

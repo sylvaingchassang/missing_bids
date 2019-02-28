@@ -21,9 +21,7 @@ if path_data is None:
             path_data = os.path.join(root, name)
             break
 
-print('data located at \n\t{}'.format(path_data))
 path_figures = os.path.join(path_data, 'figures')
-print('plots saved at \n\t{}'.format(path_figures))
 
 if not os.path.exists(path_figures):
     os.makedirs(path_figures)
@@ -32,6 +30,7 @@ if not os.path.exists(path_figures):
 # set global optimization parameters
 num_points = 30000
 number_iterations = 350
+number_iterations_individual_firms = 500
 confidence_level = .95
 
 
@@ -97,4 +96,3 @@ def pretty_plot(title, list_solutions, labels, mark=np.array(['k.:', 'k.-']),
     plt.ylabel(ylabel)
     plt.savefig(os.path.join(path_figures, '{}.pdf'.format(title)))
     plt.clf()
-    # plt.show()
