@@ -17,7 +17,7 @@ print('computing different problem solutions')
 solutions_all_deviations, share_ties = compute_minimization_solution(
     tsuchiura_before_min_price, all_deviations, .25)
 solutions_up_deviations, _ = compute_minimization_solution(
-    tsuchiura_before_min_price, all_deviations, .25)
+    tsuchiura_before_min_price, up_deviations, .25)
 
 solutions_all_deviations_w_ties = solutions_all_deviations * (1 - share_ties)
 solutions_up_deviations_w_ties = solutions_up_deviations * (1 - share_ties)
@@ -35,7 +35,8 @@ pretty_plot(
     ['k.:', 'k.--', 'k.-']
 )
 
-# computing deviation temptation over profits for tsuchiura
+# computing deviation temptation over profits, using city data
+
 print('='*20 + '\n' + 'Tsuchiura, deviation temptation')
 print('collecting and processing data')
 min_deviation_temptation_solver = ComputeMinimizationSolution(

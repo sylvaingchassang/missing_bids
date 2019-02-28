@@ -30,8 +30,8 @@ if not os.path.exists(path_figures):
 
 
 # set global optimization parameters
-num_points = 3000
-number_iterations = 1
+num_points = 30000
+number_iterations = 350
 confidence_level = .95
 
 
@@ -72,7 +72,7 @@ class ComputeMinimizationSolution:
                 number_iterations=number_iterations,
                 confidence_level=confidence_level,
                 moment_matrix=auction_data.moment_matrix(deviations, 'slope'),
-                moment_weights=np.array([0, 0, 1])
+                moment_weights=np.array((len(deviations)-1) * [0] + [1])
             )
 
             share_collusive = this_solver.result.solution
@@ -96,5 +96,5 @@ def pretty_plot(title, list_solutions, labels, mark=np.array(['k.:', 'k.-']),
     plt.xlabel('k')
     plt.ylabel(ylabel)
     plt.savefig(os.path.join(path_figures, '{}.pdf'.format(title)))
-    plt.close()
+    plt.clf()
     # plt.show()
