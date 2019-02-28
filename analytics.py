@@ -5,8 +5,8 @@ from scipy.spatial import ConvexHull
 import cvxpy
 import pandas as pd
 
-from . import environments
-from . import auction_data
+import environments
+import auction_data
 
 
 class DimensionlessCollusionMetrics:
