@@ -1,4 +1,4 @@
-from figures.figures_import_helper import *
+from scripts.figures_import_helper import *
 
 # before/after industry comparisons, using national data
 

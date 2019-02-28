@@ -1,4 +1,4 @@
-from figures.figures_import_helper import *
+from scripts.figures_import_helper import *
 import pandas as pd
 
 print('='*20 + '\n' + 'National sample (individual firms)')

@@ -1,4 +1,4 @@
-from figures.figures_import_helper import *
+from scripts.figures_import_helper import *
 
 # illustrating impact of different IC constraints, using city data
 
