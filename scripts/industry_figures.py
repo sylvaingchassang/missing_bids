@@ -6,7 +6,8 @@ list_data_sets = [
     ('Bridges', 'bc_collusion.csv', [-.025, .0, .001]),
     ('Electric', 'ec_collusion.csv', [-.025, .0, .001]),
     ('Pre-Stressed Concrete', 'pc_collusion.csv', [-.025, .0, .001]),
-    ('Floods', 'fc_collusion.csv', [-.03, .0, .001])]
+    ('Floods', 'fc_collusion.csv', [-.03, .0, .001])
+]
 
 for industry, file, deviations in list_data_sets:
     print('='*20 + '\n' + industry)
@@ -18,9 +19,10 @@ for industry, file, deviations in list_data_sets:
         data.df_bids.loc[data.data.before.isnull()])
 
     print('computing before/after problem solution')
-    solutions_before, _ = compute_minimization_solution(
+    solutions_before, _ = compute_minimization_solution_unfiltered(
         data_before, deviations)
-    solutions_after, _ = compute_minimization_solution(data_after, deviations)
+    solutions_after, _ = compute_minimization_solution_unfiltered(
+        data_after, deviations)
     del data
     del data_before
     del data_after

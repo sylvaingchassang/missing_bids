@@ -30,27 +30,33 @@ if not os.path.exists(path_figures):
 # set global optimization parameters
 num_points = 30000
 number_iterations = 350
-number_iterations_individual_firms = 500
+number_iterations_individual_firms = 5
 confidence_level = .95
+#
 
 
 class ComputeMinimizationSolution:
     def __init__(self, metric=analytics.IsNonCompetitive,
                  list_ks=np.array([0.5, 1, 1.5, 2]),
-                 project_choices=None):
+                 project_choices=None, filtering=True):
         self.metric = metric
         self.list_ks = list_ks
         if project_choices is None:
             project_choices = [False] * len(list_ks)
         self.project_choices = project_choices
+        self.filtering = filtering
 
     def __call__(self, data, deviations, max_markup=.5):
         solutions = []
-        filter_ties = auction_data.FilterTies(tolerance=.0001)
-        filtered_data = filter_ties(data)
-        demands = [filtered_data.get_counterfactual_demand(rho)
+        if self.filtering:
+            filter_ties = auction_data.FilterTies(tolerance=.0001)
+            this_data = filter_ties(data)
+            _share_ties = filter_ties.get_ties(data).mean()
+        else:
+            this_data = data
+            _share_ties = 0
+        demands = [this_data.get_counterfactual_demand(rho)
                    for rho in deviations]
-        _share_ties = filter_ties.get_ties(data).mean()
 
         for k, proj in zip(self.list_ks, self.project_choices):
             constraints = [
@@ -60,7 +66,7 @@ class ComputeMinimizationSolution:
             ]
 
             this_solver = analytics.MinCollusionIterativeSolver(
-                data=filtered_data,
+                data=this_data,
                 deviations=deviations,
                 metric=self.metric,
                 plausibility_constraints=constraints,
@@ -69,19 +75,23 @@ class ComputeMinimizationSolution:
                 project=proj,
                 filter_ties=None,
                 number_iterations=number_iterations,
-                confidence_level=confidence_level,
+                confidence_level=1-.05/len(deviations),
                 moment_matrix=auction_data.moment_matrix(deviations, 'slope'),
-                moment_weights=np.array((len(deviations)-1) * [0] + [1])
+                moment_weights=np.identity(len(deviations))
             )
 
             collusion_metric = this_solver.result.solution
             solutions.append(collusion_metric)
             del this_solver
-        del filtered_data
+        if self.filtering:
+            del this_data
+        del data
         return np.array(solutions), _share_ties
 
 
 compute_minimization_solution = ComputeMinimizationSolution()
+compute_minimization_solution_unfiltered = ComputeMinimizationSolution(
+    filtering=False)
 
 
 def pretty_plot(title, list_solutions, labels, mark=np.array(['k.:', 'k.-']),
