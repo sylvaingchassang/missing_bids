@@ -25,7 +25,7 @@ class AuctionData:
 
     @classmethod
     def from_clean_bids(cls, df_bids):
-        auction_data = cls(df_bids)
+        auction_data = cls(df_bids, clean=False)
         auction_data._df_bids = df_bids
         return auction_data
 
