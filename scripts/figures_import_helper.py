@@ -75,7 +75,7 @@ class ComputeMinimizationSolution:
                 project=proj,
                 filter_ties=None,
                 number_iterations=number_iterations,
-                confidence_level=1-.05/len(deviations),
+                confidence_level=1 - .05/len(deviations),
                 moment_matrix=auction_data.moment_matrix(deviations, 'slope'),
                 moment_weights=np.identity(len(deviations))
             )
