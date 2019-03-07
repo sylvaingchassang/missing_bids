@@ -10,9 +10,7 @@ hist_plot = auction_data.hist_plot
 sns.set_style('white')
 
 # getting data directory
-path_data = '/home/sylvain/Dropbox/Econ/papiers/gameTheory/missing_bids/' \
-            'data/data_for_missing_bids_figures'
-# None #path/to/data (if you know it, otherwise, we'll find it below)
+path_data = None #path/to/data (if you know it, otherwise, we'll find it below)
 
 if path_data is None:
     name = 'data_for_missing_bids_figures'
