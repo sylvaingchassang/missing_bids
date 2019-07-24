@@ -22,6 +22,13 @@ class MultistageAuctionData(AuctionData):
         marginal_info = (1 < new_bids) & (new_bids < self.df_bids['lowest'])
         return (marginal_cont | marginal_info).mean()
 
+    def get_counterfactual_demand(self, rho):
+        counterfactual_demand = self._get_counterfactual_demand(
+            self.df_bids, rho)
+        if rho < 0:
+            counterfactual_demand -= self.get_share_marginal(rho)
+        return counterfactual_demand
+
 
 class MultistageIsNonCompetitive(DimensionlessCollusionMetrics):
 

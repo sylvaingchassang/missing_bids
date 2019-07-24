@@ -49,8 +49,9 @@ class TestAuctionData(TestCase):
         )
 
     def test_counterfactual_demand(self):
-        dmd = self.auctions.get_counterfactual_demand(.05)
-        assert_almost_equal(dmd, 0.02067733151)
+        assert_array_almost_equal(
+            [self.auctions.get_counterfactual_demand(r) for r in [-.05, .05]],
+            [0.86096, 0.02067733151])
 
     def test_demand_function(self):
         dmd = self.auctions.demand_function(start=-.01, stop=.01, num=4)
