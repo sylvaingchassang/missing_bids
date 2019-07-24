@@ -31,9 +31,10 @@ class AuctionData:
 
     @lazy_property.LazyProperty
     def df_auctions(self):
-        auctions = self.data.groupby('pid').norm_bid
+        auction_norm_bids = self.data.groupby('pid').norm_bid
         df_auctions = pd.concat(
-            (auctions.min(), auctions.apply(self._second_lowest_bid)), axis=1)
+            (auction_norm_bids.min(),
+             auction_norm_bids.apply(self._second_lowest_bid)), axis=1)
         df_auctions.columns = ['lowest', 'second_lowest']
         return df_auctions
 
@@ -52,11 +53,14 @@ class AuctionData:
         df_bids["lowest"] = self.df_auctions["lowest"]
         df_bids["second_lowest"] = self.df_auctions["second_lowest"]
 
-        df_bids["most_competitive"] = np.minimum(df_bids["lowest"], 1)
+        df_bids["most_competitive"] = self._truncated_lowest_bid(df_bids)
         is_bid_lowest = np.isclose(df_bids["norm_bid"], df_bids["lowest"])
         df_bids.loc[is_bid_lowest, "most_competitive"] = df_bids.loc[
             is_bid_lowest, "second_lowest"]
         return df_bids.reset_index()
+
+    def _truncated_lowest_bid(self, df_bids):
+        return np.minimum(df_bids["lowest"], 1)
 
     def get_counterfactual_demand(self, rho):
         return self._get_counterfactual_demand(self.df_bids, rho)
@@ -114,7 +118,7 @@ class FilterTies:
         original_data = auction_data.data.copy()
         ties = self.get_ties(auction_data)
         original_data = original_data.loc[~ties]
-        return AuctionData(original_data)
+        return auction_data.__class__(original_data)
 
     def get_ties(self, auction_data):
         return np.isclose(
