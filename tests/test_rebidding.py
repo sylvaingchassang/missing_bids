@@ -1,7 +1,10 @@
 import os
-from rebidding import MultistageAuctionData
+import numpy as np
+from rebidding import MultistageAuctionData, MultistageIsNonCompetitive
 from auction_data import _read_bids
-from numpy.testing import TestCase, assert_array_equal, assert_almost_equal
+from numpy.testing import TestCase, assert_array_almost_equal, \
+    assert_almost_equal
+from parameterized import parameterized
 
 
 class TestMultistageAuctionData(TestCase):
@@ -24,3 +27,30 @@ class TestMultistageAuctionData(TestCase):
     def test_share_marginal(self):
         assert_almost_equal(
             self.auctions.get_share_marginal(-.02), 0.08492171)
+
+
+class TestMultistageIsNonCompetitive(TestCase):
+
+    def setUp(self):
+        self.env = np.array([.5, .4, .3, .8])
+
+    @parameterized.expand([
+        [[-.03, .02], [[0.085, 0.08, 0.066], [-.0075]]],
+        [[-.02, .02], [[0.09, 0.08, 0.066], [-.005]]],
+        [[-.2, .0, .02], [[0., 0.08, 0.066], [-.05]]]
+    ])
+    def test_payoff_penalty(self, deviations, expected):
+        metric = MultistageIsNonCompetitive(deviations, .75)
+        assert_array_almost_equal(
+            metric._get_payoffs(self.env), expected[0])
+        assert_array_almost_equal(
+            metric._get_penalty(self.env), expected[1])
+
+    @parameterized.expand([
+        [[-.03, .02], 0],
+        [[-.02, .02], 1],
+        [[-.2, .0, .02], 0]
+    ])
+    def test_ic(self, deviations, expected):
+        metric = MultistageIsNonCompetitive(deviations, .75)
+        assert_array_almost_equal(metric(self.env), expected)

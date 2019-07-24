@@ -22,9 +22,12 @@ class DimensionlessCollusionMetrics:
         """"""
 
     def _normalized_deviation_temptation(self, env):
-        beliefs, cost = env[:-1], env[-1]
-        payoffs = np.multiply(beliefs, 1 + self._deviations - cost)
+        payoffs = self._get_payoffs(env)
         return np.max(payoffs) - payoffs[self.equilibrium_index]
+
+    def _get_payoffs(self, env):
+        beliefs, cost = env[:-1], env[-1]
+        return np.multiply(beliefs, 1 + self._deviations - cost)
 
 
 def _ordered_deviations(deviations):
