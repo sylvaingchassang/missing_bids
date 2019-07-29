@@ -25,7 +25,7 @@ demands = [filtered_data.get_counterfactual_demand(rho) for rho in deviations]
 print(demands)
 
 
-constraints = [environments.MarkupConstraint(max_markup=.5, min_markup=.01),
+constraints = [environments.MarkupConstraint(max_markup=.5, min_markup=.02),
                environments.InformationConstraint(k=.5, sample_demands=demands)]
 
 min_collusion_solver = analytics.MinCollusionIterativeSolver(
