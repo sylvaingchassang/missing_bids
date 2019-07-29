@@ -32,9 +32,10 @@ class MultistageAuctionData(AuctionData):
 
 class MultistageIsNonCompetitive(DimensionlessCollusionMetrics):
 
-    def __init__(self, deviations, bounds_proba_win=1):
+    max_win_prob = 1
+
+    def __init__(self, deviations):
         super().__init__(deviations)
-        self.max_win_prob = np.array(bounds_proba_win)
 
     def __call__(self, env):
         return self._downward_non_ic(env) | self._upward_non_ic(env)

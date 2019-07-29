@@ -45,7 +45,8 @@ class TestMultistageIsNonCompetitive(TestCase):
         [[-.2, .0, .02], [[0., 0.08, 0.066], [-.05]]]
     ])
     def test_payoff_penalty(self, deviations, expected):
-        metric = MultistageIsNonCompetitive(deviations, .75)
+        MultistageIsNonCompetitive.max_win_prob = .75
+        metric = MultistageIsNonCompetitive(deviations)
         assert_array_almost_equal(
             metric._get_payoffs(self.env), expected[0])
         assert_array_almost_equal(
@@ -57,5 +58,6 @@ class TestMultistageIsNonCompetitive(TestCase):
         [[-.2, .0, .02], 0]
     ])
     def test_ic(self, deviations, expected):
-        metric = MultistageIsNonCompetitive(deviations, .75)
+        MultistageIsNonCompetitive.max_win_prob = .75
+        metric = MultistageIsNonCompetitive(deviations)
         assert_array_almost_equal(metric(self.env), expected)
