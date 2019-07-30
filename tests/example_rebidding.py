@@ -20,12 +20,12 @@ print('share of ties in the filtered data: {}'.format(
     filter_ties.get_ties(filtered_data).mean()))
 
 
-deviations = [-.02, .0, .0008]
+deviations = [-.03, .0, .0008]
 demands = [filtered_data.get_counterfactual_demand(rho) for rho in deviations]
 print(demands)
 
 
-constraints = [environments.MarkupConstraint(max_markup=.5, min_markup=.02),
+constraints = [environments.MarkupConstraint(max_markup=.5, min_markup=.05),
                environments.InformationConstraint(k=.5, sample_demands=demands)]
 
 min_collusion_solver = analytics.MinCollusionIterativeSolver(
@@ -61,7 +61,7 @@ multistage_raw_data.loc[:, 'norm_bid'] = multistage_raw_data.norm_bid * 1.01
 
 multistage_data = rb.MultistageAuctionData(multistage_raw_data)
 
-rb.MultistageIsNonCompetitive.max_win_prob = .65
+rb.MultistageIsNonCompetitive.max_win_prob = 1.
 
 min_collusion_solver = analytics.MinCollusionIterativeSolver(
     data=multistage_data,
