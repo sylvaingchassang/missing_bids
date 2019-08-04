@@ -46,6 +46,8 @@ class MultistageIsNonCompetitive(DimensionlessCollusionMetrics):
         return np.max(upward_payoffs) > upward_payoffs[0]
 
     def _downward_non_ic(self, env):
+        if self.all_upward_dev:
+            return False
         payoffs = self._get_payoffs(env)
         penalty = self._get_penalty(env)
         return (np.max(payoffs[:self.equilibrium_index] + penalty)
@@ -56,3 +58,7 @@ class MultistageIsNonCompetitive(DimensionlessCollusionMetrics):
         return np.multiply(
             self.max_win_prob - downward_beliefs,
             self._deviations[: self.equilibrium_index])
+
+    @property
+    def all_upward_dev(self):
+        return all(self._deviations >= 0)

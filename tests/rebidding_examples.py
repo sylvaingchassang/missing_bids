@@ -5,6 +5,8 @@ hist_plot = auction_data.hist_plot
 import numpy as np
 import rebidding as rb
 
+print('\n>>> \texample without rebidding\n')
+
 
 tsuchiura_data = auction_data.AuctionData('../tests/reference_data/tsuchiura_data.csv')
 tsuchiura_before_min_price = auction_data.AuctionData(
@@ -86,4 +88,43 @@ print('joint confidence: {}'.format(min_collusion_solver.joint_confidence))
 
 result = min_collusion_solver.result
 print('minimum share of collusive auctions: {}'.format(result.solution))
-result.argmin.head()
+
+print('\n>>> \texample rebidding without downward deviations\n')
+
+FC_COLLUSION_PATH = \
+    '/home/sylvain/Dropbox/Econ/papiers/gameTheory/missing_bids/data' \
+    '/data_for_missing_bids_figures/fc_collusion.csv'
+
+deviations = [.0, .001]
+
+multistage_fc_data = rb.MultistageAuctionData(FC_COLLUSION_PATH)
+
+multistage_fc_data_before = rb.MultistageAuctionData(
+    multistage_fc_data.df_bids.loc[multistage_fc_data.data.before == 1])
+
+multistage_demands_fc_before = [
+    multistage_fc_data_before.get_counterfactual_demand(rho) for rho in
+    deviations]
+
+constraints = [
+    environments.MarkupConstraint(max_markup=.5, min_markup=.05),
+    environments.InformationConstraint(
+        k=.5, sample_demands=multistage_demands_fc_before)
+]
+
+min_collusion_solver = analytics.MinCollusionIterativeSolver(
+    data=multistage_fc_data_before,
+    deviations=deviations,
+    metric=rb.MultistageIsNonCompetitive,
+    plausibility_constraints=constraints,
+    num_points=10000.0,
+    seed=0,
+    project=False,
+    filter_ties=None,
+    number_iterations=50,
+    confidence_level=.95,
+    moment_matrix=auction_data.moment_matrix(deviations, 'slope'),
+    moment_weights=np.identity(2)
+)
+share = min_collusion_solver.result.solution
+print('share non collusive: {}'.format(1 - share))

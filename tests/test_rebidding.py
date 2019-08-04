@@ -55,7 +55,8 @@ class TestMultistageIsNonCompetitive(TestCase):
     @parameterized.expand([
         [[-.03, .02], 0],
         [[-.02, .02], 1],
-        [[-.2, .0, .02], 0]
+        [[-.2, .0, .02], 0],
+        [[.01, .02], 0]
     ])
     def test_ic(self, deviations, expected):
         MultistageIsNonCompetitive.max_win_prob = .75
