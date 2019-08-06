@@ -55,6 +55,7 @@ class DeviationTemptationOverProfits(DimensionlessCollusionMetrics):
 
 class MinCollusionSolver:
     _precision = .0001
+    _environment_cls = environments.Environment  # UPDATE
 
     def __init__(self, data, deviations, metric, plausibility_constraints,
                  tolerance=None, num_points=1e6, seed=0, project=False,
@@ -71,9 +72,9 @@ class MinCollusionSolver:
         self._filter_ties = filter_ties
         self._initial_guesses = self._environments_from_demand(21)
         self._moment_matrix = moment_matrix if moment_matrix is not None \
-            else auction_data.moment_matrix(len(self._deviations), 'level')
+            else auction_data.moment_matrix(len(self._deviations), 'level')    # UPDATE
         self._moment_weights = moment_weights if moment_weights is not None \
-            else np.ones_like(self._deviations)
+            else np.ones_like(self._deviations)    # UPDATE
         self._confidence_level = confidence_level
 
     def _environments_from_demand(self, n):
@@ -82,7 +83,7 @@ class MinCollusionSolver:
 
     @property
     def environment(self):
-        return environments.Environment(
+        return self._environment_cls(
             len(self._deviations),
             constraints=self._constraints,
             project_constraint=self._project,
@@ -99,8 +100,8 @@ class MinCollusionSolver:
     def _env_with_perf(self):
         env = self.environment.generate_environments(
             num_points=self._num_points, seed=self._seed)
-        return np.append(
-            env, np.apply_along_axis(self.metric, 1, env).reshape(-1, 1), 1)
+        perf = np.apply_along_axis(self.metric, 1, env).reshape(-1, 1)
+        return np.append(env, perf, 1)
 
     def _get_interior_dimensions(self, env_perf):
         variability = np.std(env_perf, axis=0)
@@ -116,13 +117,13 @@ class MinCollusionSolver:
         return epigraph[:, -1]
 
     @property
-    def demands(self):
+    def demands(self):  # UPDATE
         return np.array([
             self.filtered_data.get_counterfactual_demand(rho)
             for rho in self._deviations])
 
     @property
-    def filtered_data(self) -> auction_data.AuctionData:
+    def filtered_data(self) -> auction_data.AuctionData:   # UPDATE
         if self._filter_ties is not None:
             return self._filter_ties(self._data)
         return self._data
@@ -159,7 +160,7 @@ class MinCollusionSolver:
     @property
     def _moment_distances(self):
         bootstrap_demand_sample = self.filtered_data.bootstrap_demand_sample(
-            self._deviations, num_samples=100)
+            self._deviations, num_samples=100)   # UPDATE
         target_demands = np.array(self.demands).reshape(1, -1)
         delta = np.add(bootstrap_demand_sample, -target_demands)
         moments_delta = np.dot(self._moment_matrix, delta.T)
@@ -182,6 +183,14 @@ class MinCollusionSolver:
     def set_seed(self, seed):
         self._seed = seed
 
+    @property
+    def deviations(self):
+        return self._deviations
+
+    @property
+    def seed(self):
+        return self._seed
+
 
 class ConvexProblem:
     def __init__(self, metrics, beliefs, demands, tolerance,
@@ -191,7 +200,7 @@ class ConvexProblem:
         self._demands = np.array(demands).reshape(-1, 1)
         self._tolerance = tolerance
         self._moment_matrix = moment_matrix if moment_matrix is not None else \
-            auction_data.moment_matrix(len(demands), 'level')
+            auction_data.moment_matrix(len(demands), 'level')  # UPDATE + REPETITIVE
         self._moment_weights = np.ones_like(demands) if \
             moment_weights is None else moment_weights
 
@@ -260,14 +269,15 @@ class MinCollusionResult:
             raise Exception('Constraints cannot be satisfied')
 
 
-class MinCollusionIterativeSolver(MinCollusionSolver):
+class IteratedSolverWrap:
     _solution_threshold = 0.01
 
     def __init__(self, data, deviations, metric, plausibility_constraints,
-                 tolerance=None, num_points=1e6, seed=0, project=False,
+                 solver_cls=MinCollusionSolver, tolerance=None,
+                 num_points=1e6, seed=0, project=False,
                  filter_ties=None, number_iterations=1, moment_matrix=None,
                  moment_weights=None, confidence_level=.95):
-        super(MinCollusionIterativeSolver, self).__init__(
+        self.solver = solver_cls(
             data, deviations, metric, plausibility_constraints,
             tolerance=tolerance, num_points=num_points, seed=seed,
             project=project, filter_ties=filter_ties,
@@ -278,13 +288,14 @@ class MinCollusionIterativeSolver(MinCollusionSolver):
     @property
     def _interim_result(self):
         return MinCollusionResult(
-            self.problem, self.epigraph_extreme_points, self._deviations)
+            self.solver.problem, self.solver.epigraph_extreme_points,
+            self.solver.deviations)
 
     @property
     def result(self):
         selected_guesses = None
         list_solutions = []
-
+        interim_result = None
         for seed_delta in range(self._number_iterations):
             interim_result = self._interim_result
             list_solutions.append(interim_result.solution)
@@ -305,5 +316,8 @@ class MinCollusionIterativeSolver(MinCollusionSolver):
             selected_guesses is not None else selected_argmin
 
     def _set_guesses_and_seed(self, selected_guesses, seed_delta):
-        self.set_initial_guesses(selected_guesses.values)
-        self.set_seed(self._seed + seed_delta + 1)
+        self.solver.set_initial_guesses(selected_guesses.values)
+        self.solver.set_seed(self.solver.seed + seed_delta + 1)
+
+
+MinCollusionIterativeSolver = IteratedSolverWrap
