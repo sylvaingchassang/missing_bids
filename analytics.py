@@ -72,14 +72,22 @@ class MinCollusionSolver:
         self._filter_ties = filter_ties
         self._initial_guesses = self._environments_from_demand(21)
         self._moment_matrix = moment_matrix if moment_matrix is not None \
-            else auction_data.moment_matrix(len(self._deviations), 'level')    # UPDATE
+            else self.default_moment_matrix
         self._moment_weights = moment_weights if moment_weights is not None \
-            else np.ones_like(self._deviations)    # UPDATE
+            else self.default_moment_weights
         self._confidence_level = confidence_level
 
     def _environments_from_demand(self, n):
         return np.array([
             list(self.demands) + [c] for c in np.linspace(0, 1, n)])
+
+    @property
+    def default_moment_matrix(self):
+        return auction_data.moment_matrix(len(self._deviations), 'level')
+
+    @property
+    def default_moment_weights(self):
+        return np.ones_like(self._deviations)
 
     @property
     def environment(self):
@@ -194,15 +202,13 @@ class MinCollusionSolver:
 
 class ConvexProblem:
     def __init__(self, metrics, beliefs, demands, tolerance,
-                 moment_matrix=None, moment_weights=None):
+                 moment_matrix, moment_weights):
         self._metrics = np.array(metrics).reshape(-1, 1)
         self._beliefs = np.array(beliefs)
         self._demands = np.array(demands).reshape(-1, 1)
         self._tolerance = tolerance
-        self._moment_matrix = moment_matrix if moment_matrix is not None else \
-            auction_data.moment_matrix(len(demands), 'level')  # UPDATE + REPETITIVE
-        self._moment_weights = np.ones_like(demands) if \
-            moment_weights is None else moment_weights
+        self._moment_matrix = moment_matrix
+        self._moment_weights = moment_weights
 
     @lazy_property.LazyProperty
     def variable(self):

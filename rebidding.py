@@ -14,13 +14,26 @@ class MultistageAuctionData(AuctionData):
         return (self.df_auctions['lowest'] > 1).mean()
 
     def get_share_marginal(self, rho):
+        self._raise_error_if_neg(rho)
+        return self.share_marginal_info(rho) + self.share_marginal_cont(rho)
+
+    def _raise_error_if_neg(self, rho):
         if rho >= 0:
             raise NotImplementedError(
                 'marginality not implemented for positive values of rho')
-        new_bids = self.df_bids.norm_bid * (1 + rho)
-        marginal_cont = (self.df_bids['lowest'] > 1) & (new_bids < 1)
+
+    def share_marginal_info(self, rho):
+        new_bids = self.bids_after_deviation(rho)
         marginal_info = (1 < new_bids) & (new_bids < self.df_bids['lowest'])
-        return (marginal_cont | marginal_info).mean()
+        return marginal_info.mean()
+
+    def share_marginal_cont(self, rho):
+        new_bids = self.bids_after_deviation(rho)
+        marginal_cont = (self.df_bids['lowest'] > 1) & (new_bids <= 1)
+        return marginal_cont.mean()
+
+    def bids_after_deviation(self, rho):
+        return self.df_bids.norm_bid * (1 + rho)
 
     def get_counterfactual_demand(self, rho):
         counterfactual_demand = self._get_counterfactual_demand(
@@ -31,7 +44,6 @@ class MultistageAuctionData(AuctionData):
 
 
 class MultistageIsNonCompetitive(DimensionlessCollusionMetrics):
-
     max_win_prob = 1
 
     def __init__(self, deviations):

@@ -28,6 +28,14 @@ class TestMultistageAuctionData(TestCase):
         assert_almost_equal(
             self.auctions.get_share_marginal(-.02), 0.08492171)
 
+    def test_share_marginal_cont(self):
+        assert_almost_equal(
+            self.auctions.share_marginal_cont(-.02), 0.08492171)
+
+    def test_share_marginal_info(self):
+        assert_almost_equal(
+            self.auctions.share_marginal_info(-.01), 0.0238257)
+
     def test_get_counterfactual_demand(self):
         assert_array_almost_equal(
             [self.auctions.get_counterfactual_demand(r) for r in [-.05, .05]],
