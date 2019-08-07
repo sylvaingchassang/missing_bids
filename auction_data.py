@@ -1,3 +1,4 @@
+from functools import reduce
 import pandas as pd
 import numpy as np
 import seaborn as sns
@@ -90,8 +91,16 @@ class AuctionData:
         sample_size, random_state, list_rhos = args
         resampled_bids = self.df_bids.sample(
             sample_size, replace=True, random_state=random_state)
-        return [self._get_counterfactual_demand(resampled_bids, rho)
-                for rho in list_rhos]
+        return reduce(extend_or_append, (self._get_counterfactual_demand(
+            resampled_bids, rho) for rho in list_rhos), [])
+
+
+def extend_or_append(l, r):
+    try:
+        l.extend(r)
+    except TypeError:
+        l.append(r)
+    return l
 
 
 def moment_matrix(n, option='slope'):

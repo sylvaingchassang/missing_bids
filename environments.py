@@ -4,29 +4,24 @@ import numpy as np
 from six import add_metaclass
 
 
-class Environment:
+@add_metaclass(abc.ABCMeta)
+class EnvironmentBase:
     def __init__(self, num_actions, constraints=None,
-                 project_constraint=False, initial_guesses=np.array([])):
+                 project_constraint=False, initial_guesses=None):
         self._num_actions = num_actions
         self._constraints = constraints
         self._project_constraint = project_constraint
-        self._initial_guesses = initial_guesses
+        self._initial_guesses = \
+            initial_guesses if initial_guesses is not None else np.array([])
 
     def generate_environments(self, num_points=1e6, seed=0):
         raw_environments = self._generate_raw_environments(num_points, seed)
         raw_environments = self._apply_constraints(raw_environments)
         return self._append_initial_guesses(raw_environments).round(9)
 
+    @abc.abstractmethod
     def _generate_raw_environments(self, num, seed):
-        np.random.seed(seed)
-        env = np.random.rand(int(num), self._num_actions + 1)
-        env = self._descending_sort_beliefs(env)
-        return env
-
-    @staticmethod
-    def _descending_sort_beliefs(env):
-        env[:, :-1] = descending_sort(env[:, :-1])
-        return env
+        """return num * pbm dim array"""
 
     def _append_initial_guesses(self, environments):
         if self._initial_guesses.size == 0:
@@ -51,9 +46,22 @@ class Environment:
         return not self._constraints or all(f(e) for f in self._constraints)
 
 
+class Environment(EnvironmentBase):
+
+    def _generate_raw_environments(self, num, seed):
+        np.random.seed(seed)
+        env = np.random.rand(int(num), self._num_actions + 1)
+        env = self._descending_sort_beliefs(env)
+        return env
+
+    @staticmethod
+    def _descending_sort_beliefs(env):
+        env[:, :-1] = descending_sort(env[:, :-1])
+        return env
+
+
 def descending_sort(arr, axis=1):
     return -np.sort(-np.array(arr), axis=axis)
-
 
 @add_metaclass(abc.ABCMeta)
 class PlausibilityConstraint(object):
@@ -115,3 +123,4 @@ class MarkupConstraint(PlausibilityConstraint):
         e[:, -1] = self._min_cost + e[:, -1] * (
             self._max_cost - self._min_cost)
         return e
+

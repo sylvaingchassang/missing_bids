@@ -100,3 +100,11 @@ class TestAuctionData(TestCase):
             filter_ties.get_ties(self.auctions).mean(), 0.01038121)
         filtered_data = filter_ties(self.auctions)
         assert_almost_equal(filter_ties.get_ties(filtered_data).mean(), 0)
+
+
+def test_extend_or_append():
+    a = []
+    b = auction_data.extend_or_append(a, 1)
+    b = auction_data.extend_or_append(b, [2, 3])
+    assert b == [1, 2, 3]
+    assert a is b
