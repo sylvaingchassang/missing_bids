@@ -214,9 +214,9 @@ class TestRefinedSolvers(TestCase):
     def test_generate_env_perf(self):
         assert_array_almost_equal(
             self.solver._env_with_perf[:3].round(2),
-            [[0.79, 0.22, 0.02, 0.53, 0.38, 0.72, 0.],
-             [0.93, 0.18, 0.02, 0.57, 0.07, 0.76, 1.],
-             [0.98, 0.11, 0.01, 0.87, 0.78, 0.81, 0.]])
+            [[0.83, 0.12, 0.06, 0.09, 0.02, 0.76, 1.],
+             [0.77, 0.04, 0.04, 0.46, 0.26, 0.85, 1.],
+             [0.62, 0.03, 0.08, 0.57, 0.02, 0.79, 0.]])
 
     def test_demand(self):
         assert_array_almost_equal(

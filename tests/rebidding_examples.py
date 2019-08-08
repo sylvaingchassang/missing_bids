@@ -2,15 +2,16 @@ from os import path
 import auction_data
 import analytics
 import environments
-hist_plot = auction_data.hist_plot
 import numpy as np
 import rebidding as rb
 from scripts.figures_import_helper import path_data
 
-print('\n>>> \texample without rebidding\n')
+print('\n>>> \tsetting up data\n')
 
+FC_COLLUSION_PATH = path.join(path_data, 'fc_collusion.csv')
 
-tsuchiura_data = auction_data.AuctionData('../tests/reference_data/tsuchiura_data.csv')
+tsuchiura_data = auction_data.AuctionData(
+    path.join('..', 'tests', 'reference_data', 'tsuchiura_data.csv'))
 tsuchiura_before_min_price = auction_data.AuctionData(
     tsuchiura_data.df_bids.loc[tsuchiura_data.data.minprice.isnull()])
 
@@ -32,6 +33,8 @@ print(demands)
 constraints = [environments.MarkupConstraint(max_markup=.5, min_markup=.05),
                environments.InformationConstraint(k=.5, sample_demands=demands)]
 
+print('\n>>> \texample without rebidding\n')
+
 min_collusion_solver = analytics.MinCollusionIterativeSolver(
     data=tsuchiura_before_min_price,
     deviations=deviations,
@@ -47,10 +50,12 @@ min_collusion_solver = analytics.MinCollusionIterativeSolver(
     moment_weights=np.identity(3)
 )
 
-print('solver demands: {}'.format(min_collusion_solver.demands))
+print('solver demands: {}'.format(min_collusion_solver.solver.demands))
 print('rough tolerance T^2: {}'.format(4. / tsuchiura_before_min_price.df_bids.shape[0]))
-print('bootstrapped tolerance T^2: {}'.format(min_collusion_solver.tolerance))
-print('joint confidence: {}'.format(min_collusion_solver.joint_confidence))
+print('bootstrapped tolerance T^2: {}'.format(
+    min_collusion_solver.solver.tolerance))
+print('joint confidence: {}'.format(
+    min_collusion_solver.solver.joint_confidence))
 
 result = min_collusion_solver.result
 print('minimum share of collusive auctions: {}'.format(result.solution))
@@ -83,17 +88,17 @@ min_collusion_solver = analytics.MinCollusionIterativeSolver(
 )
 
 
-print('solver demands: {}'.format(min_collusion_solver.demands))
+print('solver demands: {}'.format(min_collusion_solver.solver.demands))
 print('rough tolerance T^2: {}'.format(4. / tsuchiura_before_min_price.df_bids.shape[0]))
-print('bootstrapped tolerance T^2: {}'.format(min_collusion_solver.tolerance))
-print('joint confidence: {}'.format(min_collusion_solver.joint_confidence))
+print('bootstrapped tolerance T^2: {}'.format(
+    min_collusion_solver.solver.tolerance))
+print('joint confidence: {}'.format(
+    min_collusion_solver.solver.joint_confidence))
 
 result = min_collusion_solver.result
 print('minimum share of collusive auctions: {}'.format(result.solution))
 
 print('\n>>> \texample rebidding without downward deviations\n')
-
-FC_COLLUSION_PATH = path.join(path_data, 'fc_collusion.csv')
 
 deviations = [.0, .001]
 
@@ -129,7 +134,6 @@ min_collusion_solver = analytics.MinCollusionIterativeSolver(
 share = min_collusion_solver.result.solution
 print('share non collusive: {}'.format(1 - share))
 
-
 print('\n>>> \texample rebidding with more refined IC\n')
 
 
@@ -149,19 +153,20 @@ constraints = [
         k=.5, sample_demands=multistage_demands_fc_before)
 ]
 
-min_collusion_solver = analytics.MinCollusionIterativeSolver(
-#     data=multistage_fc_data_before,
-#     deviations=deviations,
-#     metric=rb.MultistageIsNonCompetitive,
-#     plausibility_constraints=constraints,
-#     num_points=10000.0,
-#     seed=0,
-#     project=False,
-#     filter_ties=None,
-#     number_iterations=50,
-#     confidence_level=.95,
-#     moment_matrix=auction_data.moment_matrix(deviations, 'slope'),
-#     moment_weights=np.identity(2)
-# )
-# share = min_collusion_solver.result.solution
-# print('share non collusive: {}'.format(1 - share))
+min_collusion_solver = rb.IteratedRefinedMultistageSolver(
+    data=multistage_fc_data_before,
+    deviations=deviations,
+    metric=rb.RefinedMultistageIsNonCompetitive,
+    plausibility_constraints=constraints,
+    num_points=1000.0,
+    seed=0,
+    project=True,
+    filter_ties=None,
+    number_iterations=25,
+    confidence_level=.95,
+    moment_matrix=rb.refined_moment_matrix(),
+    moment_weights=np.identity(5)
+)
+min_collusion_solver.max_best_sol_index = 250
+share = min_collusion_solver.result.solution
+print('share non collusive: {}'.format(1 - share))

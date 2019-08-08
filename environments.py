@@ -17,6 +17,9 @@ class EnvironmentBase:
     def generate_environments(self, num_points=1e6, seed=0):
         raw_environments = self._generate_raw_environments(num_points, seed)
         raw_environments = self._apply_constraints(raw_environments)
+        if len(raw_environments) == 0:
+            raise ValueError('Constraints are not satisfied by generated '
+                             'environments')
         return self._append_initial_guesses(raw_environments).round(9)
 
     @abc.abstractmethod

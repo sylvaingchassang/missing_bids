@@ -281,6 +281,7 @@ class MinCollusionResult:
 
 
 class IteratedSolver:
+    max_best_sol_index = 2500
     _solution_threshold = 0.01
     _solver_cls = MinCollusionSolver
 
@@ -320,6 +321,7 @@ class IteratedSolver:
         argmin = interim_result.argmin
         best_sol_idx = np.where(np.cumsum(argmin.prob)
                                 > 1 - self._solution_threshold)[0][0]
+        best_sol_idx = min(best_sol_idx, self.max_best_sol_index)
         argmin.drop(['prob', 'metric'], axis=1, inplace=True)
         selected_argmin = argmin.loc[:best_sol_idx + 1]
 
