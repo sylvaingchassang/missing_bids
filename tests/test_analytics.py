@@ -217,7 +217,10 @@ class TestConvexSolver(TestCase):
             [[.6, .5], [.45, .4], [.7, .6], [.4, .3], [.4, .2]])
         tolerance = .0005
         self.cvx = ConvexProblem(
-            self.metrics, self.beliefs, self.demands, tolerance)
+            self.metrics, self.beliefs, self.demands, tolerance,
+            moment_matrix=moment_matrix(len(self.demands), 'level'),
+            moment_weights=np.ones_like(self.demands)
+        )
         self.res = self.cvx.solution
         self.argmin = self.cvx.variable.value
 
