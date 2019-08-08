@@ -128,3 +128,40 @@ min_collusion_solver = analytics.MinCollusionIterativeSolver(
 )
 share = min_collusion_solver.result.solution
 print('share non collusive: {}'.format(1 - share))
+
+
+print('\n>>> \texample rebidding with more refined IC\n')
+
+
+deviations = [-.02, .0, .001]
+
+multistage_fc_data = rb.RefinedMultistageData(FC_COLLUSION_PATH)
+
+multistage_fc_data_before = rb.RefinedMultistageData(
+    multistage_fc_data.df_bids.loc[multistage_fc_data.data.before == 1])
+
+multistage_demands_fc_before = \
+    multistage_fc_data_before.assemble_target_moments(deviations)
+
+constraints = [
+    environments.MarkupConstraint(max_markup=.5, min_markup=.05),
+    environments.InformationConstraint(
+        k=.5, sample_demands=multistage_demands_fc_before)
+]
+
+min_collusion_solver = analytics.MinCollusionIterativeSolver(
+#     data=multistage_fc_data_before,
+#     deviations=deviations,
+#     metric=rb.MultistageIsNonCompetitive,
+#     plausibility_constraints=constraints,
+#     num_points=10000.0,
+#     seed=0,
+#     project=False,
+#     filter_ties=None,
+#     number_iterations=50,
+#     confidence_level=.95,
+#     moment_matrix=auction_data.moment_matrix(deviations, 'slope'),
+#     moment_weights=np.identity(2)
+# )
+# share = min_collusion_solver.result.solution
+# print('share non collusive: {}'.format(1 - share))

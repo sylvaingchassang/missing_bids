@@ -112,15 +112,15 @@ class MarkupConstraint(PlausibilityConstraint):
         self._max_cost = self._cost_ratio(min_markup)
         self._min_cost = self._cost_ratio(max_markup)
 
-    def __call__(self, e):
-        return self._min_cost <= e[-1] <= self._max_cost
+    def __call__(self, env):
+        return self._min_cost <= env[-1] <= self._max_cost
 
     @staticmethod
     def _cost_ratio(markup):
         return 1. / (1. + markup)
 
-    def project(self, e):
-        e[:, -1] = self._min_cost + e[:, -1] * (
+    def project(self, env):
+        env[:, -1] = self._min_cost + env[:, -1] * (
             self._max_cost - self._min_cost)
-        return e
+        return env
 

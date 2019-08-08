@@ -55,7 +55,7 @@ class DeviationTemptationOverProfits(DimensionlessCollusionMetrics):
 
 class MinCollusionSolver:
     _precision = .0001
-    _environment_cls = environments.Environment  # UPDATE
+    _environment_cls = environments.Environment
 
     def __init__(self, data, deviations, metric, plausibility_constraints,
                  tolerance=None, num_points=1e6, seed=0, project=False,
@@ -125,13 +125,11 @@ class MinCollusionSolver:
         return epigraph[:, -1]
 
     @property
-    def demands(self):  # UPDATE
-        return np.array([
-            self.filtered_data.get_counterfactual_demand(rho)
-            for rho in self._deviations])
+    def demands(self):
+        return self.filtered_data.assemble_target_moments(self.deviations)
 
     @property
-    def filtered_data(self) -> auction_data.AuctionData:   # UPDATE
+    def filtered_data(self) -> auction_data.AuctionData:
         if self._filter_ties is not None:
             return self._filter_ties(self._data)
         return self._data
@@ -168,7 +166,7 @@ class MinCollusionSolver:
     @property
     def _moment_distances(self):
         bootstrap_demand_sample = self.filtered_data.bootstrap_demand_sample(
-            self._deviations, num_samples=100)   # UPDATE
+            self._deviations, num_samples=100)
         target_demands = np.array(self.demands).reshape(1, -1)
         delta = np.add(bootstrap_demand_sample, -target_demands)
         moments_delta = np.dot(self._moment_matrix, delta.T)
@@ -182,8 +180,13 @@ class MinCollusionSolver:
     @property
     def result(self):
         return MinCollusionResult(
-            self.problem, self.epigraph_extreme_points, self._deviations
+            self.problem, self.epigraph_extreme_points, self._deviations,
+            self.argmin_columns
         )
+
+    @property
+    def argmin_columns(self):
+        return [str(d) for d in self._deviations] + ['cost', 'metric']
 
     def set_initial_guesses(self, guesses):
         self._initial_guesses = guesses
@@ -246,12 +249,14 @@ class ConvexProblem:
 
 
 class MinCollusionResult:
-    def __init__(self, problem, epigraph_extreme_points, deviations):
+    def __init__(self, problem, epigraph_extreme_points, deviations,
+                 argmin_cols):
         self._solution = problem.solution
         self._epigraph_extreme_points = epigraph_extreme_points
         self._deviations = deviations
         self._variable = problem.variable.value
         self._solver_data = []
+        self._argmin_cols = argmin_cols
 
     @property
     def solution(self):
@@ -266,7 +271,7 @@ class MinCollusionResult:
         if self.is_solvable:
             df = pd.DataFrame(
                 self._epigraph_extreme_points,
-                columns=[str(d) for d in self._deviations] + ['cost', 'metric']
+                columns=self._argmin_cols
             )
             df["prob"] = self._variable
             df = df.sort_values("prob", ascending=False)
@@ -275,15 +280,15 @@ class MinCollusionResult:
             raise Exception('Constraints cannot be satisfied')
 
 
-class IteratedSolverWrap:
+class IteratedSolver:
     _solution_threshold = 0.01
+    _solver_cls = MinCollusionSolver
 
     def __init__(self, data, deviations, metric, plausibility_constraints,
-                 solver_cls=MinCollusionSolver, tolerance=None,
-                 num_points=1e6, seed=0, project=False,
+                 tolerance=None, num_points=1e6, seed=0, project=False,
                  filter_ties=None, number_iterations=1, moment_matrix=None,
                  moment_weights=None, confidence_level=.95):
-        self.solver = solver_cls(
+        self.solver = self._solver_cls(
             data, deviations, metric, plausibility_constraints,
             tolerance=tolerance, num_points=num_points, seed=seed,
             project=project, filter_ties=filter_ties,
@@ -295,7 +300,7 @@ class IteratedSolverWrap:
     def _interim_result(self):
         return MinCollusionResult(
             self.solver.problem, self.solver.epigraph_extreme_points,
-            self.solver.deviations)
+            self.solver.deviations, self.solver.argmin_columns)
 
     @property
     def result(self):
@@ -326,4 +331,4 @@ class IteratedSolverWrap:
         self.solver.set_seed(self.solver.seed + seed_delta + 1)
 
 
-MinCollusionIterativeSolver = IteratedSolverWrap
+MinCollusionIterativeSolver = IteratedSolver

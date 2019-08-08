@@ -62,6 +62,7 @@ class TestAuctionData(TestCase):
         filter_ties = auction_data.FilterTies(.0001)
         assert np.sum(filter_ties.get_ties(self.auctions)) == 61
         assert filter_ties(self.auctions).df_bids.shape == (5815, 7)
+        assert isinstance(filter_ties(self.auctions), auction_data.AuctionData)
 
     def test_bootstrap(self):
         assert_array_almost_equal(
@@ -100,6 +101,12 @@ class TestAuctionData(TestCase):
             filter_ties.get_ties(self.auctions).mean(), 0.01038121)
         filtered_data = filter_ties(self.auctions)
         assert_almost_equal(filter_ties.get_ties(filtered_data).mean(), 0)
+
+    def test_assemble_target_moments(self):
+        assert_array_almost_equal(
+            self.auctions.assemble_target_moments([-.01, .02]),
+            [0.495575, 0.047651]
+        )
 
 
 def test_extend_or_append():

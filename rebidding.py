@@ -1,6 +1,6 @@
 from auction_data import AuctionData
 from analytics import (DimensionlessCollusionMetrics, _ordered_deviations,
-                       IsNonCompetitive)
+                       IsNonCompetitive, MinCollusionSolver, IteratedSolver)
 from environments import EnvironmentBase, descending_sort
 import numpy as np
 
@@ -124,7 +124,7 @@ class RefinedMultistageIsNonCompetitive(IsNonCompetitive):
 
 class RefinedMultistageEnvironment(EnvironmentBase):
     def _generate_raw_environments(self, num, seed):
-        """win_down, marg_cont, marg_info, reserve, win0, win_up, cost"""
+        """win_down, marg_cont, marg_info, win0, win_up, cost"""
         win_down, marg_cont, marg_info, win0, win_up, cost = \
             range(6)
         np.random.seed(seed)
@@ -137,3 +137,37 @@ class RefinedMultistageEnvironment(EnvironmentBase):
         env[:, marg_info] = np.random.rand(num) * (1 - env[:, win_down])
         env[:, cost] = np.random.rand(num)
         return env
+
+
+def refined_moment_matrix(slope=True):
+    if slope:
+        return np.array([
+            [1, 0, 0, 0, 0],
+            [1, -1, 0, -1, 0],
+            [0, -1, 1, 0, 0],
+            [-1, 0, 0, 1, 0],
+            [0, 0, 0, -1, 1]
+        ])
+    else:
+        return np.identity(5)
+
+
+class RefinedMultistageSolver(MinCollusionSolver):
+    _environment_cls = RefinedMultistageEnvironment
+
+    @property
+    def default_moment_matrix(self):
+        return refined_moment_matrix()
+
+    @property
+    def default_moment_weights(self):
+        return np.array(5 * [1])
+
+    @property
+    def argmin_columns(self):
+        return ['win_down', 'marg_cont', 'marg_info', 'win0', 'win_up',
+                'cost', 'metric']
+
+
+class IteratedRefinedMultistageSolver(IteratedSolver):
+    _solver_cls = RefinedMultistageSolver

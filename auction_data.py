@@ -91,8 +91,12 @@ class AuctionData:
         sample_size, random_state, list_rhos = args
         resampled_bids = self.df_bids.sample(
             sample_size, replace=True, random_state=random_state)
+        return self.assemble_target_moments(list_rhos, resampled_bids)
+
+    def assemble_target_moments(self, list_rhos, df_bids=None):
+        df_bids = self.df_bids if df_bids is None else df_bids
         return reduce(extend_or_append, (self._get_counterfactual_demand(
-            resampled_bids, rho) for rho in list_rhos), [])
+            df_bids, rho) for rho in list_rhos), [])
 
 
 def extend_or_append(l, r):
