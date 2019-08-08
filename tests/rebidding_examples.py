@@ -1,9 +1,11 @@
+from os import path
 import auction_data
 import analytics
 import environments
 hist_plot = auction_data.hist_plot
 import numpy as np
 import rebidding as rb
+from scripts.figures_import_helper import path_data
 
 print('\n>>> \texample without rebidding\n')
 
@@ -91,9 +93,7 @@ print('minimum share of collusive auctions: {}'.format(result.solution))
 
 print('\n>>> \texample rebidding without downward deviations\n')
 
-FC_COLLUSION_PATH = \
-    '/home/sylvain/Dropbox/Econ/papiers/gameTheory/missing_bids/data' \
-    '/data_for_missing_bids_figures/fc_collusion.csv'
+FC_COLLUSION_PATH = path.join(path_data, 'fc_collusion.csv')
 
 deviations = [.0, .001]
 

@@ -59,13 +59,10 @@ class RefinedMultistageData(MultistageAuctionData):
             counterfactual_demand = [
                 counterfactual_demand,
                 self.share_marginal_cont(self.df_bids, rho),
-                self.share_marginal_info(self.df_bids, rho),
-                self.reserve_given_continuation(self.df_bids, rho)
+                self.share_marginal_info(self.df_bids, rho)
             ]
         return counterfactual_demand
 
-    def reserve_given_continuation(self):
-        pass
 
 class MultistageIsNonCompetitive(DimensionlessCollusionMetrics):
     max_win_prob = 1
@@ -114,10 +111,11 @@ class RefinedMultistageIsNonCompetitive(IsNonCompetitive):
         self.rho_down, _, self.rho_up = self._deviations
 
     def _get_payoffs(self, env):
-        win_down, marg_cont, marg_info, reserve, win0, win_up, cost = env
+        win_down, marg_cont, marg_info, win0, win_up, cost = env
+        reserve = 1 + .5 * self._deviations[0]
         v = reserve - cost
-        payoff_down = win_down * (1 + self.rho_down - cost) + \
-                      marg_cont * self.coeff_marginal_cont * v + \
+        payoff_down = win_down * (1 + self.rho_down - cost) - \
+                      marg_cont * self.coeff_marginal_cont * v - \
             marg_info * self.coeff_marginal_info * self.coeff_marginal_cont * v
         return [payoff_down,
                 win0 * (1 - cost),
@@ -127,14 +125,13 @@ class RefinedMultistageIsNonCompetitive(IsNonCompetitive):
 class RefinedMultistageEnvironment(EnvironmentBase):
     def _generate_raw_environments(self, num, seed):
         """win_down, marg_cont, marg_info, reserve, win0, win_up, cost"""
-        win_down, marg_cont, marg_info, reserve, win0, win_up, cost = \
-            range(7)
+        win_down, marg_cont, marg_info, win0, win_up, cost = \
+            range(6)
         np.random.seed(seed)
         num = int(num)
-        env = np.empty((num, 7))
+        env = np.empty((num, 6))
         env[:, [win_down, win0, win_up]] = descending_sort(
             np.random.rand(num, 3))
-        env[:, reserve] = np.random.rand(num)
         env[:, marg_cont] = np.random.rand(num) * (
                 env[:, win_down] - env[:, win0])
         env[:, marg_info] = np.random.rand(num) * (1 - env[:, win_down])

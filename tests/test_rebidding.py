@@ -99,14 +99,14 @@ class TestMultistageIsNonCompetitive(TestCase):
 class TestRefinedMultistageIsNonCompetitive(TestCase):
 
     def setUp(self):
-        self.env = np.array([.5, .1, .05, .97, .3, .15, .95])
+        self.env = np.array([.6, .1, .05, .3, .15, .95])
         self.metric_type = RefinedMultistageIsNonCompetitive
 
     @parameterized.expand([
-        [[-.01, .01], [0.0225, 0.015, 0.009]],
-        [[-.01, 0, .01], [0.0225, 0.015, 0.009]],
-        [[-.05, .02], [0.0025, 0.015, 0.0105]],
-        [[-.05, .1], [0.0025, 0.015, 0.0225]]
+        [[-.01, .01], [0.018375, 0.015, 0.009]],
+        [[-.01, 0, .01], [0.018375, 0.015, 0.009]],
+        [[-.05, .02], [-0.003125, 0.015, 0.0105]],
+        [[-.05, .1], [-0.003125, 0.015, 0.0225]]
     ])
     def test_payoffs(self, deviations, expected):
         metric = self.metric_type(deviations)
@@ -137,7 +137,7 @@ class TestRefinedMultistageEnvironment(TestCase):
     def test_private_generate_raw_environments(self):
         assert_array_almost_equal(
             self.env._generate_raw_environments(3, 1).round(2),
-            [[0.72, 0.06, 0.19, 0.54, 0.42, 0., 0.14],
-             [0.3, 0.14, 0.29, 0.42, 0.15, 0.09, 0.2],
-             [0.4, 0., 0.34, 0.69, 0.35, 0.19, 0.8]]
+            [[0.72, 0.16, 0.06, 0.42, 0., 0.67],
+             [0.3, 0.07, 0.61, 0.15, 0.09, 0.42],
+             [0.4, 0.04, 0.02, 0.35, 0.19, 0.56]]
         )
