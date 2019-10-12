@@ -4,6 +4,7 @@ import analytics
 import environments
 import numpy as np
 import rebidding as rb
+import solvers
 from scripts.figures_import_helper import path_data
 
 print('\n>>> \tsetting up data\n')
@@ -35,7 +36,7 @@ constraints = [environments.MarkupConstraint(max_markup=.5, min_markup=.05),
 
 print('\n>>> \texample without rebidding\n')
 
-min_collusion_solver = analytics.MinCollusionIterativeSolver(
+min_collusion_solver = solvers.MinCollusionIterativeSolver(
     data=tsuchiura_before_min_price,
     deviations=deviations,
     metric=analytics.IsNonCompetitive,
@@ -72,7 +73,7 @@ multistage_data = rb.MultistageAuctionData(multistage_raw_data)
 
 rb.MultistageIsNonCompetitive.max_win_prob = 1.
 
-min_collusion_solver = analytics.MinCollusionIterativeSolver(
+min_collusion_solver = solvers.MinCollusionIterativeSolver(
     data=multistage_data,
     deviations=deviations,
     metric=rb.MultistageIsNonCompetitive,
@@ -117,7 +118,7 @@ constraints = [
         k=.5, sample_demands=multistage_demands_fc_before)
 ]
 
-min_collusion_solver = analytics.MinCollusionIterativeSolver(
+min_collusion_solver = solvers.MinCollusionIterativeSolver(
     data=multistage_fc_data_before,
     deviations=deviations,
     metric=rb.MultistageIsNonCompetitive,

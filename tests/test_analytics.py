@@ -8,7 +8,8 @@ from .. import environments
 from ..auction_data import AuctionData, moment_matrix, FilterTies
 from ..analytics import (
     IsNonCompetitive, NormalizedDeviationTemptation, MinCollusionSolver,
-    MinCollusionIterativeSolver, ConvexProblem, DeviationTemptationOverProfits)
+    ConvexProblem, DeviationTemptationOverProfits)
+from solvers import MinCollusionIterativeSolver
 
 
 class TestCollusionMetrics(TestCase):
