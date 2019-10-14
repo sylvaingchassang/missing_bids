@@ -1,14 +1,20 @@
 import environments
 import numpy as np
-import rebidding as rb
 from itertools import product
+from os import path
 
+import rebidding as rb
+from scripts.figures_import_helper import path_data
+
+print('\n>>> \tsetup')
 m_array = [0, .05, .1, .15, .2]
 
 deviations = [-.02, .0, .001]
 
+PC_COLLUSION_PATH = path.join(path_data, 'pc_collusion.csv')
+
 multistage_pc_data = rb.RefinedMultistageData(
-    '~/Desktop/missing_bids_troubleshooting/pc_collusion.csv')
+    PC_COLLUSION_PATH)
 
 multistage_pc_data_after = rb.RefinedMultistageData(
     multistage_pc_data.df_bids.loc[multistage_pc_data.data.before.isnull()])
