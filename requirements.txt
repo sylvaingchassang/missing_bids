@@ -7,3 +7,6 @@ six
 parameterized
 cvxpy
 coverage
+pytest
+pytest-cov
+pytest-xdist
