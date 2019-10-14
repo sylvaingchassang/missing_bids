@@ -278,3 +278,7 @@ class MinCollusionResult:
             return df.reset_index(drop=True)
         else:
             raise Exception('Constraints cannot be satisfied')
+
+    def argmin_array(self, quantile=None):
+        argmin = np.concatenate((self._variable,
+                                 self._epigraph_extreme_points))

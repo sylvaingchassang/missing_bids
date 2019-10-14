@@ -1,5 +1,7 @@
 import numpy as np
 import pandas as pd
+import multiprocessing
+from functools import partial
 
 from analytics import MinCollusionSolver, MinCollusionResult
 
@@ -59,3 +61,26 @@ class IteratedSolver:
 
 MinCollusionIterativeSolver = IteratedSolver
 
+
+class ParallelSolver:
+    _solver_cls = MinCollusionSolver
+
+    def __init__(self, data, deviations, metric, plausibility_constraints,
+                 tolerance=None, num_points=1e6, seed=0, project=False,
+                 filter_ties=None, num_evaluations=1, moment_matrix=None,
+                 moment_weights=None, confidence_level=.95):
+
+        self._number_evaluations = num_evaluations
+
+        def get_solver(sub_seed):
+            return self._solver_cls(
+                data=data, deviations=deviations, metric=metric,
+                plausibility_constraints=plausibility_constraints,
+                tolerance=tolerance, num_points=num_points,
+                project=project, filter_ties=filter_ties, seed=seed + sub_seed,
+                moment_matrix=moment_matrix, moment_weights=moment_weights,
+                confidence_level=confidence_level)
+        self.get_solver = get_solver
+
+    def get_interim_result(self, sub_seed):
+        solver = self.get_solver(sub_seed)

@@ -1,6 +1,7 @@
 *.idea/*
 *tests/.idea*
 *tests/.pytest_cache/*
+*.coverage*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
