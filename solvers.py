@@ -44,18 +44,16 @@ class IteratedSolver:
         return interim_result
 
     def _get_new_guesses(self, interim_result, selected_guesses):
-        argmin = interim_result.argmin
-        best_sol_idx = np.where(np.cumsum(argmin.prob)
-                                > 1 - self._solution_threshold)[0][0]
-        best_sol_idx = min(best_sol_idx, self.max_best_sol_index)
-        argmin.drop(['prob', 'metric'], axis=1, inplace=True)
-        selected_argmin = argmin.loc[:best_sol_idx + 1]
+        argmin = interim_result.argmin_array_quantile(
+            1 - self._solution_threshold)
+        argmin = argmin[:self.max_best_sol_index + 1]
+        selected_argmin = argmin[:, 1:-1]
 
-        return pd.concat([selected_guesses, selected_argmin]) if \
+        return np.concatenate((selected_guesses, selected_argmin), axis=0) if \
             selected_guesses is not None else selected_argmin
 
     def _set_guesses_and_seed(self, selected_guesses, seed_delta):
-        self.solver.set_initial_guesses(selected_guesses.values)
+        self.solver.set_initial_guesses(selected_guesses)
         self.solver.set_seed(self.solver.seed + seed_delta + 1)
 
 
@@ -69,7 +67,6 @@ class ParallelSolver:
                  tolerance=None, num_points=1e6, seed=0, project=False,
                  filter_ties=None, num_evaluations=1, moment_matrix=None,
                  moment_weights=None, confidence_level=.95):
-
         self._number_evaluations = num_evaluations
 
         def get_solver(sub_seed):

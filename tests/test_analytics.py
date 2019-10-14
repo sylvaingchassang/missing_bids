@@ -138,10 +138,11 @@ class TestMinCollusionSolver(TestCase):
 
     def test_argmin_quantile(self):
         argmin = self.solver.result.argmin_array_quantile(.9)
-        assert argmin.shape == (2, 5)
+        assert argmin.shape == (3, 5)
         assert_array_almost_equal(
             argmin, [[0.5919, 0.6822, 0.3629, 0.9626, 0.],
-                     [0.303379, 0.718859, 0.360351, 0.693249, 1.]], decimal=4)
+                     [0.303379, 0.718859, 0.360351, 0.693249, 1.],
+                     [0.1046, 0.6258, 0.3596, 0.9917, 0.]], decimal=4)
 
     def test_constraint_project_environments(self):
         assert_array_equal(self.solver._env_with_perf.shape, [384, 4])

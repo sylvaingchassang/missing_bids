@@ -240,7 +240,7 @@ class TestRefinedSolvers(TestCase):
 
     def test_iter(self):
         assert_almost_equal(
-            self.iter_solver.result.solution, 0.27142, decimal=5)
+            self.iter_solver.result.solution, 0.271439, decimal=5)
 
     def test_iter_argmin(self):
         cols = ['prob'] + self.iter_solver.solver.argmin_columns

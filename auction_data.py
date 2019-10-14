@@ -83,9 +83,12 @@ class AuctionData:
     def bootstrap_demand_sample(self, list_rhos, num_samples=100):
         pool = multiprocessing.Pool()
         sample_size = self.df_bids.shape[0]
-        return pd.DataFrame(pool.map(
+        bootstrap = pd.DataFrame(pool.map(
             self._single_bootstrap,
             [(sample_size, i, list_rhos) for i in range(num_samples)]))
+        pool.close()
+        pool.join()
+        return bootstrap
 
     def _single_bootstrap(self, args):
         sample_size, random_state, list_rhos = args

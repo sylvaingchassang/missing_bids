@@ -275,6 +275,7 @@ class MinCollusionResult:
     def argmin_array_quantile(self, quantile=1):
         sorted_argmin = self._sorted_argmin_array()
         sel = np.cumsum(sorted_argmin[:, 0]) <= quantile
+        sel[sum(sel)] = True
         return sorted_argmin[sel]
 
     def _sorted_argmin_array(self):
