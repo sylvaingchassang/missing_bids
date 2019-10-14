@@ -60,7 +60,7 @@ for m_0, seed in product(m_array, [0, 1, 2]):
         seed=seed,
         project=True,
         filter_ties=None,
-        number_evaluations=25,
+        num_evaluations=25,
         confidence_level=.95,
         moment_matrix=rb.refined_moment_matrix(),
         moment_weights=np.identity(5)
