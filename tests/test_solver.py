@@ -1,4 +1,5 @@
 import os
+import numpy as np
 from numpy.testing import TestCase, assert_array_equal, \
     assert_array_almost_equal, assert_almost_equal
 from solvers import ParallelSolver
@@ -13,11 +14,10 @@ class TestParallelSolver(TestCase):
         path = os.path.join(
             os.path.dirname(__file__), 'reference_data', 'tsuchiura_data.csv')
         self.data = AuctionData(bidding_data_or_path=path)
-        self.constraints = [environments.MarkupConstraint(.6),
-                            environments.InformationConstraint(.5, [.65, .48])]
+        self.constraints = [environments.MarkupConstraint(.6)]
         self.ps = ParallelSolver(
             self.data, [-.02], IsNonCompetitive, self.constraints,
-            tolerance=None, num_points=1000, seed=1, project=False,
+            num_points=200, seed=1, project=True,
             filter_ties=None, num_evaluations=5, moment_matrix=None,
             moment_weights=None, confidence_level=.95
         )
@@ -26,3 +26,18 @@ class TestParallelSolver(TestCase):
         solver = self.ps.get_solver(sub_seed=2)
         isinstance(solver, MinCollusionSolver)
         assert solver._seed == 3
+
+    def test_tolerance(self):
+        assert_almost_equal(self.ps.tolerance, 0.00024576331835932043)
+
+    def test_get_interim_results(self):
+        assert_array_almost_equal(
+            self.ps.get_interim_result(0)[:2],
+            [[4.063856e-01, 9.186018e-01, 4.020250e-04, 9.912847e-01, 0],
+             [1.069201e-01, 1.350792e-01, 1.263295e-01, 8.146233e-01, 0]]
+        )
+        assert_array_almost_equal(
+            self.ps.get_interim_result(1)[:2],
+            [[0.386962, 0.993852, 0.067144, 0.988968, 0.],
+             [0.079128, 0.101488, 0.087256, 0.93857, 0.]]
+        )

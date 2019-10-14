@@ -124,7 +124,7 @@ class MinCollusionSolver:
     def metric_extreme_points(epigraph):
         return epigraph[:, -1]
 
-    @property
+    @lazy_property.LazyProperty
     def demands(self):
         return self.filtered_data.assemble_target_moments(self.deviations)
 

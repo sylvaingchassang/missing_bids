@@ -3,6 +3,8 @@ import pandas as pd
 import multiprocessing
 from functools import partial
 
+import lazy_property
+
 from analytics import MinCollusionSolver, MinCollusionResult
 
 
@@ -62,14 +64,15 @@ MinCollusionIterativeSolver = IteratedSolver
 
 class ParallelSolver:
     _solver_cls = MinCollusionSolver
+    _solution_threshold = 0.01
 
     def __init__(self, data, deviations, metric, plausibility_constraints,
-                 tolerance=None, num_points=1e6, seed=0, project=False,
+                 num_points=1e6, seed=0, project=False,
                  filter_ties=None, num_evaluations=1, moment_matrix=None,
                  moment_weights=None, confidence_level=.95):
         self._number_evaluations = num_evaluations
 
-        def get_solver(sub_seed):
+        def get_solver(sub_seed, tolerance=None):
             return self._solver_cls(
                 data=data, deviations=deviations, metric=metric,
                 plausibility_constraints=plausibility_constraints,
@@ -80,4 +83,12 @@ class ParallelSolver:
         self.get_solver = get_solver
 
     def get_interim_result(self, sub_seed):
-        solver = self.get_solver(sub_seed)
+        solver = self.get_solver(sub_seed, tolerance=self.tolerance)
+        return solver.result.argmin_array_quantile(
+            1 - self._solution_threshold)
+
+    @lazy_property.LazyProperty
+    def tolerance(self):
+        return self.get_solver(0).tolerance
+
+    
