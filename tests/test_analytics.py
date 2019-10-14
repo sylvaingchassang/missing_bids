@@ -129,6 +129,13 @@ class TestMinCollusionSolver(TestCase):
             [[0.5919, 0.6822, 0.3629, 0.9626, 0.],
              [0.303379, 0.718859, 0.360351, 0.693249, 1.]], decimal=4)
 
+    def test_argmin_array(self):
+        argmin = self.solver.result._sorted_argmin_array()
+        assert_array_almost_equal(
+            argmin[:2],
+            [[0.5919, 0.6822, 0.3629, 0.9626, 0.],
+             [0.303379, 0.718859, 0.360351, 0.693249, 1.]], decimal=4)
+
     def test_constraint_project_environments(self):
         assert_array_equal(self.solver._env_with_perf.shape, [384, 4])
         assert_array_equal(

@@ -279,6 +279,15 @@ class MinCollusionResult:
         else:
             raise Exception('Constraints cannot be satisfied')
 
-    def argmin_array(self, quantile=None):
-        argmin = np.concatenate((self._variable,
-                                 self._epigraph_extreme_points))
+    def argmin_array_quantile(self, quantile=None):
+        sorted_argmin = self._sorted_argmin_array()
+        sel = np.cumsum(sorted_argmin[:, 0]) <= quantile
+        return sorted_argmin[sel]
+
+    def _sorted_argmin_array(self):
+        if self.is_solvable:
+            argmin = np.concatenate((self._variable,
+                                     self._epigraph_extreme_points), axis=1)
+            return argmin[(-argmin[:, 0]).argsort(axis=0)]
+        else:
+            raise Exception('Constraints cannot be satisfied')
