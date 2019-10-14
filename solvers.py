@@ -68,27 +68,57 @@ class ParallelSolver:
 
     def __init__(self, data, deviations, metric, plausibility_constraints,
                  num_points=1e6, seed=0, project=False,
-                 filter_ties=None, num_evaluations=1, moment_matrix=None,
+                 filter_ties=None, num_evaluations=10, moment_matrix=None,
                  moment_weights=None, confidence_level=.95):
         self._number_evaluations = num_evaluations
+        self._seed = seed
+        self._kwargs = dict(
+            data=data, deviations=deviations, metric=metric,
+            plausibility_constraints=plausibility_constraints,
+            num_points=num_points, project=project,
+            filter_ties=filter_ties,
+            moment_matrix=moment_matrix, moment_weights=moment_weights,
+            confidence_level=confidence_level)
 
-        def get_solver(sub_seed, tolerance=None):
-            return self._solver_cls(
-                data=data, deviations=deviations, metric=metric,
-                plausibility_constraints=plausibility_constraints,
-                tolerance=tolerance, num_points=num_points,
-                project=project, filter_ties=filter_ties, seed=seed + sub_seed,
-                moment_matrix=moment_matrix, moment_weights=moment_weights,
-                confidence_level=confidence_level)
-        self.get_solver = get_solver
+    def get_solver(self, sub_seed, tolerance=None):
+        return self._solver_cls(
+            seed=self._seed + sub_seed, tolerance=tolerance, **self._kwargs)
 
     def get_interim_result(self, sub_seed):
         solver = self.get_solver(sub_seed, tolerance=self.tolerance)
         return solver.result.argmin_array_quantile(
             1 - self._solution_threshold)
 
+    def get_interim_solution(self, sub_seed):
+        solver = self.get_solver(sub_seed, tolerance=self.tolerance)
+        return solver.result.solution
+
     @lazy_property.LazyProperty
     def tolerance(self):
         return self.get_solver(0).tolerance
 
-    
+    def get_all_interim_results(self):
+        return self.parallel_solve(self.get_interim_result)
+
+    def get_all_interim_solutions(self):
+        return self.parallel_solve(self.get_interim_solution)
+
+    def parallel_solve(self, func):
+        _ = self.tolerance
+        pool = multiprocessing.Pool()
+        list_sol = pool.map(func, range(self._number_evaluations))
+        pool.close()
+        pool.join()
+        return list_sol
+
+    def get_interim_guesses(self):
+        list_argmins = self.get_all_interim_results()
+        selected_argmins = np.concatenate(list_argmins, axis=0)
+        return selected_argmins[:, 1:-1]
+
+    @property
+    def result(self):
+        solver = self.get_solver(
+            sub_seed=self._number_evaluations, tolerance=self.tolerance)
+        solver.set_initial_guesses(self.get_interim_guesses())
+        return solver.result
