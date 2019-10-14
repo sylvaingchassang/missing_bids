@@ -181,8 +181,7 @@ class MinCollusionSolver:
     def result(self):
         return MinCollusionResult(
             self.problem, self.epigraph_extreme_points, self._deviations,
-            self.argmin_columns
-        )
+            self.argmin_columns)
 
     @property
     def argmin_columns(self):
@@ -268,18 +267,12 @@ class MinCollusionResult:
 
     @property
     def argmin(self):
-        if self.is_solvable:
-            df = pd.DataFrame(
-                self._epigraph_extreme_points,
-                columns=self._argmin_cols
-            )
-            df["prob"] = self._variable
-            df = df.sort_values("prob", ascending=False)
-            return df.reset_index(drop=True)
-        else:
-            raise Exception('Constraints cannot be satisfied')
+        df = pd.DataFrame(
+                self._sorted_argmin_array(),
+                columns=["prob"] + self._argmin_cols)
+        return df.reset_index(drop=True)
 
-    def argmin_array_quantile(self, quantile=None):
+    def argmin_array_quantile(self, quantile=1):
         sorted_argmin = self._sorted_argmin_array()
         sel = np.cumsum(sorted_argmin[:, 0]) <= quantile
         return sorted_argmin[sel]
