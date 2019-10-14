@@ -4,10 +4,12 @@ from numpy.testing import TestCase, assert_array_almost_equal, \
     assert_almost_equal
 from parameterized import parameterized
 
-from rebidding import (MultistageAuctionData, MultistageIsNonCompetitive,
+from rebidding import (
+    MultistageAuctionData, MultistageIsNonCompetitive,
     RefinedMultistageData, RefinedMultistageIsNonCompetitive,
     RefinedMultistageEnvironment, refined_moment_matrix,
-    RefinedMultistageSolver, IteratedRefinedMultistageSolver)
+    RefinedMultistageSolver, IteratedRefinedMultistageSolver,
+    ParallelRefinedMultistageSolver)
 from auction_data import _read_bids, FilterTies
 from environments import MarkupConstraint
 from .test_analytics import is_distribution
@@ -191,13 +193,14 @@ class TestRefinedSolvers(TestCase):
         filter_ties = FilterTies(.0001)
         markup_constraint = MarkupConstraint(.5, .02)
         self.data = filter_ties(RefinedMultistageData(_load_multistage_data()))
-        args = (self.data, [-.02, 0, .002],
-            RefinedMultistageIsNonCompetitive, [markup_constraint])
+        args = (self.data, [-.02, 0, .002], 
+                RefinedMultistageIsNonCompetitive, [markup_constraint])
         kwargs = dict(
-            tolerance=None, num_points=1e3, seed=0, project=False,
+            num_points=1e3, seed=0, project=False,
             filter_ties=filter_ties, moment_matrix=None, moment_weights=None,
             confidence_level=.95)
         self.solver = RefinedMultistageSolver(*args, **kwargs)
+        self.parallel_solver = ParallelRefinedMultistageSolver(*args, **kwargs)
         kwargs['number_iterations'] = 10
         self.iter_solver = IteratedRefinedMultistageSolver(*args, **kwargs)
 
@@ -249,3 +252,6 @@ class TestRefinedSolvers(TestCase):
             df.iloc[:2],
             [[.59, .51, .09, .025, .13, .086, .98, 0.],
              [.27, 1.0, .065, 0, .3, .29, .86, 1.]], decimal=1)
+
+    def test_parallel_solution(self):
+        assert_almost_equal(self.parallel_solver.result.solution, 0.30190327)
