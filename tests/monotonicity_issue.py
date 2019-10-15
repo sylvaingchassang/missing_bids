@@ -2,9 +2,11 @@ import environments
 import numpy as np
 from itertools import product
 from os import path
+from time import time
 
 import rebidding as rb
 from scripts.figures_import_helper import path_data
+t0 = time()
 
 print('\n>>> \tsetup')
 m_array = [0, .05, .1, .15, .2]
@@ -23,7 +25,7 @@ multistage_demands_pc_after = \
     multistage_pc_data_after.assemble_target_moments(deviations)
 
 print('>>> iterated solver')
-for m_0, seed in product(m_array, [0, 1, 2]):
+for m_0, seed in product(m_array, [0]):
     constraints = [
         environments.MarkupConstraint(max_markup=.5, min_markup=m_0)]
 
@@ -46,8 +48,11 @@ for m_0, seed in product(m_array, [0, 1, 2]):
     print('min markup {}, seed {} | share non collusive: {}'.format(
         m_0, seed, 1 - share))
 
-print('>>> parallel solver')
-for m_0, seed in product(m_array, [0, 1, 2]):
+t1 = time()
+print('computation time: {}s'.format(t1-t0))
+
+print('\n>>> parallel solver')
+for m_0, seed in product(m_array, [0]):
     constraints = [
         environments.MarkupConstraint(max_markup=.5, min_markup=m_0)]
 
@@ -69,3 +74,6 @@ for m_0, seed in product(m_array, [0, 1, 2]):
     share = min_collusion_solver.result.solution
     print('min markup {}, seed {} | share non collusive: {}'.format(
         m_0, seed, 1 - share))
+
+t2 = time()
+print('computation time: {}s'.format(t2-t1))
