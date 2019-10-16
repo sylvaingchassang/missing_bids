@@ -38,7 +38,7 @@ for m_0, seed in product(m_array, [0]):
         seed=seed,
         project=True,
         filter_ties=None,
-        number_iterations=25,
+        number_iterations=250,
         confidence_level=.95,
         moment_matrix=rb.refined_moment_matrix(),
         moment_weights=np.identity(5)
@@ -52,7 +52,7 @@ t1 = time()
 print('computation time: {}s'.format(t1-t0))
 
 print('\n>>> parallel solver')
-for m_0, seed in product(m_array, [0]):
+for m_0, seed in product(m_array, [1]):
     constraints = [
         environments.MarkupConstraint(max_markup=.5, min_markup=m_0)]
 
@@ -61,11 +61,11 @@ for m_0, seed in product(m_array, [0]):
         deviations=deviations,
         metric=rb.RefinedMultistageIsNonCompetitive,
         plausibility_constraints=constraints,
-        num_points=1000.0,
+        num_points=10000,
         seed=seed,
-        project=True,
+        project=False,
         filter_ties=None,
-        num_evaluations=25,
+        num_evaluations=200,
         confidence_level=.95,
         moment_matrix=rb.refined_moment_matrix(),
         moment_weights=np.identity(5)
@@ -77,3 +77,4 @@ for m_0, seed in product(m_array, [0]):
 
 t2 = time()
 print('computation time: {}s'.format(t2-t1))
+
