@@ -40,11 +40,11 @@ ensure_dir(os.path.join(path_figures, 'R2'))
 
 
 # set global optimization parameters
-num_points = 5000 #30000
-num_evaluations = 200
-number_iterations = 5
-number_iterations_individual_firms = 5
-confidence_level = .95
+NUM_POINTS = 5000 #30000
+NUM_EVAL = 200
+NUM_ITER = 5
+NUM_ITER_FIRMS = 5
+CONFIDENCE_LEVEL = .95
 
 
 def markup_info_constraints(max_markups, ks, demands):
@@ -63,21 +63,16 @@ def round1_constraints(max_markup=.5):
 class ComputeMinimizationSolution:
     def __init__(self, metric=analytics.IsNonCompetitive,
                  constraint_func=round1_constraints(),
-                 project_choices=None, filtering=True):
+                 project_choices=None, filtering=True, seed=0):
         self.metric = metric
         self.constraint_func = constraint_func
         self._project_choices = project_choices
         self.filtering = filtering
+        self.seed = seed
 
     def __call__(self, data, deviations):
         solutions = []
-        if self.filtering:
-            filter_ties = auction_data.FilterTies(tolerance=.0001)
-            this_data = filter_ties(data)
-            _share_ties = filter_ties.get_ties(data).mean()
-        else:
-            this_data = data
-            _share_ties = 0
+        _share_ties, this_data = self._apply_filter(data)
         demands = [this_data.get_counterfactual_demand(rho)
                    for rho in deviations]
         iter_constraints = self.constraint_func(demands)
@@ -86,28 +81,42 @@ class ComputeMinimizationSolution:
             [False] * len(iter_constraints)
 
         for constraints, proj in zip(iter_constraints, project_choices):
-            this_solver = solvers.MinCollusionIterativeSolver(
-                data=this_data,
-                deviations=deviations,
-                metric=self.metric,
-                plausibility_constraints=constraints,
-                num_points=int(num_points/(1 + 9 * proj)),
-                seed=0,
-                project=proj,
-                filter_ties=None,
-                number_iterations=number_iterations,
-                confidence_level=1 - .05/len(deviations),
-                moment_matrix=auction_data.moment_matrix(deviations, 'slope'),
-                moment_weights=np.identity(len(deviations))
-            )
-
+            this_solver = self.get_solver(
+                this_data, deviations, constraints, proj)
             collusion_metric = this_solver.result.solution
             solutions.append(collusion_metric)
             del this_solver
+
         if self.filtering:
             del this_data
         del data
         return np.array(solutions), _share_ties
+
+    def get_solver(self, this_data, deviations, constraints, proj):
+        return solvers.MinCollusionIterativeSolver(
+            data=this_data,
+            deviations=deviations,
+            metric=self.metric,
+            plausibility_constraints=constraints,
+            num_points=int(NUM_POINTS / (1 + 9 * proj)),
+            seed=self.seed,
+            project=proj,
+            filter_ties=None,
+            number_iterations=NUM_ITER,
+            confidence_level=1 - .05 / len(deviations),
+            moment_matrix=auction_data.moment_matrix(deviations, 'slope'),
+            moment_weights=np.identity(len(deviations))
+        )
+
+    def _apply_filter(self, data):
+        if self.filtering:
+            filter_ties = auction_data.FilterTies(tolerance=.0001)
+            this_data = filter_ties(data)
+            _share_ties = filter_ties.get_ties(data).mean()
+        else:
+            this_data = data
+            _share_ties = 0
+        return _share_ties, this_data
 
 
 compute_minimization_solution = ComputeMinimizationSolution()

@@ -26,11 +26,11 @@ for rank in range(30):
         deviations=deviations,
         metric=analytics.IsNonCompetitive,
         plausibility_constraints=constraints,
-        num_points=num_points,
+        num_points=NUM_POINTS,
         seed=0,
         project=False,
         filter_ties=None,
-        number_iterations=number_iterations_individual_firms,
+        number_iterations=NUM_ITER_FIRMS,
         confidence_level=1-.05/len(deviations),
         moment_matrix=auction_data.moment_matrix(deviations, 'slope'),
         moment_weights=np.identity(len(deviations))
