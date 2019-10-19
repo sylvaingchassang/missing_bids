@@ -67,7 +67,7 @@ class TestMinCollusionSolver(TestCase):
             tolerance=tol, plausibility_constraints=self.constraints, seed=0,
             num_points=10000, filter_ties=_filt, moment_matrix=mom_mat)
         if solver == MinCollusionIterativeSolver:
-            arg_dict.update({'number_iterations': num})
+            arg_dict.update({'number_evaluations': num})
         return solver(self.data, **arg_dict)
 
     def test_deviations(self):

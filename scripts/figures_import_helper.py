@@ -61,14 +61,16 @@ def round1_constraints(max_markup=.5):
 
 
 class ComputeMinimizationSolution:
-    def __init__(self, metric=analytics.IsNonCompetitive,
-                 constraint_func=round1_constraints(),
-                 project_choices=None, filtering=True, seed=0):
+    def __init__(
+            self, metric=analytics.IsNonCompetitive,
+            constraint_func=round1_constraints(), project_choices=None,
+            filtering=True, seed=0, solver_cls=solvers.IteratedSolver):
         self.metric = metric
         self.constraint_func = constraint_func
         self._project_choices = project_choices
         self.filtering = filtering
         self.seed = seed
+        self.solver_cls = solver_cls
 
     def __call__(self, data, deviations):
         solutions = []
@@ -93,7 +95,7 @@ class ComputeMinimizationSolution:
         return np.array(solutions), _share_ties
 
     def get_solver(self, this_data, deviations, constraints, proj):
-        return solvers.MinCollusionIterativeSolver(
+        return self.solver_cls(
             data=this_data,
             deviations=deviations,
             metric=self.metric,
@@ -102,7 +104,7 @@ class ComputeMinimizationSolution:
             seed=self.seed,
             project=proj,
             filter_ties=None,
-            number_iterations=NUM_ITER,
+            number_evaluations=NUM_ITER,
             confidence_level=1 - .05 / len(deviations),
             moment_matrix=auction_data.moment_matrix(deviations, 'slope'),
             moment_weights=np.identity(len(deviations))
@@ -125,11 +127,10 @@ compute_minimization_solution_unfiltered = ComputeMinimizationSolution(
 
 
 def pretty_plot(title, list_solutions, labels, mark=np.array(['k.:', 'k.-']),
-                xticks=(0.5, 1, 1.5, 2),
-                ylabel='share of competitive histories',
-                xlabel='k',
-                max_y=1.05):
-    plt.title(title)
+                xticks=(0.5, 1, 1.5, 2), max_y=1.05, xlabel='k',
+                ylabel='share of competitive histories'):
+    plt_title = title.split('/')[1]
+    plt.title(plt_title)
     for i, (solutions, label) in enumerate(zip(list_solutions, labels)):
         plt.plot(xticks, solutions, mark[i], label=label)
     plt.legend(loc='lower right')

@@ -201,7 +201,7 @@ class TestRefinedSolvers(TestCase):
             confidence_level=.95)
         self.solver = RefinedMultistageSolver(*args, **kwargs)
         self.parallel_solver = ParallelRefinedMultistageSolver(*args, **kwargs)
-        kwargs['number_iterations'] = 10
+        kwargs['number_evaluations'] = 10
         self.iter_solver = IteratedRefinedMultistageSolver(*args, **kwargs)
 
     def test_moment_matrix(self):

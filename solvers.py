@@ -12,7 +12,7 @@ class IteratedSolver:
 
     def __init__(self, data, deviations, metric, plausibility_constraints,
                  tolerance=None, num_points=1e6, seed=0, project=False,
-                 filter_ties=None, number_iterations=1, moment_matrix=None,
+                 filter_ties=None, number_evaluations=1, moment_matrix=None,
                  moment_weights=None, confidence_level=.95):
         self.solver = self._solver_cls(
             data, deviations, metric, plausibility_constraints,
@@ -20,7 +20,7 @@ class IteratedSolver:
             project=project, filter_ties=filter_ties,
             moment_matrix=moment_matrix, moment_weights=moment_weights,
             confidence_level=confidence_level)
-        self._number_iterations = number_iterations
+        self._number_iterations = number_evaluations
 
     @property
     def _interim_result(self):
