@@ -1,4 +1,3 @@
-import solvers
 from scripts.figures_import_helper import *
 import pandas as pd
 

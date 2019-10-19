@@ -1,12 +1,13 @@
-import auction_data
-import analytics
-import environments
 import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
 import os
+from datetime import datetime
 
 import solvers
+import auction_data
+import analytics
+import environments
 
 hist_plot = auction_data.hist_plot
 sns.set_style('white')
@@ -22,7 +23,8 @@ if path_data is None:
             path_data = os.path.join(root, name)
             break
 
-path_figures = os.path.join(path_data, 'figures')
+path_figures = os.path.join(path_data, 'figures',
+                            datetime.utcnow().strftime('%Y%m%d'))
 
 if not os.path.exists(path_figures):
     os.makedirs(path_figures)
