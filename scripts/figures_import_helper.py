@@ -5,11 +5,14 @@ import os
 from datetime import datetime
 import pandas as pd
 from itertools import product
+from typing import Union
 
 import solvers
 import auction_data
 import analytics
 import environments
+import rebidding
+
 
 hist_plot = auction_data.hist_plot
 sns.set_style('white')
@@ -64,7 +67,8 @@ class ComputeMinimizationSolution:
     def __init__(
             self, metric=analytics.IsNonCompetitive,
             constraint_func=round1_constraints(), project_choices=None,
-            filtering=True, seed=0, solver_cls=solvers.IteratedSolver):
+            filtering=True, seed=0,
+            solver_cls=solvers.IteratedSolver):
         self.metric = metric
         self.constraint_func = constraint_func
         self._project_choices = project_choices
@@ -123,6 +127,18 @@ class ComputeMinimizationSolution:
 
 compute_minimization_solution = ComputeMinimizationSolution()
 compute_minimization_solution_unfiltered = ComputeMinimizationSolution(
+    filtering=False)
+
+compute_solution_parallel = ComputeMinimizationSolution(
+    solver_cls=solvers.ParallelSolver)
+compute_solution_parallel_unfiltered = ComputeMinimizationSolution(
+    solver_cls=solvers.ParallelSolver, filtering=False)
+compute_solution_rebidding = ComputeMinimizationSolution(
+    solver_cls=rebidding.ParallelRefinedMultistageSolver,
+    metric=rebidding.RefinedMultistageIsNonCompetitive)
+compute_solution_rebidding_unfiltered = ComputeMinimizationSolution(
+    solver_cls=rebidding.ParallelRefinedMultistageSolver,
+    metric=rebidding.RefinedMultistageIsNonCompetitive,
     filtering=False)
 
 
