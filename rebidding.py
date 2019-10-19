@@ -1,6 +1,7 @@
 from auction_data import AuctionData
 from analytics import (DimensionlessCollusionMetrics, _ordered_deviations,
-                       IsNonCompetitive, MinCollusionSolver, IteratedSolver)
+                       IsNonCompetitive, MinCollusionSolver)
+from solvers import IteratedSolver, ParallelSolver
 from environments import EnvironmentBase, descending_sort
 import numpy as np
 
@@ -170,4 +171,8 @@ class RefinedMultistageSolver(MinCollusionSolver):
 
 
 class IteratedRefinedMultistageSolver(IteratedSolver):
+    _solver_cls = RefinedMultistageSolver
+
+
+class ParallelRefinedMultistageSolver(ParallelSolver):
     _solver_cls = RefinedMultistageSolver

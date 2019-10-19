@@ -124,7 +124,7 @@ class MinCollusionSolver:
     def metric_extreme_points(epigraph):
         return epigraph[:, -1]
 
-    @property
+    @lazy_property.LazyProperty
     def demands(self):
         return self.filtered_data.assemble_target_moments(self.deviations)
 
@@ -181,8 +181,7 @@ class MinCollusionSolver:
     def result(self):
         return MinCollusionResult(
             self.problem, self.epigraph_extreme_points, self._deviations,
-            self.argmin_columns
-        )
+            self.argmin_columns)
 
     @property
     def argmin_columns(self):
@@ -268,69 +267,21 @@ class MinCollusionResult:
 
     @property
     def argmin(self):
+        df = pd.DataFrame(
+                self._sorted_argmin_array(),
+                columns=["prob"] + self._argmin_cols)
+        return df.reset_index(drop=True)
+
+    def argmin_array_quantile(self, quantile=1):
+        sorted_argmin = self._sorted_argmin_array()
+        sel = np.cumsum(sorted_argmin[:, 0]) <= quantile
+        sel[sum(sel)] = True
+        return sorted_argmin[sel]
+
+    def _sorted_argmin_array(self):
         if self.is_solvable:
-            df = pd.DataFrame(
-                self._epigraph_extreme_points,
-                columns=self._argmin_cols
-            )
-            df["prob"] = self._variable
-            df = df.sort_values("prob", ascending=False)
-            return df.reset_index(drop=True)
+            argmin = np.concatenate((self._variable,
+                                     self._epigraph_extreme_points), axis=1)
+            return argmin[(-argmin[:, 0]).argsort(axis=0)]
         else:
             raise Exception('Constraints cannot be satisfied')
-
-
-class IteratedSolver:
-    max_best_sol_index = 2500
-    _solution_threshold = 0.01
-    _solver_cls = MinCollusionSolver
-
-    def __init__(self, data, deviations, metric, plausibility_constraints,
-                 tolerance=None, num_points=1e6, seed=0, project=False,
-                 filter_ties=None, number_iterations=1, moment_matrix=None,
-                 moment_weights=None, confidence_level=.95):
-        self.solver = self._solver_cls(
-            data, deviations, metric, plausibility_constraints,
-            tolerance=tolerance, num_points=num_points, seed=seed,
-            project=project, filter_ties=filter_ties,
-            moment_matrix=moment_matrix, moment_weights=moment_weights,
-            confidence_level=confidence_level)
-        self._number_iterations = number_iterations
-
-    @property
-    def _interim_result(self):
-        return MinCollusionResult(
-            self.solver.problem, self.solver.epigraph_extreme_points,
-            self.solver.deviations, self.solver.argmin_columns)
-
-    @property
-    def result(self):
-        selected_guesses = None
-        list_solutions = []
-        interim_result = None
-        for seed_delta in range(self._number_iterations):
-            interim_result = self._interim_result
-            list_solutions.append(interim_result.solution)
-            selected_guesses = self._get_new_guesses(
-                interim_result, selected_guesses)
-            self._set_guesses_and_seed(selected_guesses, seed_delta)
-        interim_result._solver_data = {'iterated_solutions': list_solutions}
-        return interim_result
-
-    def _get_new_guesses(self, interim_result, selected_guesses):
-        argmin = interim_result.argmin
-        best_sol_idx = np.where(np.cumsum(argmin.prob)
-                                > 1 - self._solution_threshold)[0][0]
-        best_sol_idx = min(best_sol_idx, self.max_best_sol_index)
-        argmin.drop(['prob', 'metric'], axis=1, inplace=True)
-        selected_argmin = argmin.loc[:best_sol_idx + 1]
-
-        return pd.concat([selected_guesses, selected_argmin]) if \
-            selected_guesses is not None else selected_argmin
-
-    def _set_guesses_and_seed(self, selected_guesses, seed_delta):
-        self.solver.set_initial_guesses(selected_guesses.values)
-        self.solver.set_seed(self.solver.seed + seed_delta + 1)
-
-
-MinCollusionIterativeSolver = IteratedSolver

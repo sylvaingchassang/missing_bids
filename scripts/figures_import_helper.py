@@ -6,11 +6,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 
+import solvers
+
 hist_plot = auction_data.hist_plot
 sns.set_style('white')
 
 # getting data directory
-path_data = None #path/to/data (if you know it, otherwise, we'll find it below)
+# path/to/data (if you know it, otherwise, we'll find it below)
+path_data = None
 
 if path_data is None:
     name = 'data_for_missing_bids_figures'
@@ -63,7 +66,7 @@ class ComputeMinimizationSolution:
                 environments.InformationConstraint(k=k, sample_demands=demands)
             ]
 
-            this_solver = analytics.MinCollusionIterativeSolver(
+            this_solver = solvers.MinCollusionIterativeSolver(
                 data=this_data,
                 deviations=deviations,
                 metric=self.metric,

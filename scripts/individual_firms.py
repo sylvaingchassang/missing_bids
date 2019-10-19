@@ -1,3 +1,4 @@
+import solvers
 from scripts.figures_import_helper import *
 import pandas as pd
 
@@ -22,7 +23,7 @@ for rank in range(30):
         environments.MarkupConstraint(max_markup=.5, min_markup=.02),
         environments.InformationConstraint(k=1, sample_demands=demand_firm)]
 
-    min_collusion_solver = analytics.MinCollusionIterativeSolver(
+    min_collusion_solver = solvers.MinCollusionIterativeSolver(
         data=filtered_data_firm,
         deviations=deviations,
         metric=analytics.IsNonCompetitive,
