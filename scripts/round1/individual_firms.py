@@ -1,5 +1,4 @@
 from scripts.figures_import_helper import *
-import pandas as pd
 
 print('='*20 + '\n' + 'National sample (individual firms)')
 print('collecting and processing data')
@@ -40,5 +39,4 @@ for rank in range(30):
     share_competitive.append(
         [rank + 1, 1 - min_collusion_solver.result.solution])
 
-pd.DataFrame(data=share_competitive, columns=['rank', 'share_comp']).to_csv(
-    os.path.join(path_figures, 'individual_firms.csv'), index=False)
+save2frame(share_competitive, ['rank', 'share_comp'], 'R1/individual_firms')

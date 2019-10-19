@@ -22,7 +22,7 @@ solutions_below, _ = compute_minimization_solution(
 
 print('saving plot\n')
 pretty_plot(
-        'high vs low normalized bids',
+        'R1/high vs low normalized bids',
         [1 - solutions_above, 1 - solutions_below],
         ["normalized bid above .8", "normalized bid below .8"]
    )
