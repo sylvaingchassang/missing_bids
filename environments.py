@@ -66,6 +66,7 @@ class Environment(EnvironmentBase):
 def descending_sort(arr, axis=1):
     return -np.sort(-np.array(arr), axis=axis)
 
+
 @add_metaclass(abc.ABCMeta)
 class PlausibilityConstraint(object):
 

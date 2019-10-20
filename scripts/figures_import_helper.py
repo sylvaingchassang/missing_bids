@@ -43,9 +43,8 @@ ensure_dir(os.path.join(path_figures, 'R2'))
 
 
 # set global optimization parameters
-NUM_POINTS = 5000 #30000
-NUM_EVAL = 200
-NUM_ITER = 5
+NUM_POINTS = 1000 #30000
+NUM_EVAL = 3
 NUM_ITER_FIRMS = 5
 CONFIDENCE_LEVEL = .95
 
@@ -63,24 +62,29 @@ def round1_constraints(max_markup=.5):
         max_markups=(max_markup,), ks=(0.5, 1, 1.5, 2), demands=demands)
 
 
+def round2_constraints(demands):
+    return [
+        [environments.MarkupConstraint(max_markup=.5, min_markup=min_markup)]
+        for min_markup in [.05, .1, .15, .2]
+    ]
+
+
 class ComputeMinimizationSolution:
     def __init__(
             self, metric=analytics.IsNonCompetitive,
             constraint_func=round1_constraints(), project_choices=None,
-            filtering=True, seed=0,
-            solver_cls=solvers.IteratedSolver):
+            filtering=True, seed=0, solver_cls=None):
         self.metric = metric
         self.constraint_func = constraint_func
         self._project_choices = project_choices
         self.filtering = filtering
         self.seed = seed
-        self.solver_cls = solver_cls
+        self.solver_cls = solver_cls or solvers.IteratedSolver
 
     def __call__(self, data, deviations):
         solutions = []
         _share_ties, this_data = self._apply_filter(data)
-        demands = [this_data.get_counterfactual_demand(rho)
-                   for rho in deviations]
+        demands = this_data.assemble_target_moments(deviations)
         iter_constraints = self.constraint_func(demands)
         project_choices = \
             self._project_choices if self._project_choices is not None else \
@@ -108,11 +112,21 @@ class ComputeMinimizationSolution:
             seed=self.seed,
             project=proj,
             filter_ties=None,
-            number_evaluations=NUM_ITER,
+            num_evaluations=NUM_EVAL,
             confidence_level=1 - .05 / len(deviations),
-            moment_matrix=auction_data.moment_matrix(deviations, 'slope'),
-            moment_weights=np.identity(len(deviations))
+            moment_matrix=self._moment_matrix(deviations),
+            moment_weights=self._moment_weights(deviations)
         )
+
+    def _moment_matrix(self, deviations):
+        if self.solver_cls == rebidding.ParallelRefinedMultistageSolver:
+            return rebidding.refined_moment_matrix()
+        return auction_data.moment_matrix(deviations, 'slope')
+
+    def _moment_weights(self, deviations):
+        if self.solver_cls == rebidding.ParallelRefinedMultistageSolver:
+            return np.identity(5)
+        return np.identity(len(deviations))
 
     def _apply_filter(self, data):
         if self.filtering:
@@ -134,9 +148,11 @@ compute_solution_parallel = ComputeMinimizationSolution(
 compute_solution_parallel_unfiltered = ComputeMinimizationSolution(
     solver_cls=solvers.ParallelSolver, filtering=False)
 compute_solution_rebidding = ComputeMinimizationSolution(
+    constraint_func=round2_constraints,
     solver_cls=rebidding.ParallelRefinedMultistageSolver,
     metric=rebidding.RefinedMultistageIsNonCompetitive)
 compute_solution_rebidding_unfiltered = ComputeMinimizationSolution(
+    constraint_func=round2_constraints,
     solver_cls=rebidding.ParallelRefinedMultistageSolver,
     metric=rebidding.RefinedMultistageIsNonCompetitive,
     filtering=False)

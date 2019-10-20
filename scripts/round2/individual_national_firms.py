@@ -30,7 +30,7 @@ for rank in range(30):
         seed=0,
         project=False,
         filter_ties=None,
-        number_evaluations=NUM_ITER_FIRMS,
+        num_evaluations=NUM_ITER_FIRMS,
         confidence_level=1-.05/len(deviations),
         moment_matrix=auction_data.moment_matrix(deviations, 'slope'),
         moment_weights=np.identity(len(deviations))

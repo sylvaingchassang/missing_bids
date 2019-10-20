@@ -170,7 +170,7 @@ min_collusion_solver = solvers.MinCollusionIterativeSolver(
     seed=0,
     project=True,
     filter_ties=None,
-    number_iterations=50,
+    num_evaluations=50,
     confidence_level=.98,
     moment_matrix=auction_data.moment_matrix(deviations, 'slope'),
     moment_weights=np.identity(3)
@@ -291,7 +291,7 @@ for min_markup in [.4]:
         seed=0,
         project=True,
         filter_ties=None,
-        number_iterations=25,
+        num_evaluations=25,
         confidence_level=.95,
         moment_matrix=rb.refined_moment_matrix(),
         moment_weights=np.identity(5)

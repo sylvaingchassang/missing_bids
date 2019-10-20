@@ -52,7 +52,6 @@ class MultistageAuctionData(AuctionData):
 
 
 class RefinedMultistageData(MultistageAuctionData):
-
     def _get_counterfactual_demand(self, df_bids, rho):
         counterfactual_demand = AuctionData._get_counterfactual_demand(
             df_bids, rho)
