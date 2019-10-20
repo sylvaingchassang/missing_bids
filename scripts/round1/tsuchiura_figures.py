@@ -16,9 +16,15 @@ tsuchiura_before_min_price = auction_data.AuctionData(
 all_deviations = [-.02, .0, .0008]
 up_deviations = [.0, .0008]
 
+
+def tsuchiura_round1_constraints_a(demands):
+    return markup_info_constraints(
+        max_markups=(.25,), ks=(0.5, 1, 1.5, 2), demands=demands)
+
+
 print('computing different problem solutions')
 compute_minimization_solution_tsuchiura = ComputeMinimizationSolution(
-    constraint_func=round1_constraints(.25))
+    constraint_func=tsuchiura_round1_constraints_a)
 solutions_all_deviations, share_ties = compute_minimization_solution_tsuchiura(
     tsuchiura_before_min_price, all_deviations)
 solutions_up_deviations, _ = compute_minimization_solution_tsuchiura(
@@ -47,14 +53,14 @@ print('='*20 + '\n' + 'Tsuchiura, deviation temptation')
 print('collecting and processing data')
 
 
-def tsuchiura_round1_constraints(demands):
+def tsuchiura_round1_constraints_b(demands):
     return markup_info_constraints(
         max_markups=(.5,), ks=(0.01, 0.5, 1, 1.5), demands=demands)
 
 
 min_deviation_temptation_solver = ComputeMinimizationSolution(
     metric=analytics.DeviationTemptationOverProfits,
-    constraint_func=tsuchiura_round1_constraints,
+    constraint_func=tsuchiura_round1_constraints_b,
     project_choices=[True, False, False, False]
 )
 

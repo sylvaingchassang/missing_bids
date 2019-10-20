@@ -5,7 +5,6 @@ import os
 from datetime import datetime
 import pandas as pd
 from itertools import product
-from typing import Union
 
 import solvers
 import auction_data
@@ -43,7 +42,7 @@ ensure_dir(os.path.join(path_figures, 'R2'))
 
 
 # set global optimization parameters
-NUM_POINTS = 1000 #30000
+NUM_POINTS = 5000 #30000
 NUM_EVAL = 3
 NUM_ITER_FIRMS = 5
 CONFIDENCE_LEVEL = .95
@@ -57,9 +56,9 @@ def markup_info_constraints(max_markups, ks, demands):
     ]
 
 
-def round1_constraints(max_markup=.5):
-    return lambda demands: markup_info_constraints(
-        max_markups=(max_markup,), ks=(0.5, 1, 1.5, 2), demands=demands)
+def round1_constraints(demands):
+    return markup_info_constraints(
+        max_markups=(.5,), ks=(0.5, 1, 1.5, 2), demands=demands)
 
 
 def round2_constraints(demands):
@@ -72,7 +71,7 @@ def round2_constraints(demands):
 class ComputeMinimizationSolution:
     def __init__(
             self, metric=analytics.IsNonCompetitive,
-            constraint_func=round1_constraints(), project_choices=None,
+            constraint_func=round1_constraints, project_choices=None,
             filtering=True, seed=0, solver_cls=None):
         self.metric = metric
         self.constraint_func = constraint_func
@@ -87,20 +86,27 @@ class ComputeMinimizationSolution:
         demands = this_data.assemble_target_moments(deviations)
         iter_constraints = self.constraint_func(demands)
         project_choices = \
-            self._project_choices if self._project_choices is not None else \
-            [False] * len(iter_constraints)
+            self._project_choices or [False] * len(iter_constraints)
 
         for constraints, proj in zip(iter_constraints, project_choices):
             this_solver = self.get_solver(
                 this_data, deviations, constraints, proj)
-            collusion_metric = this_solver.result.solution
-            solutions.append(collusion_metric)
+            solutions.append(this_solver.result.solution)
             del this_solver
 
-        if self.filtering:
-            del this_data
+        del this_data
         del data
         return np.array(solutions), _share_ties
+
+    def _apply_filter(self, data):
+        if self.filtering:
+            filter_ties = auction_data.FilterTies(tolerance=.0001)
+            this_data = filter_ties(data)
+            _share_ties = filter_ties.get_ties(data).mean()
+        else:
+            this_data = data
+            _share_ties = 0
+        return _share_ties, this_data
 
     def get_solver(self, this_data, deviations, constraints, proj):
         return self.solver_cls(
@@ -119,24 +125,17 @@ class ComputeMinimizationSolution:
         )
 
     def _moment_matrix(self, deviations):
-        if self.solver_cls == rebidding.ParallelRefinedMultistageSolver:
+        if self._is_rebidding():
             return rebidding.refined_moment_matrix()
         return auction_data.moment_matrix(deviations, 'slope')
 
     def _moment_weights(self, deviations):
-        if self.solver_cls == rebidding.ParallelRefinedMultistageSolver:
+        if self._is_rebidding():
             return np.identity(5)
         return np.identity(len(deviations))
 
-    def _apply_filter(self, data):
-        if self.filtering:
-            filter_ties = auction_data.FilterTies(tolerance=.0001)
-            this_data = filter_ties(data)
-            _share_ties = filter_ties.get_ties(data).mean()
-        else:
-            this_data = data
-            _share_ties = 0
-        return _share_ties, this_data
+    def _is_rebidding(self):
+        return self.solver_cls == rebidding.ParallelRefinedMultistageSolver
 
 
 compute_minimization_solution = ComputeMinimizationSolution()

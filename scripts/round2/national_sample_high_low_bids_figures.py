@@ -21,6 +21,13 @@ solutions_below, _ = compute_solution_rebidding(
      national_data_below, deviations)
 
 print('saving plot\n')
-pretty_plot('R2/high vs low normalized bids',
+pretty_plot('R2/high vs low normalized bids (national auctions)',
             [1 - solutions_above, 1 - solutions_below],
-            ["normalized bid above .8", "normalized bid below .8"])
+            ["normalized bid above .8", "normalized bid below .8"],
+            xlabel='m',
+            xticks=(.05, .1, .15, .2))
+
+print('saving data\n')
+save2frame([1 - solutions_above, 1 - solutions_below],
+           ['min_m={}'.format(m) for m in [.05, .1, .15, .2]],
+           'R2/high vs low normalized bids (national auctions)')
