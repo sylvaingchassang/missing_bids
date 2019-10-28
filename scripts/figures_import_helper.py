@@ -42,8 +42,8 @@ ensure_dir(os.path.join(path_figures, 'R2'))
 
 
 # set global optimization parameters
-NUM_POINTS = 5000 #30000
-NUM_EVAL = 3
+NUM_POINTS = 2000
+NUM_EVAL = 200 #2
 NUM_ITER_FIRMS = 5
 CONFIDENCE_LEVEL = .95
 
