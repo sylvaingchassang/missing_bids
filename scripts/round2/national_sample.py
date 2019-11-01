@@ -27,14 +27,15 @@ for coeff_marginal_info in list_coeffs:
     list_solutions.append(1 - solutions)
 
 print('saving plot\n')
-pretty_plot('R2/national_auctions',
+pretty_plot('R2/national auctions',
             list_solutions,
             [r"\alpha={}".format(coeff) for coeff in list_coeffs],
             xlabel='m',
+            mark=np.array(['k.:', 'k.-', 'k.--']),
             xticks=r2_min_mkps)
 
 print('saving data\n')
-save2frame(solutions,
-           ['min_m={}'.format(m) for m in [.05, .1, .15, .2]],
+save2frame(list_solutions,
+           ['min_m={}'.format(m) for m in r2_min_mkps],
            'R2/national_auctions',
            list_coeffs)

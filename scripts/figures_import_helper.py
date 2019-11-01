@@ -151,9 +151,10 @@ compute_minimization_solution_unfiltered = ComputeMinimizationSolution(
     filtering=False)
 
 compute_solution_parallel = ComputeMinimizationSolution(
-    solver_cls=solvers.ParallelSolver)
+    solver_cls=solvers.ParallelSolver, constraint_func=round2_constraints)
 compute_solution_parallel_unfiltered = ComputeMinimizationSolution(
-    solver_cls=solvers.ParallelSolver, filtering=False)
+    solver_cls=solvers.ParallelSolver, filtering=False,
+    constraint_func=round2_constraints)
 compute_solution_rebidding = ComputeMinimizationSolution(
     constraint_func=round2_constraints,
     solver_cls=rebidding.ParallelRefinedMultistageSolver,
@@ -176,8 +177,8 @@ def pretty_plot(title, list_solutions, labels, mark=np.array(['k.:', 'k.-']),
     plt.axis([xticks[0], xticks[-1], 0, max_y])
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
-    plt.savefig(os.path.join(path_figures, '{}.pdf'.format(title)))
-    plt.clf()
+    plt.savefig(os.path.join(path_figures, '{}.pdf'.format(
+        title.replace(' ', '_'))))
 
 
 def save2frame(data, columns, title, index=False):
@@ -189,4 +190,6 @@ def plot_delta(data, rho=.05, filename=None):
     delta = data.df_bids.norm_bid - data.df_bids.most_competitive
     delta = delta[delta.between(-rho, rho)]
     hist_plot(delta, 'distribution of normalized bid differences')
-    plt.savefig(os.path.join(path_figures, '{}.pdf'.format(filename)))
+    plt.xlabel(r'$\Delta$')
+    if filename is not None:
+        plt.savefig(os.path.join(path_figures, '{}.pdf'.format(filename)))

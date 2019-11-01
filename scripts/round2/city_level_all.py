@@ -1,33 +1,46 @@
 from scripts.figures_import_helper import *
+# %matplotlib inline
 
 # before/after industry comparisons, using national data
 
-list_data_sets = [
-    ('Bridges', 'bc_collusion.csv', [-.025, .0, .001]),
-    ('Electric', 'ec_collusion.csv', [-.025, .0, .001]),
-    ('Pre-Stressed Concrete', 'pc_collusion.csv', [-.025, .0, .001]),
-    ('Floods', 'fc_collusion.csv', [-.03, .0, .001])
-]
+# +
+filename = 'tsuchiura_data.csv'
+tsuchiura_data = auction_data.AuctionData(os.path.join(path_data, filename))
+plot_delta(tsuchiura_data)
 
-for industry, file, deviations in list_data_sets:
-    print('='*20 + '\n' + industry)
-    print('collecting and processing data')
-    data = auction_data.AuctionData(os.path.join(path_data, file))
-    data_before = auction_data.AuctionData(
-        data.df_bids.loc[data.data.before == 1])
-    data_after = auction_data.AuctionData(
-        data.df_bids.loc[data.data.before.isnull()])
+filename = 'municipal_pub_reserve_no_pricefloor.csv'
+other_data = auction_data.AuctionData(os.path.join(path_data, filename))
+plot_delta(other_data)
 
-    print('computing before/after problem solution')
-    solutions_before, _ = compute_minimization_solution_unfiltered(
-        data_before, deviations)
-    solutions_after, _ = compute_minimization_solution_unfiltered(
-        data_after, deviations)
-    del data
-    del data_before
-    del data_after
+# +
+s1 = set(other_data.df_bids.pid)
+s2 = set(tsuchiura_data.df_bids.pid)
 
-    print('saving plot\n')
-    pretty_plot(os.path.join('R1', industry),
-                np.array([1 - solutions_before, 1 - solutions_after]),
-                np.array(["before investigation", "after investigation"]))
+assert len(s2.intersection(s1)) == 0
+# -
+
+all_bids = pd.concat((other_data.df_bids, tsuchiura_data.df_bids), axis=0)
+data = auction_data.AuctionData.from_clean_bids(all_bids)
+plot_delta(data, filename='R2/city_auctions_delta')
+
+list_devs = [[.0, .001], [-.025, .0], [-.025, .0, .001]]
+list_solutions = []
+for devs in list_devs:    
+    solutions, ties = compute_solution_parallel(
+        data, devs)
+    list_solutions.append(1 - ties - solutions * (1-ties))
+
+print('saving plot\n')
+pretty_plot(
+    'R2/city auctions',
+    list_solutions,
+    [r"deviations {}".format(devs) for devs in list_devs],
+    xlabel='m',
+    mark=np.array(['k.:', 'k.--', 'k.-']),
+    xticks=r2_min_mkps
+)
+
+print('saving data\n')
+save2frame(list_solutions,
+           ['min_m={}'.format(m) for m in r2_min_mkps],
+           'R2/city_auctions')
