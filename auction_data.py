@@ -15,6 +15,8 @@ def _read_bids(bidding_data_or_path):
 
 
 class AuctionData:
+    COLS = ['pid', 'norm_bid', 'bid', 'reserveprice']
+
     def __init__(self, bidding_data_or_path, clean=True):
         self.raw_data = _read_bids(bidding_data_or_path)
         self.data = self._drop_auction_with_too_few_data(clean)
@@ -49,8 +51,7 @@ class AuctionData:
 
     @lazy_property.LazyProperty
     def df_bids(self):
-        cols = ['pid', 'norm_bid', 'bid', 'reserveprice']
-        df_bids = self.data[cols].set_index("pid")
+        df_bids = self.data[self.COLS].set_index("pid")
         df_bids["lowest"] = self.df_auctions["lowest"]
         df_bids["second_lowest"] = self.df_auctions["second_lowest"]
 
