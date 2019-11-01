@@ -9,7 +9,7 @@ national_data = rebidding.RefinedMultistageData(
     os.path.join(path_data, 'sample_with_firm_rank.csv'))
 
 national_data_above = rebidding.RefinedMultistageData.from_clean_bids(
-    national_data.df_bids.loc[national_data.data.norm_bid.between(0.8, .95)])
+    national_data.df_bids.loc[national_data.data.norm_bid > 0.8])
 national_data_below = rebidding.RefinedMultistageData.from_clean_bids(
     national_data.df_bids.loc[national_data.data.norm_bid < 0.8])
 

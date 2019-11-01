@@ -64,7 +64,7 @@ def round1_constraints(demands):
 def round2_constraints(demands):
     return [
         [environments.MarkupConstraint(max_markup=.5, min_markup=min_markup)]
-        for min_markup in [.05, .1, .15, .2]
+        for min_markup in [.0, .05, .1, .2, .4]
     ]
 
 

@@ -102,8 +102,8 @@ def _check_up_down_deviations(deviations):
 
 
 class RefinedMultistageIsNonCompetitive(IsNonCompetitive):
-    coeff_marginal_cont = 0
-    coeff_marginal_info = .0
+    coeff_marginal_cont = 1
+    coeff_marginal_info = .5
 
     def __init__(self, deviations):
         _check_up_down_deviations(deviations)
