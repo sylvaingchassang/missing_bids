@@ -5,6 +5,7 @@ print('collecting and processing data')
 national_data = auction_data.AuctionData(
     os.path.join(path_data, 'sample_with_firm_rank.csv'))
 
+NUM_ITER_FIRMS = 5
 deviations = [-.025, .0, .001]
 filter_ties = auction_data.FilterTies(tolerance=.0001)
 filtered_data = filter_ties(national_data)
