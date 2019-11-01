@@ -13,6 +13,11 @@ import environments
 import rebidding
 
 
+from matplotlib import rc
+rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']})
+rc('text', usetex=True)
+
+
 hist_plot = auction_data.hist_plot
 sns.set_style('white')
 
@@ -61,10 +66,13 @@ def round1_constraints(demands):
         max_markups=(.5,), ks=(0.5, 1, 1.5, 2), demands=demands)
 
 
+r2_min_mkps = [.0, .05, .1, .2, .4]
+
+
 def round2_constraints(demands):
     return [
         [environments.MarkupConstraint(max_markup=.5, min_markup=min_markup)]
-        for min_markup in [.0, .05, .1, .2, .4]
+        for min_markup in r2_min_mkps
     ]
 
 
@@ -172,6 +180,13 @@ def pretty_plot(title, list_solutions, labels, mark=np.array(['k.:', 'k.-']),
     plt.clf()
 
 
-def save2frame(data, columns, title):
+def save2frame(data, columns, title, index=False):
     pd.DataFrame(data=data, columns=columns).to_csv(
-        os.path.join(path_figures, '{}.csv'.format(title)), index=False)
+        os.path.join(path_figures, '{}.csv'.format(title)), index=index)
+
+
+def plot_delta(data, rho=.05, filename=None):
+    delta = data.df_bids.norm_bid - data.df_bids.most_competitive
+    delta = delta[delta.between(-rho, rho)]
+    hist_plot(delta, 'distribution of normalized bid differences')
+    plt.savefig(os.path.join(path_figures, '{}.pdf'.format(filename)))

@@ -150,4 +150,4 @@ def hist_plot(df, title=''):
         df, kde=False, hist_kws=dict(alpha=1), bins=200, hist=True,
         norm_hist=1)
     plt.title(title)
-    plt.tight_layout(), plt.show()
+    plt.tight_layout()

@@ -13,6 +13,10 @@ national_data_above = rebidding.RefinedMultistageData.from_clean_bids(
 national_data_below = rebidding.RefinedMultistageData.from_clean_bids(
     national_data.df_bids.loc[national_data.data.norm_bid < 0.8])
 
+plot_delta(national_data_above, filename='R2/national_data_above_deltas')
+plot_delta(national_data_below, filename='R2/national_data_below_deltas')
+
+
 print('computing problem solutions')
 deviations = [-.025, .0, .001]
 solutions_above, _ = compute_solution_rebidding(
@@ -23,11 +27,11 @@ solutions_below, _ = compute_solution_rebidding(
 print('saving plot\n')
 pretty_plot('R2/high vs low normalized bids (national auctions)',
             [1 - solutions_above, 1 - solutions_below],
-            ["normalized bid above .8", "normalized bid below .8"],
+            ["normalized bid within [.8, .95]", "normalized bid below .8"],
             xlabel='m',
-            xticks=(.05, .1, .15, .2))
+            xticks=r2_min_mkps)
 
 print('saving data\n')
 save2frame([1 - solutions_above, 1 - solutions_below],
-           ['min_m={}'.format(m) for m in [.05, .1, .15, .2]],
+           ['min_m={}'.format(m) for m in r2_min_mkps],
            'R2/high vs low normalized bids (national auctions)')
