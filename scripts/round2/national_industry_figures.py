@@ -13,8 +13,7 @@ deviations = [-.025, .0, .001]
 for industry, file in list_data_sets:
     print('='*20 + '\n' + industry)
     print('collecting and processing data')
-    data = rebidding.RefinedMultistageData(
-        os.path.join(path_data, file))
+    data = rebidding.RefinedMultistageData(os.path.join(path_data, file))
     data_before = rebidding.RefinedMultistageData.from_clean_bids(
         data.df_bids.loc[data.data.before == 1])
     data_after = rebidding.RefinedMultistageData.from_clean_bids(
@@ -34,6 +33,6 @@ for industry, file in list_data_sets:
     print('saving plot\n')
     pretty_plot(os.path.join('R2', industry),
                 np.array([1 - solutions_before, 1 - solutions_after]),
-                np.array(["before investigation", "after investigation"]))
-
-
+                np.array(["before investigation", "after investigation"]),
+                xlabel='m',
+                xticks=r2_min_mkps)
