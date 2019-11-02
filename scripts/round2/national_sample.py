@@ -29,7 +29,7 @@ for coeff_marginal_info in list_coeffs:
 print('saving plot\n')
 pretty_plot('R2/national auctions',
             list_solutions,
-            [r"\alpha={}".format(coeff) for coeff in list_coeffs],
+            [r"$\alpha={}$".format(coeff) for coeff in list_coeffs],
             xlabel='m',
             mark=np.array(['k.:', 'k.-', 'k.--']),
             xticks=r2_min_mkps)
