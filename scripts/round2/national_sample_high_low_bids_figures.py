@@ -28,7 +28,7 @@ print('saving plot\n')
 pretty_plot('R2/high vs low normalized bids (national auctions)',
             [1 - solutions_above, 1 - solutions_below],
             ["normalized bid within [.8, .95]", "normalized bid below .8"],
-            xlabel='m',
+            xlabel='minimum markup',
             xticks=r2_min_mkps)
 
 print('saving data\n')

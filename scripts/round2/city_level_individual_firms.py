@@ -18,7 +18,6 @@ data.df_bids.head()
 num_auctions_by_bidder = data.data.groupby('bidder_id').size()
 top30_bidders = num_auctions_by_bidder.sort_values(ascending=False).head(30)
 top30_bidders = top30_bidders.index
-top30_bidders
 
 deviations = [-.025, .0, .001]
 list_solutions = []
@@ -27,7 +26,8 @@ for i, bidder in enumerate(top30_bidders):
     data_firm = auction_data.AuctionData.from_clean_bids(
         data.df_bids.loc[data.data.bidder_id == bidder])
     demand_firm = data_firm.assemble_target_moments(deviations)
-    constraints = [environments.MarkupConstraint(max_markup=.5, min_markup=.05)]
+    constraints = [environments.MarkupConstraint(
+        max_markup=.5, min_markup=.02)]
 
     min_collusion_solver = solvers.ParallelSolver(
         data=data_firm,
@@ -44,7 +44,8 @@ for i, bidder in enumerate(top30_bidders):
         moment_weights=np.identity(len(deviations))
     )
     
-    list_solutions.append([i, bidder, min_collusion_solver.result.solution])
+    list_solutions.append([i, bidder, 1 -
+                           min_collusion_solver.result.solution])
 
 print('saving data\n')
 save2frame(list_solutions,

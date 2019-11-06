@@ -34,5 +34,5 @@ for industry, file in list_data_sets:
     pretty_plot(os.path.join('R2', industry),
                 np.array([1 - solutions_before, 1 - solutions_after]),
                 np.array(["before investigation", "after investigation"]),
-                xlabel='m',
+                xlabel='minimum markup',
                 xticks=r2_min_mkps)
