@@ -84,7 +84,7 @@ min_deviation_temptation_solver = ComputeMinimizationSolution(
     solver_cls=solvers.ParallelSolver,
     constraint_func=round2_constraints,
     metric=analytics.DeviationTemptationOverProfits,
-    project_choices=[True] * len(r2_min_mkps)
+    #project_choices=[True] * len(r2_min_mkps)
 )
 
 
