@@ -75,6 +75,9 @@ def round2_constraints(demands):
 
 
 class ComputeMinimizationSolution:
+    _NUM_POINTS = NUM_POINTS
+    _NUM_EVAL = NUM_EVAL
+
     def __init__(
             self, metric=analytics.IsNonCompetitive,
             constraint_func=round1_constraints, project_choices=None,
@@ -120,11 +123,11 @@ class ComputeMinimizationSolution:
             deviations=deviations,
             metric=self.metric,
             plausibility_constraints=constraints,
-            num_points=int(NUM_POINTS / (1 + 9 * proj)),
+            num_points=int(self._NUM_POINTS / (1 + 9 * proj)),
             seed=self.seed,
             project=proj,
             filter_ties=None,
-            num_evaluations=NUM_EVAL,
+            num_evaluations=self._NUM_EVAL,
             confidence_level=1 - .05 / len(deviations),
             moment_matrix=self._moment_matrix(deviations),
             moment_weights=self._moment_weights(deviations)
