@@ -80,11 +80,12 @@ pretty_plot(
 print('='*20 + '\n' + 'Tsuchiura, deviation temptation')
 print('collecting and processing data')
 
-ComputeMinimizationSolution._NUM_POINTS = 10000
 min_deviation_temptation_solver = ComputeMinimizationSolution(
     solver_cls=solvers.ParallelSolver,
     constraint_func=round2_constraints,
-    metric=analytics.DeviationTemptationOverProfits)
+    metric=analytics.DeviationTemptationOverProfits,
+    project_choices=[True] * len(r2_min_mkps)
+)
 
 
 print('solving for min temptation')
