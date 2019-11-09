@@ -47,8 +47,8 @@ ensure_dir(os.path.join(path_figures, 'R2'))
 
 
 # set global optimization parameters
-NUM_POINTS = 3000
-NUM_EVAL = 300
+NUM_POINTS = 4000
+NUM_EVAL = 400
 
 
 def markup_info_constraints(max_markups, ks, demands):
@@ -180,8 +180,8 @@ def pretty_plot(title, list_solutions, labels, mark=np.array(['k.:', 'k.-']),
     plt.ylabel(ylabel)
     plt.savefig(
         os.path.join(path_figures, '{}.pdf'.format(title.replace(' ', '_'))),
-        bbox_inches='tight'
-    )
+        bbox_inches='tight')
+    plt.clf()
 
 
 def save2frame(data, columns, title, index=False):
