@@ -14,14 +14,17 @@ print('computing problem solutions')
 deviations = [-.025, .0, .001]
 list_coeffs = [.25, .5, .75]
 list_solutions = []
+ComputeMinimizationSolution._NUM_POINTS = 10000
+ComputeMinimizationSolution._NUM_EVAL = 500
+RMIsNonComp = rebidding.RefinedMultistageIsNonCompetitive
 
 for coeff_marginal_info in list_coeffs:
-    rebidding.RefinedMultistageIsNonCompetitive.coeff_marginal_info = \
-        coeff_marginal_info
+    RMIsNonComp.coeff_marginal_info = coeff_marginal_info
     this_compute_solution = ComputeMinimizationSolution(
         constraint_func=round2_constraints,
         solver_cls=rebidding.ParallelRefinedMultistageSolver,
-        metric=rebidding.RefinedMultistageIsNonCompetitive)
+        metric=RMIsNonComp)
+    print('\t', 'coeff marginal info', RMIsNonComp.coeff_marginal_info)
     solutions, _ = this_compute_solution(
         national_data, deviations)
     list_solutions.append(1 - solutions)
