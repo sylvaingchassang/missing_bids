@@ -80,11 +80,12 @@ pretty_plot(
 print('='*20 + '\n' + 'Tsuchiura, deviation temptation')
 print('collecting and processing data')
 
+ComputeMinimizationSolution._NUM_POINTS = 5000
+ComputeMinimizationSolution._NUM_EVAL = 500
 min_deviation_temptation_solver = ComputeMinimizationSolution(
     solver_cls=solvers.ParallelSolver,
     constraint_func=round2_constraints,
-    metric=analytics.DeviationTemptationOverProfits,
-    #project_choices=[True] * len(r2_min_mkps)
+    metric=analytics.DeviationTemptationOverProfits
 )
 
 
@@ -95,7 +96,13 @@ dev_gain, _ = min_deviation_temptation_solver(
 print('saving plot\n')
 pretty_plot(
     'R2/Tsuchiura -- Deviation Gain', [dev_gain],
-    ['before minimum price'], max_y=.05,
+    ['before minimum price'], max_y=1.5,
     ylabel='deviation temptation as a share of profits',
     xlabel='minimum markup',
     xticks=r2_min_mkps)
+
+print('saving data\n')
+save2frame([dev_gain],
+           ['min_m={}'.format(m) for m in r2_min_mkps],
+           'R2/tsuchiura_deviation_temptation',
+           ['deviation gains'])
