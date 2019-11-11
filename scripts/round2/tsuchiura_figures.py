@@ -85,7 +85,7 @@ ComputeMinimizationSolution._NUM_EVAL = 500
 min_deviation_temptation_solver = ComputeMinimizationSolution(
     solver_cls=solvers.ParallelSolver,
     constraint_func=round2_constraints,
-    metric=analytics.DeviationTemptationOverProfits
+    metric=analytics.NormalizedDeviationTemptation
 )
 
 
