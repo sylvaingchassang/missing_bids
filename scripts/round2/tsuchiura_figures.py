@@ -96,8 +96,8 @@ dev_gain, _ = min_deviation_temptation_solver(
 print('saving plot\n')
 pretty_plot(
     'R2/Tsuchiura -- Deviation Gain', [dev_gain],
-    ['before minimum price'], max_y=.2,
-    ylabel='deviation temptation as a share of profits',
+    ['before minimum price'], max_y=.15,
+    ylabel='deviation temptation',
     xlabel='minimum markup',
     xticks=r2_min_mkps)
 
