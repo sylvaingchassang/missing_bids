@@ -47,8 +47,8 @@ ensure_dir(os.path.join(path_figures, 'R2'))
 
 
 # set global optimization parameters
-NUM_POINTS = 4000
-NUM_EVAL = 400
+NUM_POINTS = 10000
+NUM_EVAL = 500
 
 
 def markup_info_constraints(max_markups, ks, demands):
