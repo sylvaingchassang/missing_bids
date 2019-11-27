@@ -21,20 +21,52 @@ assert len(s2.intersection(s1)) == 0
 
 all_bids = pd.concat((other_data.df_bids, tsuchiura_data.df_bids), axis=0)
 data = auction_data.AuctionData.from_clean_bids(all_bids)
-plot_delta(data, filename='R2/city_auctions_delta')
+# plot_delta(data, filename='R2/city_auctions_delta')
 
-list_devs = [[.0, .001], [-.025, .0], [-.025, .0, .001]]
+# list_devs = [[.0, .001], [-.025, .0], [-.025, .0, .001]]
+# list_solutions = []
+# for devs in list_devs:
+#     solutions, ties = compute_solution_parallel(
+#         data, devs)
+#     list_solutions.append(1 - ties - solutions * (1-ties))
+#
+# print('saving plot\n')
+# pretty_plot(
+#     'R2/city auctions',
+#     list_solutions,
+#     [r"deviations {}".format(devs) for devs in list_devs],
+#     xlabel='minimum markup',
+#     mark=np.array(['k.:', 'k.--', 'k.-']),
+#     xticks=r2_min_mkps
+# )
+#
+# print('saving data\n')
+# save2frame(list_solutions,
+#            ['min_m={}'.format(m) for m in r2_min_mkps],
+#            'R2/city_auctions')
+
+
+# varying maximum markup
+
+list_max_markups = [.5, 1, 1.5]
+devs = [-.025, .0, .001]
 list_solutions = []
-for devs in list_devs:    
-    solutions, ties = compute_solution_parallel(
-        data, devs)
+
+for max_markup in list_max_markups:
+    def this_constraint():
+        return [[environments.MarkupConstraint(
+            max_markup=max_markup, min_markup=min_markup)]
+            for min_markup in r2_min_mkps]
+    this_solver = ComputeMinimizationSolution(
+        solver_cls=solvers.ParallelSolver, constraint_func=this_constraint)
+    solutions, ties = compute_solution_parallel(data, devs)
     list_solutions.append(1 - ties - solutions * (1-ties))
 
 print('saving plot\n')
 pretty_plot(
-    'R2/city auctions',
+    'R2/city auctions -- varying max markup',
     list_solutions,
-    [r"deviations {}".format(devs) for devs in list_devs],
+    [r"max markup {}".format(max_markup) for max_markup in list_max_markups],
     xlabel='minimum markup',
     mark=np.array(['k.:', 'k.--', 'k.-']),
     xticks=r2_min_mkps
@@ -43,4 +75,4 @@ pretty_plot(
 print('saving data\n')
 save2frame(list_solutions,
            ['min_m={}'.format(m) for m in r2_min_mkps],
-           'R2/city_auctions')
+           'R2/city_auctions_max_markup')
