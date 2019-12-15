@@ -6,6 +6,9 @@ from scripts.figures_import_helper import *
 # +
 filename = 'tsuchiura_data.csv'
 tsuchiura_data = auction_data.AuctionData(os.path.join(path_data, filename))
+tsuchiura_data = auction_data.AuctionData(
+    tsuchiura_data.df_bids.loc[tsuchiura_data.data.minprice.isnull()])
+plot_delta(tsuchiura_data)
 
 filename = 'municipal_pub_reserve_no_pricefloor.csv'
 other_data = auction_data.AuctionData(os.path.join(path_data, filename))

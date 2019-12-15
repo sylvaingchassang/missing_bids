@@ -5,49 +5,46 @@ from scripts.figures_import_helper import *
 print('data located at \n\t{}'.format(path_data))
 print('plots saved at \n\t{}\n'.format(path_figures))
 
-print('='*20 + '\n' + 'Tsuchiura (before min. price)')
-print('collecting and processing data')
+filename = 'tsuchiura_data.csv'
+tsuchiura_data = auction_data.AuctionData(os.path.join(path_data, filename))
 tsuchiura_data = auction_data.AuctionData(
-    os.path.join(path_data, 'tsuchiura_data.csv'))
-plot_delta(tsuchiura_data, filename='R2/tsuchiura_delta')
-
-tsuchiura_before_min_price_ = auction_data.AuctionData(
     tsuchiura_data.df_bids.loc[tsuchiura_data.data.minprice.isnull()])
 
-tsuchiura_before_min_price = auction_data.AuctionData.from_clean_bids(
-    tsuchiura_before_min_price_.df_bids.loc[
-        tsuchiura_before_min_price_.df_bids.norm_bid > .8])
+plot_delta(tsuchiura_data)
 
-plot_delta(tsuchiura_before_min_price,
-           filename='R2/tsuchiura_delta_no_min_price_bids_above_80pct')
+filename = 'municipal_pub_reserve_no_pricefloor.csv'
+other_data = auction_data.AuctionData(os.path.join(path_data, filename))
 
-tsuchiura_after_min_price_ = auction_data.AuctionData(
-    tsuchiura_data.df_bids.loc[~tsuchiura_data.data.minprice.isnull()])
+# +
+s1 = set(other_data.df_bids.pid)
+s2 = set(tsuchiura_data.df_bids.pid)
 
-tsuchiura_after_min_price = auction_data.AuctionData.from_clean_bids(
-    tsuchiura_after_min_price_.df_bids.loc[
-        tsuchiura_after_min_price_.df_bids.norm_bid > .8])
+assert len(s2.intersection(s1)) == 0
 
-plot_delta(tsuchiura_after_min_price,
-           filename='R2/tsuchiura_delta_with_min_price_bids_above_80pct')
+# +
+all_bids = pd.concat((other_data.df_bids, tsuchiura_data.df_bids), axis=0)
+data_low = auction_data.AuctionData.from_clean_bids(
+    all_bids.loc[all_bids.norm_bid < .9])
+data_high = auction_data.AuctionData.from_clean_bids(
+    all_bids.loc[all_bids.norm_bid > .9])
 
-all_deviations = [-.02, .0, .0008]
-up_deviations = [.0, .0008]
+
+plot_delta(data_high,
+           filename='R2/all_cities_delta_bids above_90pct')
+
+
+all_deviations = [-.025, .0, .001]
+up_deviations = [.0, .001]
 
 print('computing solutions for different deviations, no min price')
 
 solutions_all_deviations, share_ties = compute_solution_parallel(
-    tsuchiura_before_min_price, all_deviations)
+    data_high, all_deviations)
 solutions_up_deviations, _ = compute_solution_parallel(
-    tsuchiura_before_min_price, up_deviations)
+    data_high, up_deviations)
 share_comp_all_deviations = 1 - solutions_all_deviations
 share_comp_up_deviations = 1 - solutions_up_deviations
 
-solutions_all_devs_with_min_price, share_min_price = \
-    compute_solution_parallel(tsuchiura_after_min_price, all_deviations)
-
-share_comp_min_price = 1 - share_min_price - (
-        1 - share_min_price) * solutions_all_devs_with_min_price
 
 share_comp_all_deviations_w_ties = share_comp_all_deviations * (
     1 - share_ties)
@@ -57,7 +54,7 @@ share_comp_up_deviations_wo_ties = share_comp_up_deviations + \
 
 print('saving plot 1\n')
 pretty_plot(
-    'R2/Tsuchiura -- different deviations -- no minimum price',
+    'R2/city data -- different deviations -- no minimum price',
     [share_comp_up_deviations_wo_ties,
      share_comp_up_deviations_w_ties,
      share_comp_all_deviations_w_ties],
@@ -66,18 +63,10 @@ pretty_plot(
     xlabel='minimum markup',
     xticks=r2_min_mkps)
 
-print('saving plot 2\n')
-pretty_plot(
-    'R2/Tsuchiura with and without min price',
-    [share_comp_all_deviations_w_ties, share_comp_min_price],
-    ['without minimum price', 'with minimum price'],
-    ['k.-', 'k.:'],
-    xlabel='minimum markup',
-    xticks=r2_min_mkps)
 
 # computing deviation temptation over profits, using city data
 
-print('='*20 + '\n' + 'Tsuchiura, deviation temptation')
+print('='*20 + '\n' + 'all cities, deviation temptation')
 print('collecting and processing data')
 
 min_deviation_temptation_solver = ComputeMinimizationSolution(
@@ -89,11 +78,11 @@ min_deviation_temptation_solver = ComputeMinimizationSolution(
 
 print('solving for min temptation')
 dev_gain, _ = min_deviation_temptation_solver(
-    tsuchiura_before_min_price, all_deviations)
+    data_high, all_deviations)
 
 print('saving plot\n')
 pretty_plot(
-    'R2/Tsuchiura -- Deviation Gain', [dev_gain],
+    'R2/All cities -- Deviation Gain', [dev_gain],
     [None], max_y=.15,
     ylabel='deviation temptation',
     xlabel='minimum markup',
@@ -102,5 +91,5 @@ pretty_plot(
 print('saving data\n')
 save2frame([dev_gain],
            ['min_m={}'.format(m) for m in r2_min_mkps],
-           'R2/tsuchiura_deviation_temptation',
+           'R2/all_cities_deviation_temptation',
            ['deviation gains'])

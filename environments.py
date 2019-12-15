@@ -121,6 +121,8 @@ class MarkupConstraint(PlausibilityConstraint):
 
     @staticmethod
     def _cost_ratio(markup):
+        if markup is None:
+            return 0.
         return 1. / (1. + markup)
 
     def project(self, env):

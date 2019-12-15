@@ -47,8 +47,8 @@ ensure_dir(os.path.join(path_figures, 'R2'))
 
 
 # set global optimization parameters
-NUM_POINTS = 10000
-NUM_EVAL = 500
+NUM_POINTS = 3000
+NUM_EVAL = 5
 
 
 def markup_info_constraints(max_markups, ks, demands):
@@ -64,7 +64,7 @@ def round1_constraints(demands):
         max_markups=(.5,), ks=(0.5, 1, 1.5, 2), demands=demands)
 
 
-r2_min_mkps = [.0, .05, .1, .2, .4]
+r2_min_mkps = [.0, .025, .05, .1, .2, .4]
 
 
 def round2_constraints(demands):
@@ -171,13 +171,17 @@ def pretty_plot(title, list_solutions, labels, mark=np.array(['k.:', 'k.-']),
                 xticks=(0.5, 1, 1.5, 2), max_y=1.05, xlabel='k',
                 ylabel='share of competitive histories'):
     plt_title = title.split('/')[1]
-    # plt.title(plt_title) # uncomment to add title to figures
+    plt.figure()
+    # plt.title(plt_title)
     for i, (solutions, label) in enumerate(zip(list_solutions, labels)):
         plt.plot(xticks, solutions, mark[i], label=label)
-    plt.legend(loc='lower right')
+    if labels[0] is not None:
+        plt.legend(loc='best', fontsize=12)
     plt.axis([xticks[0], xticks[-1], 0, max_y])
-    plt.xlabel(xlabel)
-    plt.ylabel(ylabel)
+    plt.xlabel(xlabel, fontsize=16)
+    plt.ylabel(ylabel, fontsize=16)
+    plt.xticks(fontsize=12)
+    plt.yticks(fontsize=12)
     plt.savefig(
         os.path.join(path_figures, '{}.pdf'.format(title.replace(' ', '_'))),
         bbox_inches='tight')
