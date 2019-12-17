@@ -132,10 +132,9 @@ class FilterTies:
         self.tolerance = tolerance
 
     def __call__(self, auction_data):
-        original_data = auction_data.data.copy()
         ties = self.get_ties(auction_data)
-        original_data = original_data.loc[~ties]
-        return auction_data.__class__(original_data)
+        new_bids = auction_data.df_bids.loc[~ties]
+        return auction_data.__class__.from_clean_bids(new_bids)
 
     def get_ties(self, auction_data):
         return np.isclose(

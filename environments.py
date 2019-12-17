@@ -130,3 +130,6 @@ class MarkupConstraint(PlausibilityConstraint):
             self._max_cost - self._min_cost)
         return env
 
+    def __str__(self):
+        return 'MarkupConstraint(min_cost={}, max_cost={})'.format(self._min_cost, self._max_cost)
+
