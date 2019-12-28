@@ -15,7 +15,7 @@ print('solving minimization problem for each firm')
 for rank in range(30):
     print('firm {}'.format(rank + 1))
     filtered_data_firm = rebidding.RefinedMultistageData.from_clean_bids(
-        filtered_data.df_bids.loc[filtered_data.data.rank2 == rank + 1])
+        filtered_data.df_bids.loc[national_data.data.rank2 == rank + 1])
     constraints = [
         environments.MarkupConstraint(max_markup=.5, min_markup=.02)]
 
