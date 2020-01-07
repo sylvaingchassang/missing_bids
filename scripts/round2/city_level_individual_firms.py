@@ -8,14 +8,15 @@ filename = 'municipal_pub_reserve_no_pricefloor.csv'
 # +
 filter_ties = auction_data.FilterTies(tolerance=.0001)
 
-data = filter_ties(
-    auction_data.AuctionData(os.path.join(path_data, filename)))
+unfiltered_data = auction_data.AuctionData(os.path.join(path_data, filename))
+
+data = filter_ties(unfiltered_data)
 plot_delta(data)
 # -
 
 data.df_bids.head()
 
-num_auctions_by_bidder = data.data.groupby('bidder_id').size()
+num_auctions_by_bidder = unfiltered_data.data.groupby('bidder_id').size()
 top30_bidders = num_auctions_by_bidder.sort_values(ascending=False).head(30)
 top30_bidders = top30_bidders.index
 
@@ -24,7 +25,7 @@ list_solutions = []
 for i, bidder in enumerate(top30_bidders):    
     print('firm {}'.format(i + 1))
     data_firm = auction_data.AuctionData.from_clean_bids(
-        data.df_bids.loc[data.data.bidder_id == bidder])
+        data.df_bids.loc[unfiltered_data.data.bidder_id == bidder])
     demand_firm = data_firm.assemble_target_moments(deviations)
     constraints = [environments.MarkupConstraint(
         max_markup=.5, min_markup=.02)]
