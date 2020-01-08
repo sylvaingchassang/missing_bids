@@ -16,7 +16,7 @@ tsuchiura_before_min_price_ = auction_data.AuctionData(
 
 tsuchiura_before_min_price = auction_data.AuctionData.from_clean_bids(
     tsuchiura_before_min_price_.df_bids.loc[
-        tsuchiura_before_min_price_.df_bids.norm_bid > .9])
+        tsuchiura_before_min_price_.df_bids.norm_bid > .8])
 
 plot_delta(tsuchiura_before_min_price,
            filename='R2/tsuchiura_delta_no_min_price_bids_above_80pct')
@@ -31,7 +31,7 @@ tsuchiura_after_min_price = auction_data.AuctionData.from_clean_bids(
 plot_delta(tsuchiura_after_min_price,
            filename='R2/tsuchiura_delta_with_min_price_bids_above_80pct')
 
-all_deviations = [-.025, .0, .0005]
+all_deviations = [-.02, .0, .0005]
 up_deviations = [.0, .0005]
 
 print('computing solutions for different deviations, no min price')
@@ -43,11 +43,11 @@ solutions_up_deviations, _ = compute_solution_parallel(
 share_comp_all_deviations = 1 - solutions_all_deviations
 share_comp_up_deviations = 1 - solutions_up_deviations
 
-# solutions_all_devs_with_min_price, share_min_price = \
-#     compute_solution_parallel(tsuchiura_after_min_price, all_deviations)
+solutions_all_devs_with_min_price, share_min_price = \
+    compute_solution_parallel(tsuchiura_after_min_price, all_deviations)
 
-# share_comp_min_price = 1 - share_min_price - (
-#         1 - share_min_price) * solutions_all_devs_with_min_price
+share_comp_min_price = 1 - share_min_price - (
+        1 - share_min_price) * solutions_all_devs_with_min_price
 
 share_comp_all_deviations_w_ties = share_comp_all_deviations * (
     1 - share_ties)
@@ -66,41 +66,41 @@ pretty_plot(
     xlabel='minimum markup',
     xticks=r2_min_mkps)
 
-# print('saving plot 2\n')
-# pretty_plot(
-#     'R2/Tsuchiura with and without min price',
-#     [share_comp_all_deviations_w_ties, share_comp_min_price],
-#     ['without minimum price', 'with minimum price'],
-#     ['k.-', 'k.:'],
-#     xlabel='minimum markup',
-#     xticks=r2_min_mkps)
+print('saving plot 2\n')
+pretty_plot(
+    'R2/Tsuchiura with and without min price',
+    [share_comp_all_deviations_w_ties, share_comp_min_price],
+    ['without minimum price', 'with minimum price'],
+    ['k.-', 'k.:'],
+    xlabel='minimum markup',
+    xticks=r2_min_mkps)
 
 # computing deviation temptation over profits, using city data
-#
-# print('='*20 + '\n' + 'Tsuchiura, deviation temptation')
-# print('collecting and processing data')
-#
-# min_deviation_temptation_solver = ComputeMinimizationSolution(
-#     solver_cls=solvers.ParallelSolver,
-#     constraint_func=round2_constraints,
-#     metric=analytics.NormalizedDeviationTemptation
-# )
-#
-#
-# print('solving for min temptation')
-# dev_gain, _ = min_deviation_temptation_solver(
-#     tsuchiura_before_min_price, all_deviations)
-#
-# print('saving plot\n')
-# pretty_plot(
-#     'R2/Tsuchiura -- Deviation Gain', [dev_gain],
-#     [None], max_y=.15,
-#     ylabel='deviation temptation',
-#     xlabel='minimum markup',
-#     xticks=r2_min_mkps)
-#
-# print('saving data\n')
-# save2frame([dev_gain],
-#            ['min_m={}'.format(m) for m in r2_min_mkps],
-#            'R2/tsuchiura_deviation_temptation',
-#            ['deviation gains'])
+
+print('='*20 + '\n' + 'Tsuchiura, deviation temptation')
+print('collecting and processing data')
+
+min_deviation_temptation_solver = ComputeMinimizationSolution(
+    solver_cls=solvers.ParallelSolver,
+    constraint_func=round2_constraints,
+    metric=analytics.NormalizedDeviationTemptation
+)
+
+
+print('solving for min temptation')
+dev_gain, _ = min_deviation_temptation_solver(
+    tsuchiura_before_min_price, all_deviations)
+
+print('saving plot\n')
+pretty_plot(
+    'R2/Tsuchiura -- Deviation Gain', [dev_gain],
+    [None], max_y=.15,
+    ylabel='deviation temptation',
+    xlabel='minimum markup',
+    xticks=r2_min_mkps)
+
+print('saving data\n')
+save2frame([dev_gain],
+           ['min_m={}'.format(m) for m in r2_min_mkps],
+           'R2/tsuchiura_deviation_temptation',
+           ['deviation gains'])

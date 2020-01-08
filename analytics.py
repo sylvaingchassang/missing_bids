@@ -11,7 +11,7 @@ import auction_data
 
 class DimensionlessCollusionMetrics:
     def __init__(self, deviations):
-        self._deviations = _ordered_deviations(deviations)
+        self._deviations = ordered_deviations(deviations)
 
     @lazy_property.LazyProperty
     def equilibrium_index(self):
@@ -30,7 +30,7 @@ class DimensionlessCollusionMetrics:
         return np.multiply(beliefs, 1 + self._deviations - cost)
 
 
-def _ordered_deviations(deviations):
+def ordered_deviations(deviations):
     return np.sort(list(set([0] + deviations)))
 
 
@@ -66,7 +66,7 @@ class MinCollusionSolver:
                  confidence_level=.95):
         self._data = data
         self.metric = metric(deviations)
-        self._deviations = _ordered_deviations(deviations)
+        self._deviations = ordered_deviations(deviations)
         self._constraints = plausibility_constraints
         self._tolerance = None if tolerance is None else np.array(tolerance)
         self._seed = seed
@@ -158,7 +158,7 @@ class MinCollusionSolver:
     def tolerance(self):
         if self._tolerance is None:
             self._tolerance = self._compute_tolerance()
-        tol = np.maximum(self._tolerance, 1e-7).reshape(-1, 1)
+        tol = np.maximum(self._tolerance, 1e-8).reshape(-1, 1)
         return tol if len(tol) > 1 else float(tol)
 
     def _compute_tolerance(self):

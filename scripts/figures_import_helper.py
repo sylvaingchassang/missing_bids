@@ -136,12 +136,13 @@ class ComputeMinimizationSolution:
     def _moment_matrix(self, deviations):
         if self._is_rebidding():
             return rebidding.refined_moment_matrix()
-        return auction_data.moment_matrix(deviations, 'slope')
+        return auction_data.moment_matrix(
+            analytics.ordered_deviations(deviations), 'slope')
 
     def _moment_weights(self, deviations):
         if self._is_rebidding():
             return np.identity(5)
-        return np.identity(len(deviations))
+        return np.identity(len(analytics.ordered_deviations(deviations)))
 
     def _is_rebidding(self):
         return self.solver_cls == rebidding.ParallelRefinedMultistageSolver

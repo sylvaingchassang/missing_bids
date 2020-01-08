@@ -1,5 +1,5 @@
 from auction_data import AuctionData
-from analytics import (DimensionlessCollusionMetrics, _ordered_deviations,
+from analytics import (DimensionlessCollusionMetrics, ordered_deviations,
                        IsNonCompetitive, MinCollusionSolver)
 from solvers import IteratedSolver, ParallelSolver
 from environments import EnvironmentBase, descending_sort
@@ -95,7 +95,7 @@ class MultistageIsNonCompetitive(DimensionlessCollusionMetrics):
 
 
 def _check_up_down_deviations(deviations):
-    dev = _ordered_deviations(deviations)
+    dev = ordered_deviations(deviations)
     if (sum(dev < 0) != 1) or (sum(dev > 0) != 1):
         raise ValueError('profile of deviations must have one '
                          'downward and one upward deviation')

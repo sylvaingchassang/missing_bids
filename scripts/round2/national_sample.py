@@ -19,7 +19,7 @@ list_solutions = []
 
 RMIsNonComp = rebidding.RefinedMultistageIsNonCompetitive
 
-list_devs = [[.0, .001], [-.025, .0], [-.025, .0, .001]]
+list_devs = [[-.0001, .001], [-.025, .0001], [-.025, .0, .001]]
 list_solutions = []
 for deviations in list_devs:
     this_compute_solution = ComputeMinimizationSolution(
