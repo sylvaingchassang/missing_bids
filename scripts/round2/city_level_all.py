@@ -25,7 +25,7 @@ all_bids = pd.concat((other_data.df_bids, tsuchiura_data.df_bids), axis=0)
 data = auction_data.AuctionData.from_clean_bids(all_bids)
 plot_delta(data, filename='R2/city_auctions_delta')
 
-list_devs = [[.0, .001], [-.025, .0], [-.025, .0, .001]]
+list_devs = [up_deviations, down_deviations, all_deviations]
 list_solutions = []
 for devs in list_devs:
     solutions, ties = compute_solution_parallel(
@@ -51,7 +51,7 @@ save2frame(list_solutions,
 # varying maximum markup
 
 list_max_markups = [.5, 1, 1.5]
-devs = [-.025, .0, .001]
+devs = all_deviations
 list_solutions = []
 
 for max_markup in list_max_markups:

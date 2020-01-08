@@ -16,7 +16,7 @@ plot_delta(data_low, filename='R2/city_delta_low_ex_tsuchiura')
 plot_delta(data_high, filename='R2/city_delta_high_ex_tsuchiura')
 # -
 
-deviations = [-.025, 0, .001]
+deviations = all_deviations
 list_solutions = []
 for data in [data_low, data_high]:    
     solutions, ties = compute_solution_parallel(

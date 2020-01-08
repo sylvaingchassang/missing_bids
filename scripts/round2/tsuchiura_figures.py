@@ -31,9 +31,6 @@ tsuchiura_after_min_price = auction_data.AuctionData.from_clean_bids(
 plot_delta(tsuchiura_after_min_price,
            filename='R2/tsuchiura_delta_with_min_price_bids_above_80pct')
 
-all_deviations = [-.02, .0, .0005]
-up_deviations = [.0, .0005]
-
 print('computing solutions for different deviations, no min price')
 
 solutions_all_deviations, share_ties = compute_solution_parallel(

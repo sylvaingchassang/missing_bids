@@ -6,7 +6,7 @@ print('collecting and processing data')
 national_data = rebidding.RefinedMultistageData(
     os.path.join(path_data, 'sample_with_firm_rank.csv'))
 
-deviations = [-.025, .0, .001]
+deviations = all_deviations
 filter_ties = auction_data.FilterTies(tolerance=.0001)
 filtered_data = filter_ties(national_data)
 share_competitive = []

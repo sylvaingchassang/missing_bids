@@ -9,7 +9,7 @@ list_data_sets = [
     ('Floods', 'fc_collusion.csv')
 ]
 
-deviations = [-.025, .0, .001]
+deviations = all_deviations
 for industry, file in list_data_sets:
     print('='*20 + '\n' + industry)
     print('collecting and processing data')

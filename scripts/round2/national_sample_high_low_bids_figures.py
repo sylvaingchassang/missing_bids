@@ -18,7 +18,7 @@ plot_delta(national_data_below, filename='R2/national_data_below_deltas')
 
 
 print('computing problem solutions')
-deviations = [-.025, .0, .001]
+deviations = all_deviations
 solutions_above, _ = compute_solution_rebidding(
     national_data_above, deviations)
 solutions_below, _ = compute_solution_rebidding(

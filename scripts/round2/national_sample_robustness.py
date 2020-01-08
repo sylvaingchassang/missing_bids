@@ -11,11 +11,10 @@ national_data = rebidding.RefinedMultistageData(
 plot_delta(national_data, filename='R2/national_data_deltas')
 
 print('computing problem solutions')
-deviations = [-.025, .0, .001]
+deviations = all_deviations
 list_coeffs = [.25, .5, .75]
 list_solutions = []
-# ComputeMinimizationSolution._NUM_POINTS = 10000
-# ComputeMinimizationSolution._NUM_EVAL = 500
+
 RMIsNonComp = rebidding.RefinedMultistageIsNonCompetitive
 
 for coeff_marginal_info in list_coeffs:

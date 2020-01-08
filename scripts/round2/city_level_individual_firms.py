@@ -20,7 +20,7 @@ num_auctions_by_bidder = unfiltered_data.data.groupby('bidder_id').size()
 top30_bidders = num_auctions_by_bidder.sort_values(ascending=False).head(30)
 top30_bidders = top30_bidders.index
 
-deviations = [-.025, .0, .001]
+deviations = all_deviations
 list_solutions = []
 for i, bidder in enumerate(top30_bidders):    
     print('firm {}'.format(i + 1))
