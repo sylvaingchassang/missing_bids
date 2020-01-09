@@ -14,7 +14,7 @@ print('computing problem solutions')
 
 
 list_devs = [
-    [-.0001] + up_deviations, [.0001] + down_deviations, all_deviations]
+    [-1e-9] + up_deviations, [1e-9] + down_deviations, all_deviations]
 list_solutions = []
 for deviations in list_devs:
     this_compute_solution = ComputeMinimizationSolution(
