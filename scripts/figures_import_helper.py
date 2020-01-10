@@ -48,7 +48,7 @@ ensure_dir(os.path.join(path_figures, 'R2'))
 
 # set global optimization parameters
 NUM_POINTS = 3000
-NUM_EVAL = 20
+NUM_EVAL = 100
 
 all_deviations = [-.02, .0, .0005]
 up_deviations = [.0, .0005]

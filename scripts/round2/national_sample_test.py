@@ -19,7 +19,6 @@ def round2_constraints(demands):
     ]
 
 
-
 # +
 list_devs = [
     [-1e-9, 0, .0005] , [-.02, 0, 1e-9], all_deviations]
