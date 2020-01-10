@@ -163,8 +163,7 @@ def refined_moment_matrix(slope=True):
         return np.identity(5)
 
 
-def refined_moment_matrix_up_dev():
-    return np.array([
+refined_moment_matrix_up_dev = np.array([
             [0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0],

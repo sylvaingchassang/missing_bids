@@ -26,16 +26,25 @@ for deviations in list_devs:
 
 
 print('saving plot\n')
+
+
+def dev_repr(devs):
+    dev_str = ', '.join([str(d) for d in analytics.ordered_deviations(devs) if
+                         np.abs(d) > 10e-8 or d == 0])
+    return '{' + dev_str + '}'
+
 pretty_plot(
     'R2/national auctions',
     list_solutions,
-    [r"deviations {}".format(devs) for devs in list_devs],
+    [r"deviations {}".format(dev_repr(devs)) for devs in list_devs],
     xlabel='minimum markup',
     mark=np.array(['k.:', 'k.--', 'k.-']),
     xticks=r2_min_mkps
 )
 
+
 print('saving data\n')
 save2frame(list_solutions,
            ['min_m={}'.format(m) for m in r2_min_mkps],
            'R2/national_auctions')
+

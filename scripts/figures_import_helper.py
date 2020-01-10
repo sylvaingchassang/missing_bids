@@ -47,8 +47,8 @@ ensure_dir(os.path.join(path_figures, 'R2'))
 
 
 # set global optimization parameters
-NUM_POINTS = 3000
-NUM_EVAL = 100
+NUM_POINTS = 5000
+NUM_EVAL = 400
 
 all_deviations = [-.02, .0, .0005]
 up_deviations = [.0, .0005]
@@ -95,6 +95,7 @@ class ComputeMinimizationSolution:
 
     def __call__(self, data, deviations):
         solutions = []
+        deviations = analytics.ordered_deviations(deviations)
         _share_ties, this_data = self._apply_filter(data)
         demands = this_data.assemble_target_moments(deviations)
         iter_constraints = self.constraint_func(demands)
@@ -139,12 +140,18 @@ class ComputeMinimizationSolution:
 
     def _moment_matrix(self, deviations):
         if self._is_rebidding():
+            if deviations[0] > -1e-8:
+                return rebidding.refined_moment_matrix_up_dev
             return rebidding.refined_moment_matrix()
         return auction_data.moment_matrix(
             analytics.ordered_deviations(deviations), 'slope')
 
     def _moment_weights(self, deviations):
         if self._is_rebidding():
+            if deviations[0] > -1e-8:
+                return rebidding.refined_weights_up_dev
+            elif deviations[2] < 1e-8:
+                return rebidding.refined_weights_down_dev
             return np.identity(5)
         return np.identity(len(analytics.ordered_deviations(deviations)))
 
