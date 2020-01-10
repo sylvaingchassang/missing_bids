@@ -112,14 +112,25 @@ class RefinedMultistageIsNonCompetitive(IsNonCompetitive):
 
     def _get_payoffs(self, env):
         win_down, marg_cont, marg_info, win0, win_up, cost = env
+        payoff_down = self._payoff_down(env)
+        payoff_up = self._payoff_up(env)
+        return [payoff_down, win0 * (1 - cost), payoff_up]
+
+    def _payoff_down(self, env):
+        win_down, marg_cont, marg_info, win0, win_up, cost = env
+        if self.rho_down > -1e-8:
+            return win0 * (1 + self.rho_down - cost)
         reserve = 1 + .5 * self._deviations[0]
         v = reserve - cost
-        payoff_down = win_down * (1 + self.rho_down - cost) - \
-                      marg_cont * self.coeff_marginal_cont * v - \
+        return win_down * (1 + self.rho_down - cost) - \
+            marg_cont * self.coeff_marginal_cont * v - \
             marg_info * self.coeff_marginal_info * self.coeff_marginal_cont * v
-        return [payoff_down,
-                win0 * (1 - cost),
-                win_up * (1 + self.rho_up - cost)]
+
+    def _payoff_up(self, env):
+        win_down, marg_cont, marg_info, win0, win_up, cost = env
+        if self.rho_up < 1e-8:
+            return win0 * (1 - cost) - 1e-8
+        return win_up * (1 + self.rho_up - cost)
 
 
 class RefinedMultistageEnvironment(EnvironmentBase):
@@ -150,6 +161,20 @@ def refined_moment_matrix(slope=True):
         ])
     else:
         return np.identity(5)
+
+
+def refined_moment_matrix_up_dev():
+    return np.array([
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 1, 0],
+            [0, 0, 0, -1, 1]
+        ])
+
+
+refined_weights_down_dev = np.diag([1, 1, 1, 1, 0])
+refined_weights_up_dev = np.diag([0, 0, 0, 1, 1])
 
 
 class RefinedMultistageSolver(MinCollusionSolver):
