@@ -28,11 +28,6 @@ for deviations in list_devs:
 print('saving plot\n')
 
 
-def dev_repr(devs):
-    dev_str = ', '.join([str(d) for d in analytics.ordered_deviations(devs) if
-                         np.abs(d) > 10e-8 or d == 0])
-    return '{' + dev_str + '}'
-
 pretty_plot(
     'R2/national auctions',
     list_solutions,

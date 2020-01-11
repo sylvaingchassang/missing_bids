@@ -36,7 +36,7 @@ print('saving plot\n')
 pretty_plot(
     'R2/city auctions',
     list_solutions,
-    [r"deviations {}".format(devs) for devs in list_devs],
+    [r"deviations {}".format(dev_repr(devs)) for devs in list_devs],
     xlabel='minimum markup',
     mark=np.array(['k.:', 'k.--', 'k.-']),
     xticks=r2_min_mkps

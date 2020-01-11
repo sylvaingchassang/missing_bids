@@ -16,7 +16,7 @@ tsuchiura_before_min_price_ = auction_data.AuctionData(
 
 tsuchiura_before_min_price = auction_data.AuctionData.from_clean_bids(
     tsuchiura_before_min_price_.df_bids.loc[
-        tsuchiura_before_min_price_.df_bids.norm_bid > .8])
+        tsuchiura_before_min_price_.df_bids.norm_bid > .9])
 
 plot_delta(tsuchiura_before_min_price,
            filename='R2/tsuchiura_delta_no_min_price_bids_above_80pct')
@@ -26,7 +26,7 @@ tsuchiura_after_min_price_ = auction_data.AuctionData(
 
 tsuchiura_after_min_price = auction_data.AuctionData.from_clean_bids(
     tsuchiura_after_min_price_.df_bids.loc[
-        tsuchiura_after_min_price_.df_bids.norm_bid > .8])
+        tsuchiura_after_min_price_.df_bids.norm_bid > .9])
 
 plot_delta(tsuchiura_after_min_price,
            filename='R2/tsuchiura_delta_with_min_price_bids_above_80pct')

@@ -179,6 +179,12 @@ compute_solution_rebidding_unfiltered = ComputeMinimizationSolution(
     filtering=False)
 
 
+def dev_repr(devs):
+    dev_str = ', '.join([str(d) for d in analytics.ordered_deviations(devs) if
+                         np.abs(d) > 10e-8 or d == 0])
+    return r'\{' + dev_str + r'\}'
+
+
 def pretty_plot(title, list_solutions, labels, mark=np.array(['k.:', 'k.-']),
                 xticks=(0.5, 1, 1.5, 2), max_y=1.05, xlabel='k',
                 ylabel='share of competitive histories'):
