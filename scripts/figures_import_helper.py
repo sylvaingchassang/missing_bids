@@ -12,11 +12,10 @@ import analytics
 import environments
 import rebidding
 
-
 from matplotlib import rc
+
 rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']})
 rc('text', usetex=True)
-
 
 hist_plot = auction_data.hist_plot
 sns.set_style('white')
@@ -45,13 +44,12 @@ ensure_dir(path_figures)
 ensure_dir(os.path.join(path_figures, 'R1'))
 ensure_dir(os.path.join(path_figures, 'R2'))
 
-
 # set global optimization parameters
 NUM_POINTS = 5000
 NUM_EVAL = 400
 
-all_deviations = [-.02, .0, .0005]
-up_deviations = [.0, .0005]
+all_deviations = [-.02, .0, .00075]
+up_deviations = [.0, .00075]
 down_deviations = [-.02, .0]
 
 
@@ -185,13 +183,23 @@ def dev_repr(devs):
     return r'\{' + dev_str + r'\}'
 
 
+def ensure_decreasing(l):
+    sl = sorted(l, reverse=True)
+    if sl != l:
+        raise Warning('Sequence {} was expected to be decreasing '
+                      'but is not.'.format(l))
+    return sl
+
+
 def pretty_plot(title, list_solutions, labels, mark=np.array(['k.:', 'k.-']),
                 xticks=(0.5, 1, 1.5, 2), max_y=1.05, xlabel='k',
-                ylabel='share of competitive histories'):
+                ylabel='share of competitive histories', expect_decreasing=True):
     plt_title = title.split('/')[1]
     plt.figure()
     # plt.title(plt_title)
     for i, (solutions, label) in enumerate(zip(list_solutions, labels)):
+        if expect_decreasing:
+            solutions = ensure_decreasing(solutions)
         plt.plot(xticks, solutions, mark[i], label=label)
     if labels[0] is not None:
         plt.legend(loc='best', fontsize=12)
