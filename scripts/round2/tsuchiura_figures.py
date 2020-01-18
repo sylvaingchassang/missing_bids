@@ -94,7 +94,9 @@ pretty_plot(
     [None], max_y=.15,
     ylabel='deviation temptation',
     xlabel='minimum markup',
-    xticks=r2_min_mkps)
+    xticks=r2_min_mkps,
+    expect_decreasing=False
+)
 
 print('saving data\n')
 save2frame([dev_gain],

@@ -185,7 +185,7 @@ def dev_repr(devs):
 
 def ensure_decreasing(l):
     sl = sorted(l, reverse=True)
-    if sl != l:
+    if np.any(sl != l):
         raise Warning('Sequence {} was expected to be decreasing '
                       'but is not.'.format(l))
     return sl
@@ -194,9 +194,7 @@ def ensure_decreasing(l):
 def pretty_plot(title, list_solutions, labels, mark=np.array(['k.:', 'k.-']),
                 xticks=(0.5, 1, 1.5, 2), max_y=1.05, xlabel='k',
                 ylabel='share of competitive histories', expect_decreasing=True):
-    plt_title = title.split('/')[1]
     plt.figure()
-    # plt.title(plt_title)
     for i, (solutions, label) in enumerate(zip(list_solutions, labels)):
         if expect_decreasing:
             solutions = ensure_decreasing(solutions)
