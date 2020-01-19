@@ -185,9 +185,6 @@ def dev_repr(devs):
 
 def ensure_decreasing(l):
     sl = sorted(l, reverse=True)
-    if np.any(sl != l):
-        raise Warning('Sequence {} was expected to be decreasing '
-                      'but is not.'.format(l))
     return sl
 
 
