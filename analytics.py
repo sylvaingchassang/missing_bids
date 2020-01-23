@@ -158,7 +158,7 @@ class MinCollusionSolver:
     def tolerance(self):
         if self._tolerance is None:
             self._tolerance = self._compute_tolerance()
-        tol = np.maximum(self._tolerance, 5e-8).reshape(-1, 1)
+        tol = np.maximum(self._tolerance, 1e-7).reshape(-1, 1)
         return tol if len(tol) > 1 else float(tol)
 
     def _compute_tolerance(self):
