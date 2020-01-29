@@ -48,9 +48,12 @@ ensure_dir(os.path.join(path_figures, 'R2'))
 NUM_POINTS = 5000
 NUM_EVAL = 400
 
-all_deviations = [-.02, .0, .00075]
-up_deviations = [.0, .00075]
+all_deviations = [-.02, .0, .001]
+up_deviations = [.0, .001]
 down_deviations = [-.02, .0]
+
+all_deviations_tsuchiura = [-.02, .0, .0008]
+up_deviations_tsuchiura = [.0, .0008]
 
 
 def markup_info_constraints(max_markups, ks, demands):

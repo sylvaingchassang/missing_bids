@@ -34,14 +34,15 @@ plot_delta(tsuchiura_after_min_price,
 print('computing solutions for different deviations, no min price')
 
 solutions_all_deviations, share_ties = compute_solution_parallel(
-    tsuchiura_before_min_price, all_deviations)
+    tsuchiura_before_min_price, all_deviations_tsuchiura)
 solutions_up_deviations, _ = compute_solution_parallel(
-    tsuchiura_before_min_price, up_deviations)
+    tsuchiura_before_min_price, up_deviations_tsuchiura)
 share_comp_all_deviations = 1 - solutions_all_deviations
 share_comp_up_deviations = 1 - solutions_up_deviations
 
 solutions_all_devs_with_min_price, share_min_price = \
-    compute_solution_parallel(tsuchiura_after_min_price, all_deviations)
+    compute_solution_parallel(
+        tsuchiura_after_min_price, all_deviations_tsuchiura)
 
 share_comp_min_price = 1 - share_min_price - (
         1 - share_min_price) * solutions_all_devs_with_min_price
@@ -86,7 +87,7 @@ min_deviation_temptation_solver = ComputeMinimizationSolution(
 
 print('solving for min temptation')
 dev_gain, _ = min_deviation_temptation_solver(
-    tsuchiura_before_min_price, all_deviations)
+    tsuchiura_before_min_price, all_deviations_tsuchiura)
 
 print('saving plot\n')
 pretty_plot(

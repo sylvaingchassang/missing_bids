@@ -3,13 +3,13 @@ from scripts.figures_import_helper import *
 # before/after collusion scandal industry comparisons, using national data
 
 list_data_sets = [
-    # ('Bridges', 'bc_collusion.csv'),
+    ('Bridges', 'bc_collusion.csv'),
     ('Electric', 'ec_collusion.csv'),
-    # ('Pre-Stressed Concrete', 'pc_collusion.csv'),
-    # ('Floods', 'fc_collusion.csv')
+    ('Pre-Stressed Concrete', 'pc_collusion.csv'),
+    ('Floods', 'fc_collusion.csv')
 ]
 
-deviations = [-.02, .0, .001]  #all_deviations
+deviations = all_deviations
 for industry, file in list_data_sets:
     print('='*20 + '\n' + industry)
     print('collecting and processing data')
