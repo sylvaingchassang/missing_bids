@@ -86,7 +86,7 @@ class ComputeMinimizationSolution:
     def __init__(
             self, metric=analytics.IsNonCompetitive,
             constraint_func=round1_constraints, project_choices=None,
-            filtering=True, seed=0, solver_cls=None):
+            filtering=True, seed=1, solver_cls=None):
         self.metric = metric
         self.constraint_func = constraint_func
         self._project_choices = project_choices
