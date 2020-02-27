@@ -128,7 +128,7 @@ class RefinedMultistageIsNonCompetitive(IsNonCompetitive):
 
     def _payoff_up(self, env):
         win_down, marg_cont, marg_info, win0, win_up, cost = env
-        if self.rho_up < 1e-8:
+        if self.rho_up < 1e-8:  # Kludge to deal with dummy up deviations
             return win0 * (1 - cost) - 1e-8
         return win_up * (1 + self.rho_up - cost)
 

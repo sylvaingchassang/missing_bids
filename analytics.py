@@ -40,6 +40,46 @@ class IsNonCompetitive(DimensionlessCollusionMetrics):
             self._normalized_deviation_temptation(env), .0)
 
 
+class EfficientIsNonCompetitive(DimensionlessCollusionMetrics):
+
+    def __init__(self, deviations, min_markup, max_markup):
+        self.min_markup = min_markup
+        self.max_markup = max_markup
+        super().__init__(deviations)
+
+    def __call__(self, env):
+        beliefs = env[:-1]
+        d0 = env[self.equilibrium_index]
+        cost_bounds = [self._cost_bound(d0, dn, rho) for dn, rho in
+                       zip(beliefs, self._deviations)]
+        plausible = self.is_plausible(cost_bounds)
+        consistent = self.is_consistent(cost_bounds)
+        return 1 - 1. * plausible * consistent
+
+    def is_plausible(self, cost_bounds):
+        return (self.cost_dev_up(cost_bounds) >= 1/(1 + self.max_markup) and
+                self.cost_dev_down(cost_bounds) <= 1/(1 + self.min_markup))
+
+    def cost_dev_down(self, cost_bounds):
+        if self.equilibrium_index > 0:
+            return max(cost_bounds[:self.equilibrium_index])
+        return 0
+
+    def cost_dev_up(self, cost_bounds):
+        if self.equilibrium_index + 1 < len(cost_bounds):
+            return min(cost_bounds[self.equilibrium_index + 1:])
+        return 1
+
+    def is_consistent(self, cost_bounds):
+        return self.cost_dev_down(cost_bounds) <= self.cost_dev_up(cost_bounds)
+
+    @staticmethod
+    def _cost_bound(d0, dn, rho):
+        if np.isclose(dn, d0):
+            return np.NAN
+        return (d0 - (1 + rho) * dn)/(d0 - dn)
+
+
 class NormalizedDeviationTemptation(DimensionlessCollusionMetrics):
     def __call__(self, env):
         return self._normalized_deviation_temptation(env)

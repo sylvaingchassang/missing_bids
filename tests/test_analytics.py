@@ -8,7 +8,7 @@ from .. import environments
 from ..auction_data import AuctionData, moment_matrix, FilterTies
 from ..analytics import (
     IsNonCompetitive, NormalizedDeviationTemptation, MinCollusionSolver,
-    ConvexProblem, DeviationTemptationOverProfits)
+    ConvexProblem, DeviationTemptationOverProfits, EfficientIsNonCompetitive)
 from solvers import MinCollusionIterativeSolver
 
 
@@ -23,6 +23,17 @@ class TestCollusionMetrics(TestCase):
     def test_is_non_competitive(self, deviations, expected):
         metric = IsNonCompetitive(deviations)
         assert metric(self.env) == expected
+
+    @parameterized.expand([
+        [[.0, .001], [.2, .1995, .5], 1],
+        [[.0, .001], [.2, .199, .5], 0],
+        [[-.01, .0], [.5, .2, .5], 1],
+        [[-.01, .0], [.4, .2, .5], 0],
+        [[-.01, .0, .001], [.4, .2, .199, .5], 1]
+    ])
+    def test_efficient_is_non_competitive(self, deviations, env, expected):
+        metric = EfficientIsNonCompetitive(deviations, .02, .5)
+        assert metric(env) == expected
 
     @parameterized.expand([
         [[-.02, .02], 0.01],
