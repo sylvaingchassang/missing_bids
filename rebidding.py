@@ -1,6 +1,7 @@
 from auction_data import AuctionData
 from analytics import (DimensionlessCollusionMetrics, ordered_deviations,
-                       IsNonCompetitive, MinCollusionSolver)
+                       IsNonCompetitive, MinCollusionSolver,
+                       EfficientIsNonCompetitive)
 from solvers import IteratedSolver, ParallelSolver
 from environments import EnvironmentBase, descending_sort
 import numpy as np
@@ -118,7 +119,7 @@ class RefinedMultistageIsNonCompetitive(IsNonCompetitive):
 
     def _payoff_down(self, env):
         win_down, marg_cont, marg_info, win0, win_up, cost = env
-        if self.rho_down > -1e-8:
+        if self.rho_down > -1e-8:  # dummy dev kludge
             return win0 * (1 + self.rho_down - cost)
         reserve = 1 + .5 * self._deviations[0]
         v = reserve - cost
@@ -128,9 +129,29 @@ class RefinedMultistageIsNonCompetitive(IsNonCompetitive):
 
     def _payoff_up(self, env):
         win_down, marg_cont, marg_info, win0, win_up, cost = env
-        if self.rho_up < 1e-8:  # Kludge to deal with dummy up deviations
+        if self.rho_up < 1e-8:  # dummy dev kludge
             return win0 * (1 - cost) - 1e-8
         return win_up * (1 + self.rho_up - cost)
+
+
+class EfficientMultistageIsNonCompetitive(EfficientIsNonCompetitive):
+    coeff_marginal_cont = 1
+    coeff_marginal_info = .5
+
+    def _get_cost_bounds(self, beliefs):
+        win_down, marg_cont, marg_info, win0, win_up = beliefs
+        rho_down, _, rho_up = self._deviations
+        return [self._penalized_cost_bound(
+                    win0, win_down, rho_down, marg_cont, marg_info),
+                np.NAN,
+                self._cost_bound(win0, win_up, rho_up)]
+
+    def _penalized_cost_bound(self, d0, dn, rho, mc, mi):
+        penalized_dn = dn + self.coeff_marginal_cont * mc + \
+            self.coeff_marginal_info * mi
+        if np.isclose(d0, penalized_dn):
+            return np.NAN
+        return (d0 - (1 + rho) * dn) / (d0 - penalized_dn)
 
 
 class RefinedMultistageEnvironment(EnvironmentBase):

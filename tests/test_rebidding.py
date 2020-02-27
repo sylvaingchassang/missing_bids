@@ -9,7 +9,7 @@ from rebidding import (
     RefinedMultistageData, RefinedMultistageIsNonCompetitive,
     RefinedMultistageEnvironment, refined_moment_matrix,
     RefinedMultistageSolver, IteratedRefinedMultistageSolver,
-    ParallelRefinedMultistageSolver)
+    ParallelRefinedMultistageSolver, EfficientMultistageIsNonCompetitive)
 from auction_data import _read_bids, FilterTies
 from environments import MarkupConstraint
 from .test_analytics import is_distribution
@@ -158,6 +158,16 @@ class TestRefinedMultistageIsNonCompetitive(TestCase):
             ValueError, self.metric_type, [-.1, -.01, 0, .1])
         self.assertRaises(
             ValueError, self.metric_type, [-.1, .01, 0, .1])
+
+
+class TestEfficientMultistageIsNonCompetitive(TestCase):
+
+    @parameterized.expand([
+        [[]]
+    ])
+    def test_penalized_payoff_bounds(self, deviations, beliefs, expected):
+        metric = EfficientMultistageIsNonCompetitive(deviations, .02, .5)
+        assert_array_almost_equal(metric._get_cost_bounds(beliefs), expected)
 
 
 class TestRefinedMultistageEnvironment(TestCase):

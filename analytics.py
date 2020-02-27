@@ -49,12 +49,15 @@ class EfficientIsNonCompetitive(DimensionlessCollusionMetrics):
 
     def __call__(self, env):
         beliefs = env[:-1]
-        d0 = env[self.equilibrium_index]
-        cost_bounds = [self._cost_bound(d0, dn, rho) for dn, rho in
-                       zip(beliefs, self._deviations)]
+        cost_bounds = self._get_cost_bounds(beliefs)
         plausible = self.is_plausible(cost_bounds)
         consistent = self.is_consistent(cost_bounds)
         return 1 - 1. * plausible * consistent
+
+    def _get_cost_bounds(self, beliefs):
+        d0 = beliefs[self.equilibrium_index]
+        return [self._cost_bound(d0, dn, rho) for dn, rho in
+                zip(beliefs, self._deviations)]
 
     def is_plausible(self, cost_bounds):
         return (self.cost_dev_up(cost_bounds) >= 1/(1 + self.max_markup) and
