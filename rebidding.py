@@ -149,8 +149,9 @@ class EfficientMultistageIsNonCompetitive(EfficientIsNonCompetitive):
     def _penalized_cost_bound(self, d0, dn, rho, mc, mi):
         penalized_dn = dn + self.coeff_marginal_cont * mc + \
             self.coeff_marginal_info * mi
-        if np.isclose(d0, penalized_dn):
-            return np.NAN
+        is_exception, return_value = self._is_exception(d0, penalized_dn, rho)
+        if is_exception:
+            return return_value
         return (d0 - (1 + rho) * dn) / (d0 - penalized_dn)
 
 

@@ -72,15 +72,22 @@ class EfficientIsNonCompetitive(DimensionlessCollusionMetrics):
         return self.cost_lower_bound(cost_bounds) <= \
                self.cost_upper_bound(cost_bounds)
 
-    @staticmethod
-    def _cost_bound(d0, dn, rho):
-        if -1e-8 <= rho < 0:
-            return 0
-        if 0 < rho < 1e-8:
-            return 1
-        if np.isclose(dn, d0):
-            return np.NAN
+    def _cost_bound(self, d0, dn, rho):
+        is_exception, return_value = self._is_exception(d0, dn, rho)
+        if is_exception:
+            return return_value
         return (d0 - (1 + rho) * dn)/(d0 - dn)
+
+    @staticmethod
+    def _is_exception(d0, dn, rho):
+        if -1e-8 <= rho < 0:
+            return True, 0
+        elif 0 < rho < 1e-8:
+            return True, 1
+        elif np.isclose(dn, d0):
+            return True, np.NAN
+        else:
+            return False, None
 
 
 class NormalizedDeviationTemptation(DimensionlessCollusionMetrics):
