@@ -147,12 +147,15 @@ class EfficientMultistageIsNonCompetitive(EfficientIsNonCompetitive):
                 self._cost_bound(win0, win_up, rho_up)]
 
     def _penalized_cost_bound(self, d0, dn, rho, mc, mi):
-        penalized_dn = dn + self.coeff_marginal_cont * mc + \
+        marginal_penalty = self.coeff_marginal_cont * mc + \
             self.coeff_marginal_info * mi
+        penalized_dn = dn - marginal_penalty
+        reserve = 1 + .5 * self._deviations[0]
         is_exception, return_value = self._is_exception(d0, penalized_dn, rho)
         if is_exception:
             return return_value
-        return (d0 - (1 + rho) * dn) / (d0 - penalized_dn)
+        return (d0 - (1 + rho) * dn + marginal_penalty * reserve
+                ) / (d0 - penalized_dn)
 
 
 class RefinedMultistageEnvironment(EnvironmentBase):

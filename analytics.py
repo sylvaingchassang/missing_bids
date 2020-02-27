@@ -86,6 +86,8 @@ class EfficientIsNonCompetitive(DimensionlessCollusionMetrics):
             return True, 1
         elif np.isclose(dn, d0):
             return True, np.NAN
+        elif rho < 0 and dn < d0:
+            return True, 0
         else:
             return False, None
 
