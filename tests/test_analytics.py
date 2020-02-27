@@ -27,8 +27,10 @@ class TestCollusionMetrics(TestCase):
     @parameterized.expand([
         [[.0, .001], [.2, .1995, .5], 1],
         [[.0, .001], [.2, .199, .5], 0],
+        [[-1e-9, .0, .001], [.5, .2, .199, .5], 0],
         [[-.01, .0], [.5, .2, .5], 1],
         [[-.01, .0], [.4, .2, .5], 0],
+        [[-.01, .0, 1e-9], [.4, .2, .199, .5], 0],
         [[-.01, .0, .001], [.4, .2, .199, .5], 1]
     ])
     def test_efficient_is_non_competitive(self, deviations, env, expected):

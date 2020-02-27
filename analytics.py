@@ -74,6 +74,10 @@ class EfficientIsNonCompetitive(DimensionlessCollusionMetrics):
 
     @staticmethod
     def _cost_bound(d0, dn, rho):
+        if -1e-8 <= rho < 0:
+            return 0
+        if 0 < rho < 1e-8:
+            return 1
         if np.isclose(dn, d0):
             return np.NAN
         return (d0 - (1 + rho) * dn)/(d0 - dn)
