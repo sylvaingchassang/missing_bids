@@ -50,31 +50,27 @@ class EfficientIsNonCompetitive(DimensionlessCollusionMetrics):
     def __call__(self, env):
         beliefs = env[:-1]
         cost_bounds = self._get_cost_bounds(beliefs)
-        plausible = self.is_plausible(cost_bounds)
         consistent = self.is_consistent(cost_bounds)
-        return 1 - 1. * plausible * consistent
+        return 1 - 1. * consistent
 
     def _get_cost_bounds(self, beliefs):
         d0 = beliefs[self.equilibrium_index]
         return [self._cost_bound(d0, dn, rho) for dn, rho in
                 zip(beliefs, self._deviations)]
 
-    def is_plausible(self, cost_bounds):
-        return (self.cost_dev_up(cost_bounds) >= 1/(1 + self.max_markup) and
-                self.cost_dev_down(cost_bounds) <= 1/(1 + self.min_markup))
+    def cost_lower_bound(self, cost_bounds):
+        dev_bound = max(cost_bounds[:self.equilibrium_index]) if \
+            self.equilibrium_index > 0 else 0
+        return max(dev_bound, 1 / (1 + self.max_markup))
 
-    def cost_dev_down(self, cost_bounds):
-        if self.equilibrium_index > 0:
-            return max(cost_bounds[:self.equilibrium_index])
-        return 0
-
-    def cost_dev_up(self, cost_bounds):
-        if self.equilibrium_index + 1 < len(cost_bounds):
-            return min(cost_bounds[self.equilibrium_index + 1:])
-        return 1
+    def cost_upper_bound(self, cost_bounds):
+        dev_bound = min(cost_bounds[self.equilibrium_index + 1:]) if \
+            self.equilibrium_index + 1 < len(cost_bounds) else 1
+        return min(dev_bound, 1 / (1 + self.min_markup))
 
     def is_consistent(self, cost_bounds):
-        return self.cost_dev_down(cost_bounds) <= self.cost_dev_up(cost_bounds)
+        return self.cost_lower_bound(cost_bounds) <= \
+               self.cost_upper_bound(cost_bounds)
 
     @staticmethod
     def _cost_bound(d0, dn, rho):

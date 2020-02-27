@@ -163,7 +163,7 @@ class TestRefinedMultistageIsNonCompetitive(TestCase):
 class TestEfficientMultistageIsNonCompetitive(TestCase):
 
     @parameterized.expand([
-        [[]]
+        [[.0, ]]
     ])
     def test_penalized_payoff_bounds(self, deviations, beliefs, expected):
         metric = EfficientMultistageIsNonCompetitive(deviations, .02, .5)
