@@ -37,8 +37,12 @@ solutions_all_deviations, share_ties = compute_solution_parallel(
     tsuchiura_before_min_price, all_deviations_tsuchiura)
 solutions_up_deviations, _ = compute_solution_parallel(
     tsuchiura_before_min_price, up_deviations_tsuchiura)
+solutions_down_deviations, _ = compute_solution_parallel(
+    tsuchiura_before_min_price, down_deviations)
+
 share_comp_all_deviations = 1 - solutions_all_deviations
 share_comp_up_deviations = 1 - solutions_up_deviations
+share_comp_down_deviations = 1 - solutions_down_deviations
 
 solutions_all_devs_with_min_price, share_min_price = \
     compute_solution_parallel(
@@ -61,6 +65,18 @@ pretty_plot(
      share_comp_all_deviations_w_ties],
     ['upward dev.', 'upward dev. and ties',
      'upward, downward deviations and ties'], ['k.:', 'k.--', 'k.-'],
+    xlabel='minimum markup',
+    xticks=r2_min_mkps)
+
+print('saving plot 1b\n')
+pretty_plot(
+    'R2/Tsuchiura -- different deviations -- no minimum price (b)',
+    [share_comp_up_deviations_wo_ties,
+     share_comp_up_deviations_w_ties,
+     share_comp_down_deviations,
+     share_comp_all_deviations_w_ties],
+    ['upward dev', 'upward dev and ties', 'downward dev'
+     'upward, downward dev and ties'], ['k.:', 'k.--', 'k.-', 'k.-.'],
     xlabel='minimum markup',
     xticks=r2_min_mkps)
 
