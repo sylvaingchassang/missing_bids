@@ -75,7 +75,7 @@ pretty_plot(
      share_comp_up_deviations_w_ties,
      share_comp_down_deviations,
      share_comp_all_deviations_w_ties],
-    ['upward dev', 'upward dev and ties', 'downward dev'
+    ['upward dev', 'upward dev and ties', 'downward dev',
      'upward, downward dev and ties'], ['k.:', 'k.--', 'k.-', 'k.-.'],
     xlabel='minimum markup',
     xticks=r2_min_mkps)
