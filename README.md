@@ -2,7 +2,7 @@
 #### ''Data-Driven Regulation: Theory and Application to Missing Bids'' 
 ##### (Chassang, Kawai, Nakabayashi and Ortner)
 
-![](https://travis-ci.com/sylvaingchassang/missing_bids.svg?branch=master)
+![](https://travis-ci.com/sylvaingchassang/missing_bids.svg?branch=master) @travis-ci
 
 tested under Python 3.7.4, and Ubuntu Linux 16.04/18.04
 
