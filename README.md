@@ -2,6 +2,8 @@
 #### ''Data-Driven Regulation: Theory and Application to Missing Bids'' 
 ##### (Chassang, Kawai, Nakabayashi and Ortner)
 
+![](https://travis-ci.com/sylvaingchassang/missing_bids.svg?branch=master)
+
 tested under Python 3.7.4, and Ubuntu Linux 16.04/18.04
 
 if you have suggestions for improvement, please contact us  
@@ -17,6 +19,9 @@ if you want to contribute, follow [PEP8](https://www.python.org/dev/peps/pep-000
     > pip install -r requirements.txt
 
     from inside the `missing_bids/` folder
+    
+    note that the `cvxpy` package is a little finicky; 
+    it works smoothly under python 3.7.4 but not necessarily under later versions
 
 1. to run tests and check coverage, run
     > sh missing_bids/test_coverage.sh
