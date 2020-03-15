@@ -2,7 +2,7 @@
 #### ''Data-Driven Regulation: Theory and Application to Missing Bids'' 
 ##### (Chassang, Kawai, Nakabayashi and Ortner)
 
-tested under Python 3.6.6, and Ubuntu Linux 16.04/18.04
+tested under Python 3.7.4, and Ubuntu Linux 16.04/18.04
 
 if you have suggestions for improvement, please contact us  
 if you want to contribute, follow [PEP8](https://www.python.org/dev/peps/pep-0008/) standards
