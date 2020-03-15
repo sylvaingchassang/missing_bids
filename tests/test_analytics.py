@@ -9,7 +9,7 @@ from ..auction_data import AuctionData, moment_matrix, FilterTies
 from ..analytics import (
     IsNonCompetitive, NormalizedDeviationTemptation, MinCollusionSolver,
     ConvexProblem, DeviationTemptationOverProfits, EfficientIsNonCompetitive)
-from solvers import MinCollusionIterativeSolver
+from ..solvers import MinCollusionIterativeSolver
 
 
 class TestCollusionMetrics(TestCase):

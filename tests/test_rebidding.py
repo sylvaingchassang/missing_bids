@@ -4,14 +4,14 @@ from numpy.testing import TestCase, assert_array_almost_equal, \
     assert_almost_equal
 from parameterized import parameterized
 
-from rebidding import (
+from ..rebidding import (
     MultistageAuctionData, MultistageIsNonCompetitive,
     RefinedMultistageData, RefinedMultistageIsNonCompetitive,
     RefinedMultistageEnvironment, refined_moment_matrix,
     RefinedMultistageSolver, IteratedRefinedMultistageSolver,
     ParallelRefinedMultistageSolver, EfficientMultistageIsNonCompetitive)
-from auction_data import _read_bids, FilterTies
-from environments import MarkupConstraint
+from ..auction_data import _read_bids, FilterTies
+from ..environments import MarkupConstraint
 from .test_analytics import is_distribution
 
 
