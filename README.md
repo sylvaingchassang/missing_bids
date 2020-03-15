@@ -3,6 +3,7 @@
 ##### (Chassang, Kawai, Nakabayashi and Ortner)
 
 ![](https://travis-ci.com/sylvaingchassang/missing_bids.svg?branch=master) 
+
 tested under Python 3.7.4, and Ubuntu Linux 16.04/18.04, @travis-ci
 
 if you have suggestions for improvement, please contact us  
