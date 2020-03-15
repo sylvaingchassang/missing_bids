@@ -2,9 +2,8 @@
 #### ''Data-Driven Regulation: Theory and Application to Missing Bids'' 
 ##### (Chassang, Kawai, Nakabayashi and Ortner)
 
-![](https://travis-ci.com/sylvaingchassang/missing_bids.svg?branch=master) @travis-ci
-
-tested under Python 3.7.4, and Ubuntu Linux 16.04/18.04
+![](https://travis-ci.com/sylvaingchassang/missing_bids.svg?branch=master) 
+tested under Python 3.7.4, and Ubuntu Linux 16.04/18.04, @travis-ci
 
 if you have suggestions for improvement, please contact us  
 if you want to contribute, follow [PEP8](https://www.python.org/dev/peps/pep-0008/) standards
@@ -36,8 +35,7 @@ if you want to contribute, follow [PEP8](https://www.python.org/dev/peps/pep-000
     make sure the folder containing `missing_bids/` is included in your `PYTHONPATH`
 
 1. to generate figures included in the paper, run
-    > bash missing_bids/scripts/generate_figures.sh 
+    > bash missing_bids/scripts/round2/generate_figures.sh 
     
     generating figures requires 16GB RAM;  
-    this is caused by memory leaks while bootstrapping the national level data   
     suggestions for improvements welcome
