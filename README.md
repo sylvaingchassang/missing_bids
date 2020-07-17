@@ -6,6 +6,8 @@
 
 tested under Python 3.7.4, and Ubuntu Linux 16.04/18.04, @travis-ci
 
+hoping 3.8 works, make sure to run sudo apt-get install python3.8-dev
+
 if you have suggestions for improvement, please contact us  
 if you want to contribute, follow [PEP8](https://www.python.org/dev/peps/pep-0008/) standards
 
