@@ -5,8 +5,8 @@ from scipy.spatial import ConvexHull
 import cvxpy
 import pandas as pd
 
-from . import environments
-from . import auction_data
+import environments
+import auction_data
 
 
 class DimensionlessCollusionMetrics:
@@ -42,7 +42,7 @@ class IsNonCompetitive(DimensionlessCollusionMetrics):
 
 class EfficientIsNonCompetitive(DimensionlessCollusionMetrics):
 
-    def __init__(self, deviations, min_markup, max_markup):
+    def __init__(self, deviations, min_markup=0, max_markup=1):
         self.min_markup = min_markup
         self.max_markup = max_markup
         super().__init__(deviations)
@@ -210,7 +210,7 @@ class MinCollusionSolver:
     def tolerance(self):
         if self._tolerance is None:
             self._tolerance = self._compute_tolerance()
-        tol = np.maximum(self._tolerance, 1e-7).reshape(-1, 1)
+        tol = np.maximum(self._tolerance, 1e-8).reshape(-1, 1)
         return tol if len(tol) > 1 else float(tol)
 
     def _compute_tolerance(self):

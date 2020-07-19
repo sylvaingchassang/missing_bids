@@ -79,6 +79,17 @@ class PlausibilityConstraint(object):
         """"""
 
 
+class EmptyConstraint(PlausibilityConstraint):
+    def __init__(self, *args, **kwargs):
+        pass
+
+    def __call__(self, e):
+        return True
+
+    def project(self, e):
+        return e
+
+
 class InformationConstraint(PlausibilityConstraint):
 
     def __init__(self, k, sample_demands):
@@ -113,6 +124,8 @@ class InformationConstraint(PlausibilityConstraint):
 
 class MarkupConstraint(PlausibilityConstraint):
     def __init__(self, max_markup=.5, min_markup=.0):
+        self.min_markup = min_markup
+        self.max_markup = max_markup
         self._max_cost = self._cost_ratio(min_markup)
         self._min_cost = self._cost_ratio(max_markup)
 
@@ -131,5 +144,6 @@ class MarkupConstraint(PlausibilityConstraint):
         return env
 
     def __str__(self):
-        return 'MarkupConstraint(min_cost={}, max_cost={})'.format(self._min_cost, self._max_cost)
+        return 'MarkupConstraint(min_cost={}, max_cost={})'.format(
+            self._min_cost, self._max_cost)
 

@@ -45,38 +45,25 @@ for round in ['R1', 'R2', 'R3']:
     ensure_dir(os.path.join(path_figures, round))
 
 # set global optimization parameters
-NUM_POINTS = 3000 #5000
-NUM_EVAL = 10 #400
+NUM_POINTS = 5000
+NUM_EVAL = 100
 
 all_deviations = [-.02, .0, .001]
 up_deviations = [.0, .001]
 down_deviations = [-.02, .0]
 
-all_deviations_tsuchiura = [-.02, .0, .0008]
-up_deviations_tsuchiura = [.0, .0008]
+all_deviations_tsuchiura = [-.02, .0, .0007]
+up_deviations_tsuchiura = [.0, .0007]
 
+#r3_min_markups = [.0, .025, .05, .1, .2, .4]
+r3_min_markups = [.0, .1, .4]
+r3_markups = list(product(r3_min_markups, [.5]))
 
-def markup_info_constraints(max_markups, ks, demands):
-    return [
-        [environments.MarkupConstraint(max_markup=max_markup, min_markup=.02),
-         environments.InformationConstraint(k=k, sample_demands=demands)]
-        for max_markup, k in product(max_markups, ks)
-    ]
+r3_constraints = ([environments.MarkupConstraint(
+    max_markup=max_markup, min_markup=min_markup)]
+    for min_markup, max_markup in r3_markups)
 
-
-def round1_constraints(demands):
-    return markup_info_constraints(
-        max_markups=(.5,), ks=(0.5, 1, 1.5, 2), demands=demands)
-
-
-r2_min_mkps = [.0, .025, .05, .1, .2, .4]
-
-
-def round2_constraints(demands):
-    return [
-        [environments.MarkupConstraint(max_markup=.5, min_markup=min_markup)]
-        for min_markup in r2_min_mkps
-    ]
+empty_constraints = [[environments.EmptyConstraint()]] * len(r3_markups)
 
 
 class ComputeMinimizationSolution:
@@ -85,12 +72,12 @@ class ComputeMinimizationSolution:
 
     def __init__(
             self, metric=analytics.IsNonCompetitive,
-            constraint_func=round1_constraints, project_choices=None,
-            filtering=True, seed=0, solver_cls=None):
+            markups=r3_markups, constraints=empty_constraints,
+            seed=0, solver_cls=None):
         self.metric = metric
-        self.constraint_func = constraint_func
-        self._project_choices = project_choices
-        self.filtering = filtering
+        self.markups_list = markups
+        self.constraints_list = constraints
+        self.filtering = True
         self.seed = seed
         self.solver_cls = solver_cls or solvers.IteratedSolver
 
@@ -98,14 +85,10 @@ class ComputeMinimizationSolution:
         solutions = []
         deviations = analytics.ordered_deviations(deviations)
         _share_ties, this_data = self._apply_filter(data)
-        demands = this_data.assemble_target_moments(deviations)
-        iter_constraints = self.constraint_func(demands)
-        project_choices = \
-            self._project_choices or [False] * len(iter_constraints)
 
-        for constraints, proj in zip(iter_constraints, project_choices):
+        for mkps, constraints in zip(self.markups_list, self.constraints_list):
             this_solver = self.get_solver(
-                this_data, deviations, constraints, proj)
+                this_data, deviations, constraints, mkps)
             solutions.append(this_solver.result.solution)
             del this_solver
 
@@ -123,21 +106,28 @@ class ComputeMinimizationSolution:
             _share_ties = 0
         return _share_ties, this_data
 
-    def get_solver(self, this_data, deviations, constraints, proj):
+    def get_solver(self, this_data, deviations, constraints, mkps):
+        self._update_metric_params(mkps)
         return self.solver_cls(
             data=this_data,
             deviations=deviations,
             metric=self.metric,
             plausibility_constraints=constraints,
-            num_points=int(self._NUM_POINTS / (1 + 9 * proj)),
+            num_points=self._NUM_POINTS,
             seed=self.seed,
-            project=proj,
+            project=True,
             filter_ties=None,
             num_evaluations=self._NUM_EVAL,
             confidence_level=1 - .05 / len(deviations),
             moment_matrix=self._moment_matrix(deviations),
             moment_weights=self._moment_weights(deviations)
         )
+
+    def _update_metric_params(self, mkps):
+        min_markup, max_markup = mkps
+        if self._is_efficient():
+            self.metric.min_markup = min_markup
+            self.metric.max_markup = max_markup
 
     def _moment_matrix(self, deviations):
         if self._is_rebidding():
@@ -159,29 +149,13 @@ class ComputeMinimizationSolution:
     def _is_rebidding(self):
         return self.solver_cls == rebidding.ParallelRefinedMultistageSolver
 
+    def _is_efficient(self):
+        return isinstance(self.metric, analytics.EfficientIsNonCompetitive)
 
-compute_minimization_solution = ComputeMinimizationSolution()
-compute_minimization_solution_unfiltered = ComputeMinimizationSolution(
-    filtering=False)
-
-compute_solution_parallel = ComputeMinimizationSolution(
-    solver_cls=solvers.ParallelSolver, constraint_func=round2_constraints)
-compute_solution_parallel_unfiltered = ComputeMinimizationSolution(
-    solver_cls=solvers.ParallelSolver, filtering=False,
-    constraint_func=round2_constraints)
-compute_solution_rebidding = ComputeMinimizationSolution(
-    constraint_func=round2_constraints,
-    solver_cls=rebidding.ParallelRefinedMultistageSolver,
-    metric=rebidding.RefinedMultistageIsNonCompetitive)
-compute_solution_rebidding_unfiltered = ComputeMinimizationSolution(
-    constraint_func=round2_constraints,
-    solver_cls=rebidding.ParallelRefinedMultistageSolver,
-    metric=rebidding.RefinedMultistageIsNonCompetitive,
-    filtering=False)
 
 compute_efficient_solution_parallel = ComputeMinimizationSolution(
     metric=analytics.EfficientIsNonCompetitive,
-    solver_cls=solvers.ParallelSolver, constraint_func=round2_constraints)
+    solver_cls=solvers.ParallelSolver)
 
 
 def dev_repr(devs):
@@ -191,8 +165,9 @@ def dev_repr(devs):
 
 
 def ensure_decreasing(l):
-    sl = sorted(l, reverse=True)
-    return sl
+    #sl = sorted(l, reverse=True)
+    #return sl
+    return l
 
 
 def pretty_plot(title, list_solutions, labels, mark=np.array(['k.:', 'k.-']),
