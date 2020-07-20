@@ -3,6 +3,7 @@
 *tests/.pytest_cache/*
 *.coverage*
 *script_config.py
+*conda_run.sh
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
