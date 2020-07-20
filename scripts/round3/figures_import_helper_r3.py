@@ -14,9 +14,9 @@ import rebidding
 
 from matplotlib import rc
 
-# set path/to/data in a config.py file, which you must create
-# config.py is included in .gitignore
-from .config import path_data
+# set path/to/data in a script_config.py file, which you must create
+# script_config.py is included in .gitignore
+from .script_config import path_data
 
 rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']})
 rc('text', usetex=True)
