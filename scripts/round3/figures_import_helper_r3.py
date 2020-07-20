@@ -40,7 +40,7 @@ for rnd in ['R1', 'R2', 'R3']:
 
 # set global optimization parameters
 NUM_POINTS = 5000
-NUM_EVAL = 1
+NUM_EVAL = 20
 
 all_deviations = [-.02, .0, .001]
 up_deviations = [.0, .001]

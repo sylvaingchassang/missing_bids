@@ -2,7 +2,7 @@ import numpy as np
 import multiprocessing
 import lazy_property
 
-from .analytics import MinCollusionSolver, MinCollusionResult
+from analytics import MinCollusionSolver, MinCollusionResult
 
 
 class IteratedSolver:
