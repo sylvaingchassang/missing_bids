@@ -14,22 +14,16 @@ import rebidding
 
 from matplotlib import rc
 
+# set path/to/data in a config.py file, which you must create
+# config.py is included in .gitignore
+from .config import path_data
+
 rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']})
 rc('text', usetex=True)
 
 hist_plot = auction_data.hist_plot
 sns.set_style('white')
 
-# getting data directory
-# path/to/data (if you know it, otherwise, we'll find it below)
-path_data = None
-
-if path_data is None:
-    name = 'data_for_missing_bids_figures'
-    for root, dirs, _ in os.walk('/'):
-        if name in dirs:
-            path_data = os.path.join(root, name)
-            break
 
 path_figures = os.path.join(path_data, 'figures',
                             datetime.utcnow().strftime('%Y%m%d'))
@@ -41,19 +35,19 @@ def ensure_dir(path_dir):
 
 
 ensure_dir(path_figures)
-for round in ['R1', 'R2', 'R3']:
-    ensure_dir(os.path.join(path_figures, round))
+for rnd in ['R1', 'R2', 'R3']:
+    ensure_dir(os.path.join(path_figures, rnd))
 
 # set global optimization parameters
 NUM_POINTS = 5000
-NUM_EVAL = 10
+NUM_EVAL = 1
 
 all_deviations = [-.02, .0, .001]
 up_deviations = [.0, .001]
 down_deviations = [-.02, .0]
 
-all_deviations_tsuchiura = [-.02, .0, .0007]
-up_deviations_tsuchiura = [.0, .0007]
+all_deviations_tsuchiura = [-.02, .0, .0008]
+up_deviations_tsuchiura = [.0, .0008]
 
 r3_min_markups = [.0, .025, .05, .1, .2, .4]
 r3_markups = list(product(r3_min_markups, [.5]))
