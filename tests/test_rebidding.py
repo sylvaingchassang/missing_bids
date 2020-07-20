@@ -170,7 +170,8 @@ class TestEfficientMultistageIsNonCompetitive(TestCase):
         [[-.02, 0, .001], [.37, .1, .1, .2, .199], [0.705, np.NAN, .801]]
     ])
     def test_penalized_payoff_bounds(self, deviations, beliefs, expected):
-        metric = EfficientMultistageIsNonCompetitive(deviations, .02, .5)
+        metric = EfficientMultistageIsNonCompetitive(deviations)
+        metric.min_markup, metric.max_markup = .02, .5
         assert_array_almost_equal(metric._get_cost_bounds(beliefs), expected)
 
     @parameterized.expand([
@@ -181,7 +182,8 @@ class TestEfficientMultistageIsNonCompetitive(TestCase):
         [[-.02, 0, .001], [.37, .1, .1, .2, .199, .5], 0]
     ])
     def test_is_non_competitive(self, deviations, env, expected):
-        metric = EfficientMultistageIsNonCompetitive(deviations, .02, .5)
+        metric = EfficientMultistageIsNonCompetitive(deviations)
+        metric.min_markup, metric.max_markup = .02, .5
         assert metric(env) == expected
 
 

@@ -34,7 +34,8 @@ class TestCollusionMetrics(TestCase):
         [[-.01, .0, .001], [.4, .2, .199, .5], 1]
     ])
     def test_efficient_is_non_competitive(self, deviations, env, expected):
-        metric = EfficientIsNonCompetitive(deviations, .02, .5)
+        metric = EfficientIsNonCompetitive(deviations)
+        metric.min_markup, metric.max_markup = .02, .5
         assert metric(env) == expected
 
     @parameterized.expand([
