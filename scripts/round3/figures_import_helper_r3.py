@@ -46,7 +46,7 @@ for round in ['R1', 'R2', 'R3']:
 
 # set global optimization parameters
 NUM_POINTS = 5000
-NUM_EVAL = 100
+NUM_EVAL = 10
 
 all_deviations = [-.02, .0, .001]
 up_deviations = [.0, .001]
@@ -55,8 +55,7 @@ down_deviations = [-.02, .0]
 all_deviations_tsuchiura = [-.02, .0, .0007]
 up_deviations_tsuchiura = [.0, .0007]
 
-#r3_min_markups = [.0, .025, .05, .1, .2, .4]
-r3_min_markups = [.0, .1, .4]
+r3_min_markups = [.0, .025, .05, .1, .2, .4]
 r3_markups = list(product(r3_min_markups, [.5]))
 
 r3_constraints = ([environments.MarkupConstraint(
@@ -150,7 +149,7 @@ class ComputeMinimizationSolution:
         return self.solver_cls == rebidding.ParallelRefinedMultistageSolver
 
     def _is_efficient(self):
-        return isinstance(self.metric, analytics.EfficientIsNonCompetitive)
+        return issubclass(self.metric, analytics.EfficientIsNonCompetitive)
 
 
 compute_efficient_solution_parallel = ComputeMinimizationSolution(

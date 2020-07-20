@@ -37,12 +37,12 @@ solutions_all_deviations, share_ties = compute_efficient_solution_parallel(
     tsuchiura_before_min_price, all_deviations_tsuchiura)
 solutions_up_deviations, _ = compute_efficient_solution_parallel(
     tsuchiura_before_min_price, up_deviations_tsuchiura)
-# solutions_down_deviations, _ = compute_efficient_solution_parallel(
-#     tsuchiura_before_min_price, down_deviations)
+solutions_down_deviations, _ = compute_efficient_solution_parallel(
+    tsuchiura_before_min_price, down_deviations)
 
 share_comp_all_deviations = 1 - solutions_all_deviations
 share_comp_up_deviations = 1 - solutions_up_deviations
-# share_comp_down_deviations = 1 - solutions_down_deviations
+share_comp_down_deviations = 1 - solutions_down_deviations
 
 solutions_all_devs_with_min_price, share_min_price = \
     compute_efficient_solution_parallel(
@@ -69,17 +69,17 @@ pretty_plot(
     xticks=r3_min_markups)
 
 
-# print('saving plot 1b\n')
-# pretty_plot(
-#     'R3/Tsuchiura -- different deviations -- no minimum price (b)',
-#     [share_comp_up_deviations_wo_ties,
-#      share_comp_up_deviations_w_ties,
-#      share_comp_down_deviations,
-#      share_comp_all_deviations_w_ties],
-#     ['upward dev', 'upward dev and ties', 'downward dev',
-#      'upward, downward dev and ties'], ['k.:', 'k.--', 'k.-', 'k.-.'],
-#     xlabel='minimum markup',
-#     xticks=r3_min_markups)
+print('saving plot 1b\n')
+pretty_plot(
+    'R3/Tsuchiura -- different deviations -- no minimum price (b)',
+    [share_comp_up_deviations_wo_ties,
+     share_comp_up_deviations_w_ties,
+     share_comp_down_deviations,
+     share_comp_all_deviations_w_ties],
+    ['upward dev', 'upward dev and ties', 'downward dev',
+     'upward, downward dev and ties'], ['k.:', 'k.--', 'k.-', 'k.-.'],
+    xlabel='minimum markup',
+    xticks=r3_min_markups)
 
 print('saving plot 2\n')
 pretty_plot(
@@ -90,34 +90,34 @@ pretty_plot(
     xlabel='minimum markup',
     xticks=r3_min_markups)
 
-# # computing deviation temptation over profits, using city data
-#
-# print('='*20 + '\n' + 'Tsuchiura, deviation temptation')
-# print('collecting and processing data')
-#
-# min_deviation_temptation_solver = ComputeMinimizationSolution(
-#     solver_cls=solvers.ParallelSolver,
-#     constraints=r3_constraints,
-#     metric=analytics.NormalizedDeviationTemptation
-# )
-#
-#
-# print('solving for min temptation')
-# dev_gain, _ = min_deviation_temptation_solver(
-#     tsuchiura_before_min_price, all_deviations_tsuchiura)
-#
-# print('saving plot\n')
-# pretty_plot(
-#     'R3/Tsuchiura -- Deviation Gain', [dev_gain],
-#     [None], max_y=.15,
-#     ylabel='deviation temptation',
-#     xlabel='minimum markup',
-#     xticks=r3_min_markups,
-#     expect_decreasing=False
-# )
-#
-# print('saving data\n')
-# save2frame([dev_gain],
-#            ['min_m={}'.format(m) for m in r3_min_markups],
-#            'R3/tsuchiura_deviation_temptation',
-#            ['deviation gains'])
+# computing deviation temptation over profits, using city data
+
+print('='*20 + '\n' + 'Tsuchiura, deviation temptation')
+print('collecting and processing data')
+
+min_deviation_temptation_solver = ComputeMinimizationSolution(
+    solver_cls=solvers.ParallelSolver,
+    constraints=r3_constraints,
+    metric=analytics.NormalizedDeviationTemptation
+)
+
+
+print('solving for min temptation')
+dev_gain, _ = min_deviation_temptation_solver(
+    tsuchiura_before_min_price, all_deviations_tsuchiura)
+
+print('saving plot\n')
+pretty_plot(
+    'R3/Tsuchiura -- Deviation Gain', [dev_gain],
+    [None], max_y=.15,
+    ylabel='deviation temptation',
+    xlabel='minimum markup',
+    xticks=r3_min_markups,
+    expect_decreasing=False
+)
+
+print('saving data\n')
+save2frame([dev_gain],
+           ['min_m={}'.format(m) for m in r3_min_markups],
+           'R3/tsuchiura_deviation_temptation',
+           ['deviation gains'])

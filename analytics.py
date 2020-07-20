@@ -41,10 +41,10 @@ class IsNonCompetitive(DimensionlessCollusionMetrics):
 
 
 class EfficientIsNonCompetitive(DimensionlessCollusionMetrics):
+    min_markup = 0
+    max_markup = .5
 
-    def __init__(self, deviations, min_markup=0, max_markup=1):
-        self.min_markup = min_markup
-        self.max_markup = max_markup
+    def __init__(self, deviations):
         super().__init__(deviations)
 
     def __call__(self, env):
