@@ -1,4 +1,4 @@
-from scripts.figures_import_helper import *
+from scripts.round3.figures_import_helper_r3 import *
 
 
 # national data
@@ -8,36 +8,36 @@ print('collecting and processing data')
 national_data = rebidding.RefinedMultistageData(
     os.path.join(path_data, 'sample_with_firm_rank.csv'))
 
-plot_delta(national_data, filename='R2/national_data_deltas')
+plot_delta(national_data, filename='R3/national_data_deltas')
 
 print('computing problem solutions')
 deviations = all_deviations
 list_coeffs = [.25, .5, .75]
 list_solutions = []
 
-RMIsNonComp = rebidding.RefinedMultistageIsNonCompetitive
+EMIsNonComp = rebidding.EfficientMultistageIsNonCompetitive
 
 for coeff_marginal_info in list_coeffs:
-    RMIsNonComp.coeff_marginal_info = coeff_marginal_info
+    EMIsNonComp.coeff_marginal_info = coeff_marginal_info
     this_compute_solution = ComputeMinimizationSolution(
-        constraint_func=round2_constraints,
+        constraints=empty_constraints,
         solver_cls=rebidding.ParallelRefinedMultistageSolver,
-        metric=RMIsNonComp)
-    print('\t', 'coeff marginal info', RMIsNonComp.coeff_marginal_info)
+        metric=EMIsNonComp)
+    print('\t', 'coeff marginal info', EMIsNonComp.coeff_marginal_info)
     solutions, _ = this_compute_solution(
         national_data, deviations)
     list_solutions.append(1 - solutions)
 
 print('saving plot\n')
-pretty_plot('R2/national auctions robustness',
+pretty_plot('R3/national auctions robustness',
             list_solutions,
             [r"$\alpha={}$".format(coeff) for coeff in list_coeffs],
             xlabel='minimum markup',
             mark=np.array(['k.:', 'k.-', 'k.--']),
-            xticks=r2_min_mkps)
+            xticks=r3_min_markups)
 
 print('saving data\n')
 save2frame(list_solutions,
-           ['min_m={}'.format(m) for m in r2_min_mkps],
-           'R2/national_auctions_robustness',
+           ['min_m={}'.format(m) for m in r3_min_markups],
+           'R3/national_auctions_robustness',
            list_coeffs)

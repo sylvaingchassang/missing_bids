@@ -16,7 +16,7 @@ from matplotlib import rc
 
 # set path/to/data in a script_config.py file, which you must create
 # script_config.py is included in .gitignore
-from .script_config import path_data
+from scripts.round3.script_config import path_data
 
 rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']})
 rc('text', usetex=True)
@@ -40,7 +40,7 @@ for rnd in ['R1', 'R2', 'R3']:
 
 # set global optimization parameters
 NUM_POINTS = 5000
-NUM_EVAL = 20
+NUM_EVAL = 10
 
 all_deviations = [-.02, .0, .001]
 up_deviations = [.0, .001]
