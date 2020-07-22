@@ -39,8 +39,8 @@ for rnd in ['R1', 'R2', 'R3']:
     ensure_dir(os.path.join(path_figures, rnd))
 
 # set global optimization parameters
-NUM_POINTS = 5000
-NUM_EVAL = 10
+NUM_POINTS = 3000
+NUM_EVAL = 2
 
 all_deviations = [-.02, .0, .001]
 up_deviations = [.0, .001]
@@ -149,6 +149,10 @@ class ComputeMinimizationSolution:
 compute_efficient_solution_parallel = ComputeMinimizationSolution(
     metric=analytics.EfficientIsNonCompetitive,
     solver_cls=solvers.ParallelSolver)
+
+compute_efficient_solution_rebidding = ComputeMinimizationSolution(
+    solver_cls=rebidding.ParallelRefinedMultistageSolver,
+    metric=rebidding.EfficientMultistageIsNonCompetitive)
 
 
 def dev_repr(devs):
