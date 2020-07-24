@@ -1,4 +1,4 @@
-from scripts.figures_import_helper import *
+from scripts.round3.figures_import_helper_r3 import *
 # %matplotlib inline
 
 print('='*20 + '\n' + 'National sample (individual firms)')
@@ -16,14 +16,14 @@ for rank in range(30):
     print('firm {}'.format(rank + 1))
     filtered_data_firm = rebidding.RefinedMultistageData.from_clean_bids(
         filtered_data.df_bids.loc[national_data.data.rank2 == rank + 1])
-    constraints = [
-        environments.MarkupConstraint(max_markup=.5, min_markup=.02)]
 
+    metric = rebidding.EfficientMultistageIsNonCompetitive
+    metric.min_markup, metric.max_markup = .02, .5
     min_collusion_solver = rebidding.ParallelRefinedMultistageSolver(
         data=filtered_data_firm,
         deviations=deviations,
-        metric=rebidding.RefinedMultistageIsNonCompetitive,
-        plausibility_constraints=constraints,
+        metric=metric,
+        plausibility_constraints=[environments.EmptyConstraint()],
         num_points=NUM_POINTS,
         seed=0,
         project=False,
@@ -38,4 +38,4 @@ for rank in range(30):
         [rank + 1, 1 - min_collusion_solver.result.solution])
 
 save2frame(share_competitive,
-           ['rank', 'share_comp'], 'R2/national_individual_firms')
+           ['rank', 'share_comp'], 'R3/national_individual_firms')

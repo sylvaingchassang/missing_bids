@@ -1,4 +1,4 @@
-from scripts.figures_import_helper import *
+from scripts.round3.figures_import_helper_r3 import *
 
 # illustrating impact of different IC constraints, using city data
 
@@ -30,7 +30,7 @@ data_high = auction_data.AuctionData.from_clean_bids(
 
 
 plot_delta(data_high,
-           filename='R2/all_cities_delta_bids above_90pct')
+           filename='R3/all_cities_delta_bids above_90pct')
 
 
 all_deviations = [-.025, .0, .001]
@@ -38,9 +38,9 @@ up_deviations = [.0, .001]
 
 print('computing solutions for different deviations, no min price')
 
-solutions_all_deviations, share_ties = compute_solution_parallel(
+solutions_all_deviations, share_ties = compute_efficient_solution_parallel(
     data_high, all_deviations)
-solutions_up_deviations, _ = compute_solution_parallel(
+solutions_up_deviations, _ = compute_efficient_solution_parallel(
     data_high, up_deviations)
 share_comp_all_deviations = 1 - solutions_all_deviations
 share_comp_up_deviations = 1 - solutions_up_deviations
@@ -54,14 +54,14 @@ share_comp_up_deviations_wo_ties = share_comp_up_deviations + \
 
 print('saving plot 1\n')
 pretty_plot(
-    'R2/city data -- different deviations -- no minimum price',
+    'R3/city data -- different deviations -- no minimum price',
     [share_comp_up_deviations_wo_ties,
      share_comp_up_deviations_w_ties,
      share_comp_all_deviations_w_ties],
     ['upward dev.', 'upward dev. and ties',
      'upward, downward deviations and ties'], ['k.:', 'k.--', 'k.-'],
     xlabel='minimum markup',
-    xticks=r2_min_mkps)
+    xticks=r3_min_markups)
 
 
 # computing deviation temptation over profits, using city data
@@ -71,7 +71,7 @@ print('collecting and processing data')
 
 min_deviation_temptation_solver = ComputeMinimizationSolution(
     solver_cls=solvers.ParallelSolver,
-    constraint_func=round2_constraints,
+    constraints=r3_constraints,
     metric=analytics.NormalizedDeviationTemptation
 )
 
@@ -82,16 +82,16 @@ dev_gain, _ = min_deviation_temptation_solver(
 
 print('saving plot\n')
 pretty_plot(
-    'R2/All cities -- Deviation Gain', [dev_gain],
+    'R3/All cities -- Deviation Gain', [dev_gain],
     [None], max_y=.15,
     ylabel='deviation temptation',
     xlabel='minimum markup',
-    xticks=r2_min_mkps,
+    xticks=r3_min_markups,
     expect_decreasing=False
 )
 
 print('saving data\n')
 save2frame([dev_gain],
            ['min_m={}'.format(m) for m in r2_min_mkps],
-           'R2/all_cities_deviation_temptation',
+           'R3/all_cities_deviation_temptation',
            ['deviation gains'])

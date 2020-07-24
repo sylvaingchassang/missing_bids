@@ -1,4 +1,4 @@
-from scripts.figures_import_helper import *
+from scripts.round3.figures_import_helper_r3 import *
 # %matplotlib inline
 
 # before/after industry comparisons, using national data
@@ -27,13 +27,15 @@ for i, bidder in enumerate(top30_bidders):
     data_firm = auction_data.AuctionData.from_clean_bids(
         data.df_bids.loc[unfiltered_data.data.bidder_id == bidder])
     demand_firm = data_firm.assemble_target_moments(deviations)
-    constraints = [environments.MarkupConstraint(
-        max_markup=.5, min_markup=.02)]
+
+    constraints = [environments.EmptyConstraint()]
+    metric = analytics.EfficientIsNonCompetitive
+    metric.min_markup, metric.max_markup = .02, .5
 
     min_collusion_solver = solvers.ParallelSolver(
         data=data_firm,
         deviations=deviations,
-        metric=analytics.IsNonCompetitive,
+        metric=metric,
         plausibility_constraints=constraints,
         num_points=NUM_POINTS,
         seed=0,
@@ -51,6 +53,6 @@ for i, bidder in enumerate(top30_bidders):
 print('saving data\n')
 save2frame(list_solutions,
            ['rank', 'bidder_id', 'share competitive'],
-           'R2/city_auctions_individual_firms')
+           'R3/city_auctions_individual_firms')
 
 
