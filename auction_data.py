@@ -127,6 +127,17 @@ def moment_distance(candidate_demand, target_demand, weights, mat=None):
                   np.square(candidate_moment - target_moment))
 
 
+class AuctionDataPIDMean(AuctionData):
+
+    @staticmethod
+    def _get_counterfactual_demand(df_bids, rho):
+        new_bids = df_bids.norm_bid * (1 + rho)
+        df_bids['new_wins'] = 1. * (new_bids < df_bids.most_competitive) +\
+                              .5 * (new_bids == df_bids.most_competitive)
+        pid_counterfactual_demand = df_bids.groupby('pid')['new_wins'].mean()
+        return pid_counterfactual_demand.mean()
+
+
 class FilterTies:
     def __init__(self, tolerance=.0001):
         self.tolerance = tolerance

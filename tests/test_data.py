@@ -115,3 +115,17 @@ def test_extend_or_append():
     b = auction_data.extend_or_append(b, [2, 3])
     assert b == [1, 2, 3]
     assert a is b
+
+
+class TestAuctionDataPIDMean(TestCase):
+    def setUp(self):
+        path = os.path.join(
+            os.path.dirname(__file__), 'reference_data', 'tsuchiura_data.csv')
+        self.auctions = auction_data.AuctionDataPIDMean(
+            bidding_data_or_path=path
+        )
+
+    def test_counterfactual_demand(self):
+        assert_array_almost_equal(
+            [self.auctions.get_counterfactual_demand(r) for r in [-.05, .05]],
+            [0.896378, 0.023846])
