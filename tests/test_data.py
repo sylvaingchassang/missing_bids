@@ -129,3 +129,19 @@ class TestAuctionDataPIDMean(TestCase):
         assert_array_almost_equal(
             [self.auctions.get_counterfactual_demand(r) for r in [-.05, .05]],
             [0.896378, 0.023846])
+
+    # def test_standard_deviation(self):
+    #     assert_almost_equal(self.auctions.standard_deviation(
+    #         [(-.02, 0, .005),  (.4, 2, .4)]), [])
+
+    def test_win_vector(self):
+        deviations = [-.02, 0, .005]
+        df_bids = self.auctions._win_vector(self.auctions.df_bids, deviations)
+        assert_almost_equal(
+            df_bids[['pid'] + deviations].head(),
+            [[15, 1., 1., 0.],
+             [15, 1., 0., 0.],
+             [15, 1., 0., 0.],
+             [15, 1., 0., 0.],
+             [15, 1., 0., 0.]]
+        )

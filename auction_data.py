@@ -129,13 +129,26 @@ def moment_distance(candidate_demand, target_demand, weights, mat=None):
 
 class AuctionDataPIDMean(AuctionData):
 
-    @staticmethod
-    def _get_counterfactual_demand(df_bids, rho):
-        new_bids = df_bids.norm_bid * (1 + rho)
-        df_bids['new_wins'] = 1. * (new_bids < df_bids.most_competitive) +\
-                              .5 * (new_bids == df_bids.most_competitive)
+    def _get_counterfactual_demand(self, df_bids, rho):
+        df_bids['new_wins'] = self._get_new_wins(df_bids, rho)
         pid_counterfactual_demand = df_bids.groupby('pid')['new_wins'].mean()
         return pid_counterfactual_demand.mean()
+
+    @staticmethod
+    def _get_new_wins(df_bids, rho):
+        new_bids = df_bids.norm_bid * (1 + rho)
+        new_wins = 1. * (new_bids < df_bids.most_competitive) + \
+                   .5 * (new_bids == df_bids.most_competitive)
+        return new_wins
+
+    def standard_deviation(self, deviations, weights):
+        win_vector = self._win_vector(self.df_bids, deviations)
+        # weighted_wins
+
+    def _win_vector(self, df_bids, deviations):
+        for rho in deviations:
+            df_bids[rho] = self._get_new_wins(df_bids, rho)
+        return df_bids
 
 
 class FilterTies:
