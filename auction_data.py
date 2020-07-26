@@ -143,12 +143,25 @@ class AuctionDataPIDMean(AuctionData):
 
     def standard_deviation(self, deviations, weights):
         win_vector = self._win_vector(self.df_bids, deviations)
-        # weighted_wins
+        centered_wins = win_vector[deviations] - self._demand_vector(
+            win_vector, deviations)
+        win_vector['square_residual'] = \
+            np.square(np.dot(centered_wins, weights))
+        variance = win_vector.groupby('pid')['square_residual'].mean().mean()
+        return np.sqrt(variance)
 
     def _win_vector(self, df_bids, deviations):
         for rho in deviations:
             df_bids[rho] = self._get_new_wins(df_bids, rho)
         return df_bids
+
+    @staticmethod
+    def _demand_vector(win_vector, deviations):
+        return win_vector.groupby('pid')[deviations].mean().mean(axis=0)
+
+    def demand_vector(self, deviations):
+        return self._demand_vector(
+            self._win_vector(self.df_bids, deviations), deviations)
 
 
 class FilterTies:

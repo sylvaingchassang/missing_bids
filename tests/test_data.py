@@ -124,24 +124,30 @@ class TestAuctionDataPIDMean(TestCase):
         self.auctions = auction_data.AuctionDataPIDMean(
             bidding_data_or_path=path
         )
+        self.deviations = [-.02, 0, .005]
 
     def test_counterfactual_demand(self):
         assert_array_almost_equal(
             [self.auctions.get_counterfactual_demand(r) for r in [-.05, .05]],
             [0.896378, 0.023846])
 
-    # def test_standard_deviation(self):
-    #     assert_almost_equal(self.auctions.standard_deviation(
-    #         [(-.02, 0, .005),  (.4, 2, .4)]), [])
+    def test_standard_deviation(self):
+        assert_almost_equal(self.auctions.standard_deviation(
+            self.deviations, (.4, .2, .4)), 0.34073885)
 
     def test_win_vector(self):
-        deviations = [-.02, 0, .005]
-        df_bids = self.auctions._win_vector(self.auctions.df_bids, deviations)
+        df_bids = self.auctions._win_vector(
+            self.auctions.df_bids, self.deviations)
         assert_almost_equal(
-            df_bids[['pid'] + deviations].head(),
+            df_bids[['pid'] + self.deviations].head(3),
             [[15, 1., 1., 0.],
-             [15, 1., 0., 0.],
-             [15, 1., 0., 0.],
              [15, 1., 0., 0.],
              [15, 1., 0., 0.]]
         )
+
+    def test_demand_vector(self):
+        assert_array_almost_equal(
+            self.auctions.demand_vector(self.deviations),
+            [0.757466, 0.29353, 0.211717]
+        )
+
