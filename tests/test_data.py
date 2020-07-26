@@ -142,12 +142,17 @@ class TestAuctionDataPIDMean(TestCase):
             df_bids[['pid'] + self.deviations].head(3),
             [[15, 1., 1., 0.],
              [15, 1., 0., 0.],
-             [15, 1., 0., 0.]]
-        )
+             [15, 1., 0., 0.]])
 
     def test_demand_vector(self):
         assert_array_almost_equal(
             self.auctions.demand_vector(self.deviations),
-            [0.757466, 0.29353, 0.211717]
-        )
+            [0.757466, 0.29353, 0.211717])
 
+    def test_num_auctions(self):
+        assert self.auctions.num_auctions == 1469
+
+    def test_confidence_threshold(self):
+        assert_almost_equal(
+            self.auctions.confidence_threshold([-1, 1, 0], self.deviations),
+            -0.4425795)

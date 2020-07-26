@@ -1,4 +1,5 @@
 from functools import reduce
+from scipy.stats import norm
 import pandas as pd
 import numpy as np
 import seaborn as sns
@@ -162,6 +163,16 @@ class AuctionDataPIDMean(AuctionData):
     def demand_vector(self, deviations):
         return self._demand_vector(
             self._win_vector(self.df_bids, deviations), deviations)
+
+    @lazy_property.LazyProperty
+    def num_auctions(self):
+        return len(set(self.df_bids.pid))
+
+    def confidence_threshold(self, weights, deviations, pvalue=.05):
+        x = norm.ppf(1 - pvalue)
+        demand_vector = self.demand_vector(deviations)
+        return np.dot(demand_vector, weights) + x * self.standard_deviation(
+            deviations, weights)/np.sqrt(self.num_auctions)
 
 
 class FilterTies:
