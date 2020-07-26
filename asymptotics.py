@@ -1,11 +1,13 @@
 import lazy_property
 import numpy as np
+import cvxpy
 from scipy.stats import norm
 
 from .auction_data import AuctionData
+from .analytics import MinCollusionSolver, ConvexProblem
 
 
-class AuctionDataPIDMean(AuctionData):
+class PIDMeanAuctionData(AuctionData):
 
     def _get_counterfactual_demand(self, df_bids, rho):
         df_bids['new_wins'] = self._get_new_wins(df_bids, rho)
@@ -50,3 +52,44 @@ class AuctionDataPIDMean(AuctionData):
         demand_vector = self.demand_vector(deviations)
         return np.dot(demand_vector, weights) + x * self.standard_deviation(
             deviations, weights)/np.sqrt(self.num_auctions)
+
+
+class AsymptoticProblem(ConvexProblem):
+
+    @property
+    def _moment_constraint(self):
+        rationalizing_demands = cvxpy.matmul(self._beliefs.T, self.variable)
+        moment = 1e2 * cvxpy.matmul(self._moment_matrix, rationalizing_demands)
+        return [moment <= 1e2 * self._tolerance]
+
+
+class AsymptoticMinCollusionSolver(MinCollusionSolver):
+    _pbm_cls = AsymptoticProblem
+
+    @property
+    def pvalues(self):
+        return self._get_pvalues(self._confidence_level)
+
+    def _get_pvalues(self, confidence_level):
+        if isinstance(confidence_level, float):
+            num_dev = len(self._deviations)
+            return np.array([1-confidence_level] * num_dev)/num_dev
+        else:
+            return 1 - np.array(confidence_level)
+
+    @property
+    def tolerance(self):
+        return self._get_tolerance(self.pvalues)
+
+    def _get_tolerance(self, pvalues):
+        assert isinstance(self._data, PIDMeanAuctionData)
+        list_tol = []
+        for weights, p in zip(self._moment_matrix, pvalues):
+            list_tol.append(
+                self.filtered_data.confidence_threshold(
+                    weights, self.deviations, p))
+        return np.array(list_tol)
+
+
+
+

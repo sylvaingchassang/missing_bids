@@ -108,9 +108,55 @@ class DeviationTemptationOverProfits(DimensionlessCollusionMetrics):
             return 0
 
 
+class ConvexProblem:
+    def __init__(self, metrics, beliefs, demands, tolerance,
+                 moment_matrix, moment_weights):
+        self._metrics = np.array(metrics).reshape(-1, 1)
+        self._beliefs = np.array(beliefs)
+        self._demands = np.array(demands).reshape(-1, 1)
+        self._tolerance = tolerance
+        self._moment_matrix = moment_matrix
+        self._moment_weights = moment_weights
+
+    @lazy_property.LazyProperty
+    def variable(self):
+        return cvxpy.Variable((len(self._metrics), 1))
+
+    @lazy_property.LazyProperty
+    def constraints(self):
+        return self._is_distribution + self._moment_constraint
+
+    @property
+    def _is_distribution(self):
+        return [self.variable >= 0, cvxpy.sum(self.variable) == 1]
+
+    @property
+    def _moment_constraint(self):
+        delta = cvxpy.matmul(self._beliefs.T, self.variable) - \
+                self._demands
+        moment = 1e2 * cvxpy.matmul(self._moment_matrix, delta)
+        return [cvxpy.matmul(
+            self._moment_weights, cvxpy.square(moment)) <= 1e4 *
+                self._tolerance]
+
+    @lazy_property.LazyProperty
+    def objective(self):
+        return cvxpy.Minimize(
+            cvxpy.sum(cvxpy.multiply(self.variable, self._metrics)))
+
+    @lazy_property.LazyProperty
+    def problem(self):
+        return cvxpy.Problem(self.objective, self.constraints)
+
+    @lazy_property.LazyProperty
+    def solution(self):
+        return self.problem.solve()
+
+
 class MinCollusionSolver:
     _precision = .0001
     _environment_cls = environments.Environment
+    _pbm_cls = ConvexProblem
 
     def __init__(self, data, deviations, metric, plausibility_constraints,
                  tolerance=None, num_points=1e6, seed=0, project=False,
@@ -197,7 +243,7 @@ class MinCollusionSolver:
     @property
     def problem(self):
         epigraph = self.epigraph_extreme_points
-        return ConvexProblem(
+        return self._pbm_cls(
             metrics=self.metric_extreme_points(epigraph),
             beliefs=self.belief_extreme_points(epigraph),
             demands=self.demands,
@@ -255,51 +301,6 @@ class MinCollusionSolver:
     @property
     def seed(self):
         return self._seed
-
-
-class ConvexProblem:
-    def __init__(self, metrics, beliefs, demands, tolerance,
-                 moment_matrix, moment_weights):
-        self._metrics = np.array(metrics).reshape(-1, 1)
-        self._beliefs = np.array(beliefs)
-        self._demands = np.array(demands).reshape(-1, 1)
-        self._tolerance = tolerance
-        self._moment_matrix = moment_matrix
-        self._moment_weights = moment_weights
-
-    @lazy_property.LazyProperty
-    def variable(self):
-        return cvxpy.Variable((len(self._metrics), 1))
-
-    @lazy_property.LazyProperty
-    def constraints(self):
-        return self._is_distribution + self._moment_constraint
-
-    @property
-    def _is_distribution(self):
-        return [self.variable >= 0, cvxpy.sum(self.variable) == 1]
-
-    @property
-    def _moment_constraint(self):
-        delta = cvxpy.matmul(self._beliefs.T, self.variable) - \
-                self._demands
-        moment = 1e2 * cvxpy.matmul(self._moment_matrix, delta)
-        return [cvxpy.matmul(
-            self._moment_weights, cvxpy.square(moment)) <= 1e4 *
-                self._tolerance]
-
-    @lazy_property.LazyProperty
-    def objective(self):
-        return cvxpy.Minimize(
-            cvxpy.sum(cvxpy.multiply(self.variable, self._metrics)))
-
-    @lazy_property.LazyProperty
-    def problem(self):
-        return cvxpy.Problem(self.objective, self.constraints)
-
-    @lazy_property.LazyProperty
-    def solution(self):
-        return self.problem.solve()
 
 
 class MinCollusionResult:
