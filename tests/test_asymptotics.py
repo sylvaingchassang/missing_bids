@@ -3,7 +3,7 @@ from unittest.case import TestCase
 
 from numpy.testing import assert_array_almost_equal, assert_almost_equal
 
-import asymptotics
+from .. import asymptotics
 
 
 class TestAuctionDataPIDMean(TestCase):
