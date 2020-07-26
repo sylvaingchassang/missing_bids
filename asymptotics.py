@@ -2,7 +2,7 @@ import lazy_property
 import numpy as np
 from scipy.stats import norm
 
-from auction_data import AuctionData
+from .auction_data import AuctionData
 
 
 class AuctionDataPIDMean(AuctionData):
