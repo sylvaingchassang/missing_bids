@@ -88,7 +88,7 @@ class AsymptoticMinCollusionSolver(MinCollusionSolver):
             list_tol.append(
                 self.filtered_data.confidence_threshold(
                     weights, self.deviations, p))
-        return np.array(list_tol)
+        return np.array(list_tol).reshape(-1, 1)
 
 
 

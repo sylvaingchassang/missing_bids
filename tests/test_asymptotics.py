@@ -74,10 +74,10 @@ class TestAsymptoticSolver(TestCase):
                                   [.02, .03, .01])
 
     def test_tolerance(self):
-        assert_array_almost_equal(self.solver.tolerance,
-                                  [0.781659, -0.436149, -0.065206])
-        assert_array_almost_equal(self.solver._get_tolerance([.005, .1, .1]),
-                                  [0.786685, -0.447208, -0.071234])
+        assert_array_almost_equal(self.solver.tolerance.T,
+                                  [[0.781659, -0.436149, -0.065206]])
+        assert_array_almost_equal(self.solver._get_tolerance([.005, .1, .1]).T,
+                                  [[0.786685, -0.447208, -0.071234]])
 
 
 class TestAsymptoticProblem(TestCase):
@@ -86,14 +86,19 @@ class TestAsymptoticProblem(TestCase):
         self.demands = [.5, .4]
         self.beliefs = np.array(
             [[.6, .5], [.45, .4], [.7, .6], [.4, .3], [.4, .2]])
-        tolerance = .0005
+        tolerance = np.array([-.55, .45]).reshape(-1, 1)
         self.cvx = asymptotics.AsymptoticProblem(
             self.metrics, self.beliefs, self.demands, tolerance,
-            moment_matrix=moment_matrix(len(self.demands), 'level'),
+            moment_matrix=np.array([[-1, 0], [0, 1]]),
             moment_weights=np.ones_like(self.demands)
         )
         self.res = self.cvx.solution
         self.argmin = self.cvx.variable.value
 
-    def test_problem(self):
-        assert 1 == 0
+    def test_minimal_value(self):
+        assert_almost_equal(self.res, 0.4375)
+
+    def test_solution(self):
+        assert_array_almost_equal(
+            self.argmin, [[0], [.375], [.4375], [0], [.1875]],
+            decimal=5)
