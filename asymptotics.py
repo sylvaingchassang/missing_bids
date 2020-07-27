@@ -4,6 +4,8 @@ import cvxpy
 from scipy.stats import norm
 
 from .auction_data import AuctionData
+from .rebidding import (RefinedMultistageData, RefinedMultistageSolver,
+                        _check_up_down_deviations)
 from .analytics import MinCollusionSolver, ConvexProblem
 
 
@@ -22,8 +24,9 @@ class PIDMeanAuctionData(AuctionData):
         return new_wins
 
     def standard_deviation(self, deviations, weights):
+        list_moments = self.moment_names(deviations)
         win_vector = self._win_vector(self.df_bids, deviations)
-        centered_wins = win_vector[deviations] - self._demand_vector(
+        centered_wins = win_vector[list_moments] - self._demand_vector(
             win_vector, deviations)
         win_vector['square_residual'] = \
             np.square(np.dot(centered_wins, weights))
@@ -35,9 +38,9 @@ class PIDMeanAuctionData(AuctionData):
             df_bids[rho] = self._get_new_wins(df_bids, rho)
         return df_bids
 
-    @staticmethod
-    def _demand_vector(win_vector, deviations):
-        return win_vector.groupby('pid')[deviations].mean().mean(axis=0)
+    def _demand_vector(self, win_vector, deviations):
+        list_moments = self.moment_names(deviations)
+        return win_vector.groupby('pid')[list_moments].mean().mean(axis=0)
 
     def demand_vector(self, deviations):
         return self._demand_vector(
@@ -52,6 +55,40 @@ class PIDMeanAuctionData(AuctionData):
         demand_vector = self.demand_vector(deviations)
         return np.dot(demand_vector, weights) + x * self.standard_deviation(
             deviations, weights)/np.sqrt(self.num_auctions)
+
+    def moment_names(self, deviations):
+        return deviations
+
+
+class MultistagePIDMeanAuctionData(PIDMeanAuctionData):
+
+    def _win_vector(self, df_bids, deviations):
+        _check_up_down_deviations(deviations)
+        down_dev = deviations[0]
+        for col, rho in zip(['win_down', 'win0', 'win_up'], deviations):
+            df_bids[col] = self._get_new_wins(df_bids, rho)
+        df_bids['marg_cont'] = self.is_marginal_cont(df_bids, down_dev)
+        df_bids['marg_info'] = self.is_marginal_info(df_bids, down_dev)
+        return df_bids[['pid'] + self.moment_names()]
+
+    @staticmethod
+    def bids_after_deviation(df_bids, rho):
+        return df_bids.norm_bid * (1 + rho)
+
+    @classmethod
+    def is_marginal_info(cls, df_bids, rho):
+        new_bids = cls.bids_after_deviation(df_bids, rho)
+        marginal_info = (1 < new_bids) & (new_bids < df_bids['lowest'])
+        return 1. * marginal_info
+
+    @classmethod
+    def is_marginal_cont(cls, df_bids, rho):
+        new_bids = cls.bids_after_deviation(df_bids, rho)
+        marginal_cont = (df_bids['lowest'] > 1) & (new_bids <= 1)
+        return 1. * marginal_cont
+
+    def moment_names(self, deviations=None):
+        return ['win_down', 'marg_cont', 'marg_info', 'win0', 'win_up']
 
 
 class AsymptoticProblem(ConvexProblem):

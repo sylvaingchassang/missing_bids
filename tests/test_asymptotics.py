@@ -8,6 +8,7 @@ from .. import asymptotics
 from .. import environments
 from ..auction_data import moment_matrix, FilterTies
 from ..analytics import EfficientIsNonCompetitive
+from .test_rebidding import _load_multistage_data
 
 
 class TestAuctionDataPIDMean(TestCase):
@@ -106,3 +107,39 @@ class TestAsymptoticProblem(TestCase):
         assert_array_almost_equal(
             self.argmin, [[0], [.375], [.4375], [0], [.1875]],
             decimal=5)
+
+
+class TestMultistagePIDMeanAuctionData(TestCase):
+    def setUp(self):
+        self.data = asymptotics.MultistagePIDMeanAuctionData(
+            _load_multistage_data())
+        self.deviations = [-.01, 0, .005]
+
+    def test_error(self):
+        self.assertRaises(ValueError, self.data._win_vector,
+                          self.data.df_bids, [0., .005])
+
+    def test_win_vector(self):
+        assert_array_almost_equal(
+            self.data._win_vector(self.data.df_bids, self.deviations).head(3),
+            [[15., 1., 0., 0., 1., 0.],
+             [15., 1., 0., 0., 0., 0.],
+             [15., 0, 0., 0., 0., 0.]]
+        )
+        assert_array_almost_equal(
+            self.data._win_vector(self.data.df_bids, self.deviations).mean(),
+            [9.611816e+02, 4.745575e-01, 5.973451e-02, 2.382573e-02,
+             2.501702e-01, 1.806501e-01], decimal=5
+        )
+
+    def test_demands(self):
+        assert_array_almost_equal(
+            self.data.demand_vector(self.deviations),
+            [0.532985, 0.08288, 0.034218, 0.29353, 0.212029]
+        )
+
+    def test_confidence_thresholds(self):
+        assert_almost_equal(
+            self.data.confidence_threshold([1, 0, 0, -1, 0], self.deviations),
+            0.2577102084
+        )
