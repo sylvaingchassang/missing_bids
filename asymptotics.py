@@ -7,6 +7,7 @@ from .auction_data import AuctionData
 from .rebidding import (RefinedMultistageData, RefinedMultistageSolver,
                         _check_up_down_deviations)
 from .analytics import MinCollusionSolver, ConvexProblem
+from .solvers import ParallelSolver
 
 
 class PIDMeanAuctionData(AuctionData):
@@ -128,5 +129,14 @@ class AsymptoticMinCollusionSolver(MinCollusionSolver):
         return np.array(list_tol).reshape(-1, 1)
 
 
+class AsymptoticMultistageSolver(AsymptoticMinCollusionSolver):
+    pass
 
+
+class ParallelAsymptoticSolver(ParallelSolver):
+    _solver_cls = AsymptoticMinCollusionSolver
+
+
+class ParallelAsymptoticMultistageSolver(ParallelSolver):
+    _solver_cls = AsymptoticMultistageSolver
 

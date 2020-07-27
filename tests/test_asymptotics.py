@@ -52,20 +52,28 @@ class TestAuctionDataPIDMean(TestCase):
             -0.4425795)
 
 
+def _load_data_constraints_metric(
+        data_cls=asymptotics.PIDMeanAuctionData):
+    path = os.path.join(
+        os.path.dirname(__file__), 'reference_data',
+        'tsuchiura_data.csv')
+    data = data_cls(bidding_data_or_path=path)
+    constraints = [environments.EmptyConstraint()]
+    metric = EfficientIsNonCompetitive
+    metric.max_markup = .5
+    metric.min_markup = .05
+
+    return data, constraints, metric
+
+
 class TestAsymptoticSolver(TestCase):
     def setUp(self):
-        path = os.path.join(
-            os.path.dirname(__file__), 'reference_data',
-            'tsuchiura_data.csv')
-        self.data = asymptotics.PIDMeanAuctionData(bidding_data_or_path=path)
-        self.constraints = [environments.EmptyConstraint()]
-        metric = EfficientIsNonCompetitive
-        metric.max_markup = .5
-        metric.min_markup = .05
+        data, constraints, metric = \
+            _load_data_constraints_metric()
         self.solver = asymptotics.AsymptoticMinCollusionSolver(
-            deviations=[-.02, 0, .005], data=self.data,
-            metric=EfficientIsNonCompetitive, project=False,
-            tolerance=None, plausibility_constraints=self.constraints,
+            deviations=[-.02, 0, .005], data=data,
+            metric=metric, project=False,
+            tolerance=None, plausibility_constraints=constraints,
             seed=0, num_points=10000, filter_ties=FilterTies(),
             moment_matrix=np.diag([-1, 1, -1])
         )
@@ -143,3 +151,38 @@ class TestMultistagePIDMeanAuctionData(TestCase):
             self.data.confidence_threshold([1, 0, 0, -1, 0], self.deviations),
             0.2577102084
         )
+
+
+class TestAsymptoticMultistageSolver(TestCase):
+    def setUp(self):
+        data, constraints, metric = \
+            _load_data_constraints_metric()
+        self.solver
+
+    def test_solver(self):
+        assert 0 == 1
+
+
+class TestParallelAsymptoticSolver(TestCase):
+    def setUp(self):
+        data, constraints, metric = \
+            _load_data_constraints_metric()
+        self.solver = asymptotics.ParallelAsymptoticSolver(
+            deviations=[-.02, 0, .005], data=data,
+            metric=metric, project=False, num_evaluations=2,
+            plausibility_constraints=constraints,
+            seed=0, num_points=10000, filter_ties=FilterTies(),
+            moment_matrix=np.diag([-1, 1, -1])
+        )
+
+    def test_tolerance(self):
+        assert_array_almost_equal(self.solver.tolerance.T,
+                                  [[-0.733889, 0.319218, -0.190617]])
+
+    def test_solution(self):
+        assert_almost_equal(self.solver.result.solution, 0.19679492, decimal=5)
+
+# class TestParallelAsymptoticMultistageSolver(TestCase):
+#
+#     def test_solver(self):
+#         assert 0 == 1
