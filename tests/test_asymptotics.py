@@ -57,15 +57,16 @@ class TestAsymptoticSolver(TestCase):
             os.path.dirname(__file__), 'reference_data',
             'tsuchiura_data.csv')
         self.data = asymptotics.PIDMeanAuctionData(bidding_data_or_path=path)
-        self.constraints = [
-            environments.MarkupConstraint(.6),
-            environments.InformationConstraint(.5, [.65, .48])]
+        self.constraints = [environments.EmptyConstraint()]
+        metric = EfficientIsNonCompetitive
+        metric.max_markup = .5
+        metric.min_markup = .05
         self.solver = asymptotics.AsymptoticMinCollusionSolver(
             deviations=[-.02, 0, .005], data=self.data,
             metric=EfficientIsNonCompetitive, project=False,
             tolerance=None, plausibility_constraints=self.constraints,
             seed=0, num_points=10000, filter_ties=FilterTies(),
-            moment_matrix=moment_matrix(3)
+            moment_matrix=np.diag([-1, 1, -1])
         )
 
     def test_pvalues(self):
@@ -75,9 +76,12 @@ class TestAsymptoticSolver(TestCase):
 
     def test_tolerance(self):
         assert_array_almost_equal(self.solver.tolerance.T,
-                                  [[0.781659, -0.436149, -0.065206]])
+                                  [[-0.733889,  0.319218, -0.190617]])
         assert_array_almost_equal(self.solver._get_tolerance([.005, .1, .1]).T,
-                                  [[0.786685, -0.447208, -0.071234]])
+                                  [[-0.728863,  0.309116, -0.199704]])
+
+    def test_solution(self):
+        assert_almost_equal(self.solver.result.solution, 0.2042775, decimal=5)
 
 
 class TestAsymptoticProblem(TestCase):
