@@ -4,7 +4,7 @@ import cvxpy
 from scipy.stats import norm
 
 from .auction_data import AuctionData
-from .rebidding import (RefinedMultistageData, RefinedMultistageSolver,
+from .rebidding import (RefinedMultistageEnvironment,
                         _check_up_down_deviations)
 from .analytics import MinCollusionSolver, ConvexProblem
 from .solvers import ParallelSolver
@@ -59,6 +59,9 @@ class PIDMeanAuctionData(AuctionData):
 
     def moment_names(self, deviations):
         return deviations
+
+    def assemble_target_moments(self, list_rhos, **kwargs):
+        return self.demand_vector(list_rhos)
 
 
 class MultistagePIDMeanAuctionData(PIDMeanAuctionData):
@@ -130,7 +133,26 @@ class AsymptoticMinCollusionSolver(MinCollusionSolver):
 
 
 class AsymptoticMultistageSolver(AsymptoticMinCollusionSolver):
-    pass
+    _environment_cls = RefinedMultistageEnvironment
+
+    def _get_pvalues(self, confidence_level):
+        if isinstance(confidence_level, float):
+            return np.array([1-confidence_level] * 5)/5
+        else:
+            return 1 - np.array(confidence_level)
+
+    @property
+    def default_moment_matrix(self):
+        return np.diag([-1, 1, 1, 1, -1])
+
+    @property
+    def default_moment_weights(self):
+        return None
+
+    @property
+    def argmin_columns(self):
+        return ['win_down', 'marg_cont', 'marg_info', 'win0', 'win_up',
+                'cost', 'metric']
 
 
 class ParallelAsymptoticSolver(ParallelSolver):
