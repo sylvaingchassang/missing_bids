@@ -3,6 +3,7 @@ from numpy.testing import TestCase, assert_array_almost_equal, \
 import pandas as pd
 import numpy as np
 import os
+
 from .. import auction_data
 
 

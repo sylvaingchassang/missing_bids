@@ -1,10 +1,10 @@
 import numpy as np
-from auction_data import AuctionData
-from analytics import (DimensionlessCollusionMetrics, ordered_deviations,
+from .auction_data import AuctionData
+from .analytics import (DimensionlessCollusionMetrics, ordered_deviations,
                        IsNonCompetitive, MinCollusionSolver,
                        EfficientIsNonCompetitive)
-from solvers import IteratedSolver, ParallelSolver
-from environments import EnvironmentBase, descending_sort
+from .solvers import IteratedSolver, ParallelSolver
+from .environments import EnvironmentBase, descending_sort
 
 
 class MultistageAuctionData(AuctionData):
@@ -18,12 +18,12 @@ class MultistageAuctionData(AuctionData):
 
     @classmethod
     def get_share_marginal(cls, df_bids, rho):
-        cls._raise_error_if_neg(rho)
+        cls._raise_error_if_pos(rho)
         return cls.share_marginal_info(df_bids, rho) + \
                cls.share_marginal_cont(df_bids, rho)
 
     @staticmethod
-    def _raise_error_if_neg(rho):
+    def _raise_error_if_pos(rho):
         if rho >= 0:
             raise NotImplementedError(
                 'marginality not implemented for positive values of rho')
