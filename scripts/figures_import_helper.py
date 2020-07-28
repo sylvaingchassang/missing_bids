@@ -6,11 +6,7 @@ from datetime import datetime
 import pandas as pd
 from itertools import product
 
-import solvers
-import auction_data
-import analytics
-import environments
-import rebidding
+from mb_api import analytics, environments, auction_data, rebidding, solvers
 
 from matplotlib import rc
 

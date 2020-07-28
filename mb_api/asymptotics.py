@@ -3,11 +3,11 @@ import numpy as np
 import cvxpy
 from scipy.stats import norm
 
-from .auction_data import AuctionData
-from .rebidding import (RefinedMultistageEnvironment,
-                        _check_up_down_deviations)
-from .analytics import MinCollusionSolver, ConvexProblem
-from .solvers import ParallelSolver
+from mb_api.auction_data import AuctionData
+from mb_api.rebidding import (RefinedMultistageEnvironment,
+                              _check_up_down_deviations)
+from mb_api.analytics import MinCollusionSolver, ConvexProblem
+from mb_api.solvers import ParallelSolver
 
 
 class PIDMeanAuctionData(AuctionData):
@@ -161,4 +161,3 @@ class ParallelAsymptoticSolver(ParallelSolver):
 
 class ParallelAsymptoticMultistageSolver(ParallelSolver):
     _solver_cls = AsymptoticMultistageSolver
-

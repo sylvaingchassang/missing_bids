@@ -6,8 +6,7 @@ from datetime import datetime
 import pandas as pd
 from itertools import product
 
-from mb_api import asymptotics, analytics, environments, auction_data, \
-    rebidding, solvers
+from mb_api import analytics, environments, auction_data, rebidding, solvers
 
 from matplotlib import rc
 
@@ -55,13 +54,6 @@ r3_constraints = ([environments.MarkupConstraint(
 
 empty_constraints = [[environments.EmptyConstraint()]] * len(r3_markups)
 
-moment_matrix = None
-moment_matrix_up = None
-moment_matrix_down = None
-multistage_moment_matrix = None
-multistage_moment_matrix_up = None
-multistage_moment_matrix_down = None
-
 
 class ComputeMinimizationSolution:
     _NUM_POINTS = NUM_POINTS
@@ -70,14 +62,13 @@ class ComputeMinimizationSolution:
     def __init__(
             self, metric=analytics.IsNonCompetitive,
             markups=r3_markups, constraints=empty_constraints,
-            seed=0, solver_cls=None, confidence_level=.95):
+            seed=0, solver_cls=None):
         self.metric = metric
         self.markups_list = markups
         self.constraints_list = constraints
         self.filtering = True
         self.seed = seed
         self.solver_cls = solver_cls or solvers.ParallelSolver
-        self.confidence_level = confidence_level
 
     def __call__(self, data, deviations):
         solutions = []
@@ -113,12 +104,12 @@ class ComputeMinimizationSolution:
             plausibility_constraints=constraints,
             num_points=self._NUM_POINTS,
             seed=self.seed,
-            project=False,
+            project=True,
             filter_ties=None,
             num_evaluations=self._NUM_EVAL,
-            confidence_level=self.confidence_level,
+            confidence_level=1 - .05 / len(deviations),
             moment_matrix=self._moment_matrix(deviations),
-            moment_weights=None
+            moment_weights=self._moment_weights(deviations)
         )
 
     def _update_metric_params(self, mkps):
@@ -127,29 +118,37 @@ class ComputeMinimizationSolution:
             self.metric.min_markup = min_markup
             self.metric.max_markup = max_markup
 
-    def _moment_matrix(self, deviations): #TODO: update
-        if self._is_multistage_solver():
+    def _moment_matrix(self, deviations):
+        if self._is_rebidding():
             if deviations[0] > -1e-8:
-                return multistage_moment_matrix_up
-            return multistage_moment_matrix
-        return moment_matrix
+                return rebidding.refined_moment_matrix_up_dev
+            return rebidding.refined_moment_matrix()
+        return auction_data.moment_matrix(
+            analytics.ordered_deviations(deviations), 'slope')
 
-    def _is_multistage_solver(self):
-        return issubclass(self.solver_cls,
-                          (asymptotics.AsymptoticMultistageSolver,
-                           asymptotics.ParallelAsymptoticMultistageSolver))
+    def _moment_weights(self, deviations):
+        if self._is_rebidding():
+            if deviations[0] > -1e-8:
+                return rebidding.refined_weights_up_dev
+            elif deviations[2] < 1e-8:
+                return rebidding.refined_weights_down_dev
+            return np.identity(5)
+        return np.identity(len(analytics.ordered_deviations(deviations)))
+
+    def _is_rebidding(self):
+        return self.solver_cls == rebidding.ParallelRefinedMultistageSolver
 
     def _is_efficient(self):
         return issubclass(self.metric, analytics.EfficientIsNonCompetitive)
 
 
-compute_asymptotic_solution = ComputeMinimizationSolution(
+compute_efficient_solution_parallel = ComputeMinimizationSolution(
     metric=analytics.EfficientIsNonCompetitive,
-    solver_cls=asymptotics.ParallelAsymptoticSolver)
+    solver_cls=solvers.ParallelSolver)
 
-compute_asymptotic_multistage_solution = ComputeMinimizationSolution(
-    metric=rebidding.EfficientMultistageIsNonCompetitive,
-    solver_cls=asymptotics.ParallelAsymptoticMultistageSolver)
+compute_efficient_solution_rebidding = ComputeMinimizationSolution(
+    solver_cls=rebidding.ParallelRefinedMultistageSolver,
+    metric=rebidding.EfficientMultistageIsNonCompetitive)
 
 
 def dev_repr(devs):
@@ -158,7 +157,7 @@ def dev_repr(devs):
     return r'\{' + dev_str + r'\}'
 
 
-def ensure_decreasing(l): #TODO
+def ensure_decreasing(l):
     #sl = sorted(l, reverse=True)
     #return sl
     return l

@@ -1,10 +1,10 @@
 import numpy as np
-from .auction_data import AuctionData
-from .analytics import (DimensionlessCollusionMetrics, ordered_deviations,
-                       IsNonCompetitive, MinCollusionSolver,
-                       EfficientIsNonCompetitive)
-from .solvers import IteratedSolver, ParallelSolver
-from .environments import EnvironmentBase, descending_sort
+from mb_api.auction_data import AuctionData
+from mb_api.analytics import (
+    DimensionlessCollusionMetrics, ordered_deviations, IsNonCompetitive,
+    MinCollusionSolver, EfficientIsNonCompetitive)
+from mb_api.solvers import IteratedSolver, ParallelSolver
+from mb_api.environments import EnvironmentBase, descending_sort
 
 
 class MultistageAuctionData(AuctionData):

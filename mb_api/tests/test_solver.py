@@ -1,7 +1,6 @@
 import os
 import numpy as np
-from numpy.testing import TestCase, assert_array_equal, \
-    assert_array_almost_equal, assert_almost_equal
+from numpy.testing import TestCase, assert_array_almost_equal, assert_almost_equal
 from ..solvers import ParallelSolver
 from ..auction_data import AuctionData
 from .. import environments

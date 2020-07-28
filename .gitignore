@@ -1,9 +1,10 @@
 *.idea/*
-*tests/.idea*
-*tests/.pytest_cache/*
+tests/.idea*
+mb_api/tests/.pytest_cache/.gitignore
 *.coverage*
 *script_config.py
 *conda_run.sh
+*.pytest_cache*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
