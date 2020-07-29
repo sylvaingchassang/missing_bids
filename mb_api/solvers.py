@@ -66,7 +66,8 @@ class ParallelSolver:
     def __init__(self, data, deviations, metric, plausibility_constraints,
                  num_points=1e6, seed=0, project=False,
                  filter_ties=None, num_evaluations=10, moment_matrix=None,
-                 moment_weights=None, confidence_level=.95):
+                 moment_weights=None, confidence_level=.95,
+                 enhanced_guesses=False):
         self._number_evaluations = num_evaluations
         self._seed = seed
         self._kwargs = dict(
@@ -75,7 +76,8 @@ class ParallelSolver:
             num_points=num_points, project=project,
             filter_ties=filter_ties,
             moment_matrix=moment_matrix, moment_weights=moment_weights,
-            confidence_level=confidence_level)
+            confidence_level=confidence_level,
+            enhanced_guesses=enhanced_guesses)
 
     def get_solver(self, sub_seed, tolerance=None):
         return self._solver_cls(
