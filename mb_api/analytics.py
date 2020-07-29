@@ -161,7 +161,7 @@ class MinCollusionSolver:
     def __init__(self, data, deviations, metric, plausibility_constraints,
                  tolerance=None, num_points=1e6, seed=0, project=False,
                  filter_ties=None, moment_matrix=None, moment_weights=None,
-                 confidence_level=.95):
+                 confidence_level=.95, enhanced_guesses=False):
         self._data = data
         self.metric = metric(deviations)
         self._deviations = ordered_deviations(deviations)
@@ -170,6 +170,7 @@ class MinCollusionSolver:
         self._seed = seed
         self._num_points = num_points
         self._project = project
+        self._enhanced_guesses = enhanced_guesses
         self._filter_ties = filter_ties
         self._initial_guesses = self._environments_from_demand(21)
         self._moment_matrix = moment_matrix if moment_matrix is not None \
@@ -179,8 +180,27 @@ class MinCollusionSolver:
         self._confidence_level = confidence_level
 
     def _environments_from_demand(self, n):
-        return np.array([
-            list(self.demands) + [c] for c in np.linspace(0, 1, n)])
+        if not self._enhanced_guesses:
+            return np.array([
+                list(self.demands) + [c] for c in np.linspace(0, 1, n)])
+        else:
+            return np.array(
+                [list(self.demands) + [c] for c in np.linspace(0, 1, n)]
+                + self._winner_env + self._loser_env
+            )
+
+    @property
+    def _winner_env(self):
+        env = 1 * (np.array(self._deviations) <= 0)
+        return [list(np.append(env, 0))]
+
+    @property
+    def _loser_env(self):
+        env_0 = 0 * (np.array(self._deviations))
+        env_0 = np.append(env_0, 1)
+        env_1 = 1 * (np.array(self._deviations) < 0)
+        env_1 = np.append(env_1, 1)
+        return [list(env_0), list(env_1)]
 
     @property
     def default_moment_matrix(self):

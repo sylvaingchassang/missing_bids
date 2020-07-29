@@ -90,6 +90,15 @@ class TestMinCollusionSolver(TestCase):
     def test_demand(self):
         assert_array_almost_equal(self.solver.demands, [0.693839, 0.25017])
 
+    def test_guesses(self):
+        self.solver._enhanced_guesses = True
+        assert_array_almost_equal(
+            self.solver._environments_from_demand(2),
+            [[0.693839, 0.25017, 0.],
+             [0.693839, 0.25017, 1.],
+             [1., 1., 0.], [0, 0, 1], [1, 0, 1]]
+        )
+
     def test_environment(self):
         assert_array_almost_equal(
             [[0.544883, 0.423655, 0.645894]],
