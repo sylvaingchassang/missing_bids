@@ -192,7 +192,7 @@ class MinCollusionSolver:
     @property
     def _winner_env(self):
         env = 1 * (np.array(self._deviations) <= 0)
-        return [list(np.append(env, 0))]
+        return [[1] * (len(env) + 1), list(np.append(env, 0))]
 
     @property
     def _loser_env(self):

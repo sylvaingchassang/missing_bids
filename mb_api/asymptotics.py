@@ -150,6 +150,15 @@ class AsymptoticMultistageSolver(AsymptoticMinCollusionSolver):
         return None
 
     @property
+    def _winner_env(self):
+        return [[1, 0, 0, 1, 0, 0], [1, 0, 0, 1, 1, 0], [1, 0, 0, 1, 1, 1]]
+
+    @property
+    def _loser_env(self):
+        return [[1, 0, 0, 0, 0, 1], [1, 1, 1, 0, 0, 0], [1, 1, 1, 0, 0, 1],
+                [0, 0, 0, 0, 0, 0]]
+
+    @property
     def argmin_columns(self):
         return ['win_down', 'marg_cont', 'marg_info', 'win0', 'win_up',
                 'cost', 'metric']

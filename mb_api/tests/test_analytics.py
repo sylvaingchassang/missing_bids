@@ -97,7 +97,7 @@ class TestMinCollusionSolver(TestCase):
         assert_array_almost_equal(
             solver._environments_from_demand(2),
             [[0.693839, 0.25017, 0.],
-             [0.693839, 0.25017, 1.],
+             [0.693839, 0.25017, 1.], [1, 1, 1],
              [1., 1., 0.], [0, 0, 1], [1, 0, 1]]
         )
         assert_almost_equal(solver.result.solution, 0.303379, decimal=5)
