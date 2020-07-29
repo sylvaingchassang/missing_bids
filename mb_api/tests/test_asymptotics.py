@@ -83,6 +83,13 @@ class TestAsymptoticSolver(TestCase):
             seed=0, num_points=10000, filter_ties=FilterTies(),
             moment_matrix=np.diag([-1, 1, -1])
         )
+        self.solver_enhanced = asymptotics.AsymptoticMinCollusionSolver(
+            deviations=[-.02, 0, .005], data=data,
+            metric=metric, project=False,
+            tolerance=None, plausibility_constraints=constraints,
+            seed=0, num_points=10000, filter_ties=FilterTies(),
+            moment_matrix=np.diag([-1, 1, -1]), enhanced_guesses=True
+        )
 
     def test_pvalues(self):
         assert_array_almost_equal(self.solver.pvalues, [0.016667] * 3)
@@ -97,6 +104,16 @@ class TestAsymptoticSolver(TestCase):
 
     def test_solution(self):
         assert_almost_equal(self.solver.result.solution, 0.2042775, decimal=5)
+
+    def test_guesses(self):
+        assert_array_almost_equal(
+            self.solver_enhanced._initial_guesses[-5:],
+            [[0.757774, 0.293822, 0.213461, 0.95],
+             [0.757774, 0.293822, 0.213461, 1.],
+             [1., 1., 0., 0.], [0., 0., 0., 1.], [1., 0., 0., 1.]]
+        )
+        assert_almost_equal(
+            self.solver_enhanced.result.solution, 0.18362843, decimal=5)
 
 
 class TestAsymptoticProblem(TestCase):

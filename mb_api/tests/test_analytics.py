@@ -73,7 +73,7 @@ class TestMinCollusionSolver(TestCase):
             [[.007, False, None, moment_matrix(2), 2]]
         ]
 
-    def _get_solver(self, args, solver=None):
+    def _get_solver(self, args, solver=None, enhanced_guesses=False):
         solver = MinCollusionSolver if solver is None else solver
         tol, proj, _filt, mom_mat, num = args + [None] * (5 - len(args))
         arg_dict = dict(
@@ -82,6 +82,8 @@ class TestMinCollusionSolver(TestCase):
             num_points=10000, filter_ties=_filt, moment_matrix=mom_mat)
         if solver == MinCollusionIterativeSolver:
             arg_dict.update({'num_evaluations': num})
+        else:
+            arg_dict.update({'enhanced_guesses': enhanced_guesses})
         return solver(self.data, **arg_dict)
 
     def test_deviations(self):
@@ -91,13 +93,14 @@ class TestMinCollusionSolver(TestCase):
         assert_array_almost_equal(self.solver.demands, [0.693839, 0.25017])
 
     def test_guesses(self):
-        self.solver._enhanced_guesses = True
+        solver = self._get_solver([.0125, False], enhanced_guesses=True)
         assert_array_almost_equal(
-            self.solver._environments_from_demand(2),
+            solver._environments_from_demand(2),
             [[0.693839, 0.25017, 0.],
              [0.693839, 0.25017, 1.],
              [1., 1., 0.], [0, 0, 1], [1, 0, 1]]
         )
+        assert_almost_equal(solver.result.solution, 0.303379, decimal=5)
 
     def test_environment(self):
         assert_array_almost_equal(
