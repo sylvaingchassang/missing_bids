@@ -1,6 +1,7 @@
 from scripts.round3.figures_import_helper_r3 import *
 
 # illustrating impact of different IC constraints, using city data
+print('='*20, '\n city level high case study')
 
 print('data located at \n\t{}'.format(path_data))
 print('plots saved at \n\t{}\n'.format(path_figures))

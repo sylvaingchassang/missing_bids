@@ -2,6 +2,7 @@ from scripts.round3.figures_import_helper_r3 import *
 # %matplotlib inline
 
 # before/after industry comparisons, using national data
+print('='*20, '\n city level all')
 
 # +
 filename = 'tsuchiura_data.csv'

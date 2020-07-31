@@ -2,6 +2,7 @@ from scripts.round3.figures_import_helper_r3 import *
 # %matplotlib inline
 
 # before/after industry comparisons, using national data
+print('='*20, '\n city level individual firms')
 
 filename = 'municipal_pub_reserve_no_pricefloor.csv'
 
