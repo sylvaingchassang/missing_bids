@@ -32,7 +32,7 @@ class PIDMeanAuctionData(AuctionData):
         win_vector['square_residual'] = \
             np.square(np.dot(centered_wins, weights))
         variance = win_vector.groupby('pid')['square_residual'].mean().mean()
-        return max(np.sqrt(variance), 1e-4)
+        return max(np.sqrt(variance), 1e-6)
 
     def _win_vector(self, df_bids, deviations):
         for rho in deviations:
@@ -113,8 +113,8 @@ class AsymptoticMinCollusionSolver(MinCollusionSolver):
 
     def _get_pvalues(self, confidence_level):
         if isinstance(confidence_level, float):
-            num_dev = len(self._deviations)
-            return np.array([1-confidence_level] * num_dev)/num_dev
+            num_moments = self._moment_matrix.shape[0]
+            return np.array([1-confidence_level] * num_moments)/num_moments
         else:
             return 1 - np.array(confidence_level)
 
