@@ -32,7 +32,7 @@ for i, bidder in enumerate(top30_bidders):
     metric = analytics.EfficientIsNonCompetitive
     metric.min_markup, metric.max_markup = .02, .5
 
-    min_collusion_solver = solvers.ParallelSolver(
+    min_collusion_solver = asymptotics.ParallelAsymptoticSolver(
         data=data_firm,
         deviations=deviations,
         metric=metric,
@@ -42,9 +42,10 @@ for i, bidder in enumerate(top30_bidders):
         project=False,
         filter_ties=None,
         num_evaluations=NUM_EVAL,
-        confidence_level=1 - .05 / len(deviations),
-        moment_matrix=auction_data.moment_matrix(deviations, 'slope'),
-        moment_weights=np.identity(len(deviations))
+        confidence_level=.95,
+        moment_matrix=moment_matrix,
+        moment_weights=None,
+        enhanced_guesses=True
     )
     
     list_solutions.append([i, bidder, 1 -

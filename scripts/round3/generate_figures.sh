@@ -2,8 +2,8 @@
 
 python -m tsuchiura_figures
 pkill python
-#python -m city_level_individual_firms
-#pkill python
+python -m city_level_individual_firms
+pkill python
 #python -m city_level_high_low
 #pkill python
 #python -m city_level_all
