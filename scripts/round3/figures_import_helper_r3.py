@@ -153,12 +153,9 @@ class ComputeMinimizationSolution:
     @staticmethod
     def _singlestage_moment_matrix(deviations):
         if deviations[0] > -1e-8:
-            print(deviations, 'mom mat up')
             return moment_matrix_up
         elif deviations[-1] < 1e-8:
-            print(deviations, 'mom mat down')
             return moment_matrix_down
-        print(deviations, 'mom mat full')
         return moment_matrix
 
     def _is_efficient(self):

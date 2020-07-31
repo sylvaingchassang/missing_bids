@@ -34,9 +34,6 @@ plot_delta(data_high,
            filename='R3/all_cities_delta_bids above_90pct')
 
 
-all_deviations = [-.02, .0, .001]
-up_deviations = [.0, .001]
-
 print('computing solutions for different deviations, no min price')
 
 solutions_all_deviations, share_ties = compute_asymptotic_solution(
@@ -62,7 +59,7 @@ pretty_plot(
     ['upward dev.', 'upward dev. and ties',
      'upward, downward deviations and ties'], ['k.:', 'k.--', 'k.-'],
     xlabel='minimum markup',
-    xticks=r3_markups)
+    xticks=r3_min_markups)
 
 
 # computing deviation temptation over profits, using city data
@@ -86,12 +83,12 @@ pretty_plot(
     [None], max_y=.15,
     ylabel='deviation temptation',
     xlabel='minimum markup',
-    xticks=r3_markups,
+    xticks=r3_min_markups,
     expect_decreasing=False
 )
 
 print('saving data\n')
 save2frame([dev_gain],
-           ['min_m={}'.format(m) for m in r3_markups],
+           ['min_m={}'.format(m) for m in r3_min_markups],
            'R3/all_cities_deviation_temptation',
            ['deviation gains'])
