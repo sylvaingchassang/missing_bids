@@ -222,7 +222,7 @@ class TestAsymptoticMultistageSolver(TestCase):
              [0., 0., 0., 0., 0., 0.]]
         )
         assert_almost_equal(
-            self.solver_enhanced.result.solution, 0.814052448, decimal=5)
+            self.solver_enhanced.result.solution, 0.376921317, decimal=5)
 
 
 class TestParallelAsymptoticSolver(TestCase):

@@ -33,11 +33,11 @@ plot_delta(tsuchiura_after_min_price,
 
 print('computing solutions for different deviations, no min price')
 
-solutions_all_deviations, share_ties = compute_efficient_solution_parallel(
+solutions_all_deviations, share_ties = compute_asymptotic_solution(
     tsuchiura_before_min_price, all_deviations_tsuchiura)
-solutions_up_deviations, _ = compute_efficient_solution_parallel(
+solutions_up_deviations, _ = compute_asymptotic_solution(
     tsuchiura_before_min_price, up_deviations_tsuchiura)
-solutions_down_deviations, _ = compute_efficient_solution_parallel(
+solutions_down_deviations, _ = compute_asymptotic_solution(
     tsuchiura_before_min_price, down_deviations)
 
 share_comp_all_deviations = 1 - solutions_all_deviations
@@ -45,7 +45,7 @@ share_comp_up_deviations = 1 - solutions_up_deviations
 share_comp_down_deviations = 1 - solutions_down_deviations
 
 solutions_all_devs_with_min_price, share_min_price = \
-    compute_efficient_solution_parallel(
+    compute_asymptotic_solution(
         tsuchiura_after_min_price, all_deviations_tsuchiura)
 
 share_comp_min_price = 1 - share_min_price - (

@@ -36,8 +36,8 @@ for rnd in ['R1', 'R2', 'R3']:
     ensure_dir(os.path.join(path_figures, rnd))
 
 # set global optimization parameters
-NUM_POINTS = 3000
-NUM_EVAL = 2
+NUM_POINTS = 5000
+NUM_EVAL = 400
 
 all_deviations = [-.02, .0, .001]
 up_deviations = [.0, .001]
@@ -55,9 +55,10 @@ r3_constraints = ([environments.MarkupConstraint(
 
 empty_constraints = [[environments.EmptyConstraint()]] * len(r3_markups)
 
-moment_matrix = None
-moment_matrix_up = None
-moment_matrix_down = None
+moment_matrix = np.array([[-1, 0, 0], [-1, 1, 0], [0, 1, -1], [0, 0, -1]])
+moment_matrix_up = np.array([[1, 0], [1, -1], [0, -1]])
+moment_matrix_down = np.array([[-1, 0], [-1, 1], [0, 1]])
+
 multistage_moment_matrix = None
 multistage_moment_matrix_up = None
 multistage_moment_matrix_down = None
@@ -70,7 +71,8 @@ class ComputeMinimizationSolution:
     def __init__(
             self, metric=analytics.IsNonCompetitive,
             markups=r3_markups, constraints=empty_constraints,
-            seed=0, solver_cls=None, confidence_level=.95):
+            seed=0, solver_cls=None, confidence_level=.95,
+            enhanced_guesses=True):
         self.metric = metric
         self.markups_list = markups
         self.constraints_list = constraints
@@ -78,6 +80,7 @@ class ComputeMinimizationSolution:
         self.seed = seed
         self.solver_cls = solver_cls or solvers.ParallelSolver
         self.confidence_level = confidence_level
+        self.enhanced_guesses = enhanced_guesses
 
     def __call__(self, data, deviations):
         solutions = []
@@ -118,7 +121,8 @@ class ComputeMinimizationSolution:
             num_evaluations=self._NUM_EVAL,
             confidence_level=self.confidence_level,
             moment_matrix=self._moment_matrix(deviations),
-            moment_weights=None
+            moment_weights=None,
+            enhanced_guesses=self.enhanced_guesses
         )
 
     def _update_metric_params(self, mkps):
@@ -127,17 +131,35 @@ class ComputeMinimizationSolution:
             self.metric.min_markup = min_markup
             self.metric.max_markup = max_markup
 
-    def _moment_matrix(self, deviations): #TODO: update
+    def _moment_matrix(self, deviations):
         if self._is_multistage_solver():
-            if deviations[0] > -1e-8:
-                return multistage_moment_matrix_up
-            return multistage_moment_matrix
-        return moment_matrix
+            return self._multistage_moment_matrix(deviations)
+        else:
+            return self._singlestage_moment_matrix(deviations)
 
     def _is_multistage_solver(self):
         return issubclass(self.solver_cls,
                           (asymptotics.AsymptoticMultistageSolver,
                            asymptotics.ParallelAsymptoticMultistageSolver))
+
+    @staticmethod
+    def _multistage_moment_matrix(deviations):
+        if deviations[0] > -1e-8:
+            return multistage_moment_matrix_up
+        elif deviations[-1] < 1e-8:
+            return multistage_moment_matrix_down
+        return multistage_moment_matrix
+
+    @staticmethod
+    def _singlestage_moment_matrix(deviations):
+        if deviations[0] > -1e-8:
+            print(deviations, 'mom mat up')
+            return moment_matrix_up
+        elif deviations[-1] < 1e-8:
+            print(deviations, 'mom mat down')
+            return moment_matrix_down
+        print(deviations, 'mom mat full')
+        return moment_matrix
 
     def _is_efficient(self):
         return issubclass(self.metric, analytics.EfficientIsNonCompetitive)
