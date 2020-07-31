@@ -5,13 +5,14 @@ from scripts.round3.figures_import_helper_r3 import *
 
 # +
 filename = 'tsuchiura_data.csv'
-tsuchiura_data = auction_data.AuctionData(os.path.join(path_data, filename))
-tsuchiura_data = auction_data.AuctionData(
+tsuchiura_data = asymptotics.PIDMeanAuctionData(
+    os.path.join(path_data, filename))
+tsuchiura_data = asymptotics.PIDMeanAuctionData(
     tsuchiura_data.df_bids.loc[tsuchiura_data.data.minprice.isnull()])
 plot_delta(tsuchiura_data)
 
 filename = 'municipal_pub_reserve_no_pricefloor.csv'
-other_data = auction_data.AuctionData(os.path.join(path_data, filename))
+other_data = asymptotics.PIDMeanAuctionData(os.path.join(path_data, filename))
 plot_delta(other_data)
 
 # +
@@ -22,7 +23,7 @@ assert len(s2.intersection(s1)) == 0
 # -
 
 all_bids = pd.concat((other_data.df_bids, tsuchiura_data.df_bids), axis=0)
-data = auction_data.AuctionData.from_clean_bids(all_bids)
+data = asymptotics.PIDMeanAuctionData.from_clean_bids(all_bids)
 plot_delta(data, filename='R3/city_auctions_delta')
 
 list_devs = [up_deviations, down_deviations, all_deviations]

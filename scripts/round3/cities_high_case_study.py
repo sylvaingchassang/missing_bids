@@ -6,14 +6,15 @@ print('data located at \n\t{}'.format(path_data))
 print('plots saved at \n\t{}\n'.format(path_figures))
 
 filename = 'tsuchiura_data.csv'
-tsuchiura_data = auction_data.AuctionData(os.path.join(path_data, filename))
-tsuchiura_data = auction_data.AuctionData(
+tsuchiura_data = asymptotics.PIDMeanAuctionData(
+    os.path.join(path_data, filename))
+tsuchiura_data = asymptotics.PIDMeanAuctionData(
     tsuchiura_data.df_bids.loc[tsuchiura_data.data.minprice.isnull()])
 
 plot_delta(tsuchiura_data)
 
 filename = 'municipal_pub_reserve_no_pricefloor.csv'
-other_data = auction_data.AuctionData(os.path.join(path_data, filename))
+other_data = asymptotics.PIDMeanAuctionData(os.path.join(path_data, filename))
 
 # +
 s1 = set(other_data.df_bids.pid)
@@ -23,9 +24,9 @@ assert len(s2.intersection(s1)) == 0
 
 # +
 all_bids = pd.concat((other_data.df_bids, tsuchiura_data.df_bids), axis=0)
-data_low = auction_data.AuctionData.from_clean_bids(
+data_low = asymptotics.PIDMeanAuctionData.from_clean_bids(
     all_bids.loc[all_bids.norm_bid < .9])
-data_high = auction_data.AuctionData.from_clean_bids(
+data_high = asymptotics.PIDMeanAuctionData.from_clean_bids(
     all_bids.loc[all_bids.norm_bid > .9])
 
 

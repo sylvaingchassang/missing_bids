@@ -7,24 +7,24 @@ print('plots saved at \n\t{}\n'.format(path_figures))
 
 print('=' * 20 + '\n' + 'Tsuchiura (before min. price)')
 print('collecting and processing data')
-tsuchiura_data = auction_data.AuctionData(
+tsuchiura_data = asymptotics.PIDMeanAuctionData(
     os.path.join(path_data, 'tsuchiura_data.csv'))
 plot_delta(tsuchiura_data, filename='R3/tsuchiura_delta')
 
-tsuchiura_before_min_price_ = auction_data.AuctionData(
+tsuchiura_before_min_price_ = asymptotics.PIDMeanAuctionData(
     tsuchiura_data.df_bids.loc[tsuchiura_data.data.minprice.isnull()])
 
-tsuchiura_before_min_price = auction_data.AuctionData.from_clean_bids(
+tsuchiura_before_min_price = asymptotics.PIDMeanAuctionData.from_clean_bids(
     tsuchiura_before_min_price_.df_bids.loc[
         tsuchiura_before_min_price_.df_bids.norm_bid > .9])
 
 plot_delta(tsuchiura_before_min_price,
            filename='R3/tsuchiura_delta_no_min_price_bids_above_80pct')
 
-tsuchiura_after_min_price_ = auction_data.AuctionData(
+tsuchiura_after_min_price_ = asymptotics.PIDMeanAuctionData(
     tsuchiura_data.df_bids.loc[~tsuchiura_data.data.minprice.isnull()])
 
-tsuchiura_after_min_price = auction_data.AuctionData.from_clean_bids(
+tsuchiura_after_min_price = asymptotics.PIDMeanAuctionData.from_clean_bids(
     tsuchiura_after_min_price_.df_bids.loc[
         tsuchiura_after_min_price_.df_bids.norm_bid > .9])
 
