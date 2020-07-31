@@ -28,7 +28,7 @@ plot_delta(data, filename='R3/city_auctions_delta')
 list_devs = [up_deviations, down_deviations, all_deviations]
 list_solutions = []
 for devs in list_devs:
-    solutions, ties = compute_efficient_solution_parallel(
+    solutions, ties = compute_asymptotic_solution(
         data, devs)
     list_solutions.append(1 - ties - solutions * (1-ties))
 
@@ -57,7 +57,7 @@ list_solutions = []
 for max_markup in list_max_markups:
     markups = list(product(r3_min_markups, [max_markup]))
     this_solver = ComputeMinimizationSolution(
-        solver_cls=solvers.ParallelSolver,
+        solver_cls=asymptotics.ParallelAsymptoticSolver,
         metric=analytics.EfficientIsNonCompetitive,
         markups=markups
     )

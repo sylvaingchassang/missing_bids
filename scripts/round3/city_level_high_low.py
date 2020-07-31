@@ -33,7 +33,7 @@ plot_delta(data_high, filename='R3/city_delta_high')
 deviations = all_deviations
 list_solutions = []
 for data in [data_low, data_high]:    
-    solutions, ties = compute_efficient_solution_parallel(
+    solutions, ties = compute_asymptotic_solution(
         data, deviations)
     list_solutions.append(1 - ties - solutions * (1-ties))
 
