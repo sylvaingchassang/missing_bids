@@ -36,8 +36,8 @@ for rnd in ['R1', 'R2', 'R3']:
     ensure_dir(os.path.join(path_figures, rnd))
 
 # set global optimization parameters
-NUM_POINTS = 1000
-NUM_EVAL = 100
+NUM_POINTS = 100
+NUM_EVAL = 8
 
 all_deviations = [-.02, .0, .001]
 up_deviations = [.0, .001]

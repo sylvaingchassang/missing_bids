@@ -5,7 +5,7 @@ from scripts.round3.figures_import_helper_r3 import *
 
 print('='*20 + '\n' + 'National sample')
 print('collecting and processing data')
-national_data = rebidding.RefinedMultistageData(
+national_data = asymptotics.MultistagePIDMeanAuctionData(
     os.path.join(path_data, 'sample_with_firm_rank.csv'))
 
 plot_delta(national_data, filename='R3/national_data_deltas')
@@ -21,7 +21,7 @@ for coeff_marginal_info in list_coeffs:
     EMIsNonComp.coeff_marginal_info = coeff_marginal_info
     this_compute_solution = ComputeMinimizationSolution(
         constraints=empty_constraints,
-        solver_cls=rebidding.ParallelRefinedMultistageSolver,
+        solver_cls=asymptotics.ParallelAsymptoticMultistageSolver,
         metric=EMIsNonComp)
     print('\t', 'coeff marginal info', EMIsNonComp.coeff_marginal_info)
     solutions, _ = this_compute_solution(

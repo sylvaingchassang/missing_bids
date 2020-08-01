@@ -5,12 +5,12 @@ from scripts.round3.figures_import_helper_r3 import *
 
 print('='*20 + '\n' + 'National sample (high/low bids)')
 print('collecting and processing data')
-national_data = rebidding.RefinedMultistageData(
+national_data = asymptotics.MultistagePIDMeanAuctionData(
     os.path.join(path_data, 'sample_with_firm_rank.csv'))
 
-national_data_above = rebidding.RefinedMultistageData.from_clean_bids(
+national_data_above = asymptotics.MultistagePIDMeanAuctionData.from_clean_bids(
     national_data.df_bids.loc[national_data.data.norm_bid.between(0.8, .95)])
-national_data_below = rebidding.RefinedMultistageData.from_clean_bids(
+national_data_below = asymptotics.MultistagePIDMeanAuctionData.from_clean_bids(
     national_data.df_bids.loc[national_data.data.norm_bid < 0.8])
 
 plot_delta(national_data_above, filename='R3/national_data_above_deltas')
@@ -19,9 +19,9 @@ plot_delta(national_data_below, filename='R3/national_data_below_deltas')
 
 print('computing problem solutions')
 deviations = all_deviations
-solutions_above, _ = compute_efficient_solution_rebidding(
+solutions_above, _ = compute_asymptotic_multistage_solution(
     national_data_above, deviations)
-solutions_below, _ = compute_efficient_solution_rebidding(
+solutions_below, _ = compute_asymptotic_multistage_solution(
      national_data_below, deviations)
 
 print('saving plot\n')

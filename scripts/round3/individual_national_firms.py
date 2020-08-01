@@ -3,7 +3,7 @@ from scripts.round3.figures_import_helper_r3 import *
 
 print('='*20 + '\n' + 'National sample (individual firms)')
 print('collecting and processing data')
-national_data = rebidding.RefinedMultistageData(
+national_data = asymptotics.MultistagePIDMeanAuctionData(
     os.path.join(path_data, 'sample_with_firm_rank.csv'))
 
 deviations = all_deviations
@@ -14,12 +14,13 @@ share_competitive = []
 print('solving minimization problem for each firm')
 for rank in range(30):
     print('firm {}'.format(rank + 1))
-    filtered_data_firm = rebidding.RefinedMultistageData.from_clean_bids(
-        filtered_data.df_bids.loc[national_data.data.rank2 == rank + 1])
+    filtered_data_firm = \
+        asymptotics.MultistagePIDMeanAuctionData.from_clean_bids(
+            filtered_data.df_bids.loc[national_data.data.rank2 == rank + 1])
 
     metric = rebidding.EfficientMultistageIsNonCompetitive
-    metric.min_markup, metric.max_markup = .02, .5
-    min_collusion_solver = rebidding.ParallelRefinedMultistageSolver(
+    metric.min_markup, metric.max_markup = .025, .5
+    min_collusion_solver = asymptotics.ParallelAsymptoticMultistageSolver(
         data=filtered_data_firm,
         deviations=deviations,
         metric=metric,
@@ -29,9 +30,9 @@ for rank in range(30):
         project=False,
         filter_ties=None,
         num_evaluations=NUM_EVAL,
-        confidence_level=1 - .05 / len(deviations),
-        moment_matrix=rebidding.refined_moment_matrix(),
-        moment_weights=np.identity(5)
+        confidence_level=.95,
+        moment_matrix=multistage_moment_matrix,
+        enhanced_guesses=True
     )
 
     share_competitive.append(
