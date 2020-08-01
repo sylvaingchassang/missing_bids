@@ -5,7 +5,7 @@ from scripts.round3.figures_import_helper_r3 import *
 
 print('='*20 + '\n' + 'National sample')
 print('collecting and processing data')
-national_data = rebidding.RefinedMultistageData(
+national_data = asymptotics.MultistagePIDMeanAuctionData(
     os.path.join(path_data, 'sample_with_firm_rank.csv'))
 
 plot_delta(national_data, filename='R3/national_data_deltas')
@@ -14,12 +14,12 @@ print('computing problem solutions')
 
 
 list_devs = [
-    [-1e-9] + up_deviations, [1e-9] + down_deviations, all_deviations]
+    [-1e-9] + up_deviations,  down_deviations + [1e-9], all_deviations]
 list_solutions = []
 for deviations in list_devs:
     this_compute_solution = ComputeMinimizationSolution(
         constraints=empty_constraints,
-        solver_cls=rebidding.ParallelRefinedMultistageSolver,
+        solver_cls=asymptotics.ParallelAsymptoticMultistageSolver,
         metric=rebidding.EfficientMultistageIsNonCompetitive)
     solutions, _ = this_compute_solution(national_data, deviations)
     list_solutions.append(1 - solutions)

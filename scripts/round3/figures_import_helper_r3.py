@@ -181,7 +181,7 @@ def dev_repr(devs):
     return r'\{' + dev_str + r'\}'
 
 
-def ensure_decreasing(l): #TODO
+def ensure_decreasing(l):
     #sl = sorted(l, reverse=True)
     #return sl
     return l

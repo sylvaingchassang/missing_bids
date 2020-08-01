@@ -105,14 +105,4 @@ print('tolerance', solver.get_solver(0).tolerance)
 print('solution', solver.result.solution)
 # -
 
-1-.001 * .114/(.0012)
-
-1/1.1
-
-
-1-.136
-
-
-1/1+.1"
-
 
