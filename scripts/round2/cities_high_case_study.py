@@ -70,7 +70,7 @@ print('='*20 + '\n' + 'all cities, deviation temptation')
 print('collecting and processing data')
 
 min_deviation_temptation_solver = ComputeMinimizationSolution(
-    solver_cls=solvers.asymptotics.ParallelAsymptoticSolver,
+    solver_cls=asymptotics.ParallelAsymptoticSolver,
     constraints=r3_constraints,
     metric=analytics.NormalizedDeviationTemptation
 )
