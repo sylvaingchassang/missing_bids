@@ -38,9 +38,9 @@ up_deviations = [.0, .001]
 
 print('computing solutions for different deviations, no min price')
 
-solutions_all_deviations, share_ties = compute_efficient_solution_parallel(
+solutions_all_deviations, share_ties = compute_asymptotic_solution(
     data_high, all_deviations)
-solutions_up_deviations, _ = compute_efficient_solution_parallel(
+solutions_up_deviations, _ = compute_asymptotic_solution(
     data_high, up_deviations)
 share_comp_all_deviations = 1 - solutions_all_deviations
 share_comp_up_deviations = 1 - solutions_up_deviations
@@ -70,7 +70,7 @@ print('='*20 + '\n' + 'all cities, deviation temptation')
 print('collecting and processing data')
 
 min_deviation_temptation_solver = ComputeMinimizationSolution(
-    solver_cls=solvers.ParallelSolver,
+    solver_cls=solvers.asymptotics.ParallelAsymptoticSolver,
     constraints=r3_constraints,
     metric=analytics.NormalizedDeviationTemptation
 )
@@ -92,6 +92,6 @@ pretty_plot(
 
 print('saving data\n')
 save2frame([dev_gain],
-           ['min_m={}'.format(m) for m in r2_min_mkps],
+           ['min_m={}'.format(m) for m in r3_min_markups],
            'R3/all_cities_deviation_temptation',
            ['deviation gains'])
