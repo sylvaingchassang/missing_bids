@@ -49,9 +49,9 @@ up_deviations_tsuchiura = [.0, .0008]
 r3_min_markups = [.0, .025, .05, .1, .2, .4]
 r3_markups = list(product(r3_min_markups, [.5]))
 
-r3_constraints = ([environments.MarkupConstraint(
+r3_constraints = [[environments.MarkupConstraint(
     max_markup=max_markup, min_markup=min_markup)]
-    for min_markup, max_markup in r3_markups)
+    for min_markup, max_markup in r3_markups]
 
 empty_constraints = [[environments.EmptyConstraint()]] * len(r3_markups)
 
@@ -60,12 +60,15 @@ moment_matrix_up = np.array([[1, 0], [1, -1], [0, -1]])
 moment_matrix_down = np.array([[-1, 0], [-1, 1], [0, 1]])
 
 multistage_moment_matrix = np.array([
-    [-1, 0, 0, 0, 0], [-1, 1, .5, 1, 0],
-    [0, 0, 0, 0, -1], [0, 0, 0, 1, -1]])
+    [-.98, 1, .5, 1, 0],
+    [1, -1, -.5, -1, 0],
+    [0, 0, 0, 0, -1],
+    [0, 0, 0, 1, -1]])
 multistage_moment_matrix_up = np.array([
     [0, 0, 0, 0, -1], [0, 0, 0, 1, -1]])
 multistage_moment_matrix_down = np.array([
-    [-1, 0, 0, 0, 0], [-1, 1, .5, 1, 0]])
+    [-.98, 1, .5, 1, 0],
+    [1, -1, -.5, -1, 0]])
 
 
 class ComputeMinimizationSolution:

@@ -33,7 +33,7 @@ plot_delta(data_high,
            filename='R3/all_cities_delta_bids above_90pct')
 
 
-all_deviations = [-.025, .0, .001]
+all_deviations = [-.02, .0, .001]
 up_deviations = [.0, .001]
 
 print('computing solutions for different deviations, no min price')
