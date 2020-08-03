@@ -39,8 +39,8 @@ for rnd in ['R1', 'R2', 'R3']:
 NUM_POINTS = 1000
 NUM_EVAL = 100
 
-all_deviations = [-.02, .0, .001]
-up_deviations = [.0, .001]
+all_deviations = [-.02, .0, .0008]
+up_deviations = [.0, .0008]
 down_deviations = [-.02, .0]
 
 all_deviations_tsuchiura = [-.02, .0, .0008]
