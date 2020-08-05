@@ -174,9 +174,18 @@ compute_asymptotic_solution = ComputeMinimizationSolution(
     metric=analytics.EfficientIsNonCompetitive,
     solver_cls=asymptotics.ParallelAsymptoticSolver)
 
-compute_asymptotic_multistage_solution = ComputeMinimizationSolution(
+compute_asymptotic_multistage_solution_95 = ComputeMinimizationSolution(
     metric=rebidding.EfficientMultistageIsNonCompetitive,
     solver_cls=asymptotics.ParallelAsymptoticMultistageSolver)
+
+compute_asymptotic_multistage_solution_90 = ComputeMinimizationSolution(
+    metric=rebidding.EfficientMultistageIsNonCompetitive,
+    solver_cls=asymptotics.ParallelAsymptoticMultistageSolver,
+    confidence_level=.9
+)
+
+compute_asymptotic_multistage_solution = \
+    compute_asymptotic_multistage_solution_90
 
 
 def dev_repr(devs):
