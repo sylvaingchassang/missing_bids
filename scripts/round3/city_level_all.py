@@ -28,6 +28,7 @@ data = asymptotics.PIDMeanAuctionData.from_clean_bids(all_bids)
 plot_delta(data, filename='R3/city_auctions_delta')
 
 list_devs = [up_deviations, down_deviations, all_deviations]
+
 list_solutions = []
 for devs in list_devs:
     solutions, ties = compute_asymptotic_solution(

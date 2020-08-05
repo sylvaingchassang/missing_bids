@@ -70,7 +70,8 @@ print('collecting and processing data')
 
 min_deviation_temptation_solver = ComputeMinimizationSolution(
     solver_cls=asymptotics.ParallelAsymptoticSolver,
-    metric=analytics.NormalizedDeviationTemptation
+    metric=analytics.NormalizedDeviationTemptation,
+    constraints=r3_constraints
 )
 
 
