@@ -311,7 +311,8 @@ class MinCollusionSolver:
         return [str(d) for d in self._deviations] + ['cost', 'metric']
 
     def set_initial_guesses(self, guesses):
-        self._initial_guesses = guesses
+        self._initial_guesses = np.concatenate(
+            (self._initial_guesses, guesses), axis=0)
 
     def set_seed(self, seed):
         self._seed = seed
