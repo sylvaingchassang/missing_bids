@@ -28,6 +28,11 @@ for industry, file in list_data_sets:
         data_before, deviations)
     solutions_after, _ = compute_asymptotic_multistage_solution(
         data_after, deviations)
+
+    solutions_before_90, _ = compute_asymptotic_multistage_solution_90(
+        data_before, deviations)
+    solutions_after_90, _ = compute_asymptotic_multistage_solution_90(
+        data_after, deviations)
     del data
     del data_before
     del data_after
@@ -36,6 +41,13 @@ for industry, file in list_data_sets:
     pretty_plot(
         os.path.join('R3', industry),
         np.array([1 - solutions_before, 1 - solutions_after]),
+        np.array(["before investigation", "after investigation"]),
+        xlabel='minimum markup',
+        xticks=r3_min_markups
+    )
+    pretty_plot(
+        os.path.join('R3', industry + '_90'),
+        np.array([1 - solutions_before_90, 1 - solutions_after_90]),
         np.array(["before investigation", "after investigation"]),
         xlabel='minimum markup',
         xticks=r3_min_markups

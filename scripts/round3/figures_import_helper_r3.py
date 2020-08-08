@@ -36,8 +36,8 @@ for rnd in ['R1', 'R2', 'R3']:
     ensure_dir(os.path.join(path_figures, rnd))
 
 # set global optimization parameters
-NUM_POINTS = 1000
-NUM_EVAL = 100
+NUM_POINTS = 500
+NUM_EVAL = 8
 
 all_deviations = [-.02, .0, .001]
 up_deviations = [.0, .001]
@@ -185,7 +185,7 @@ compute_asymptotic_multistage_solution_90 = ComputeMinimizationSolution(
 )
 
 compute_asymptotic_multistage_solution = \
-    compute_asymptotic_multistage_solution_90
+    compute_asymptotic_multistage_solution_95
 
 
 def dev_repr(devs):
@@ -194,21 +194,15 @@ def dev_repr(devs):
     return r'\{' + dev_str + r'\}'
 
 
-def ensure_decreasing(l):
-    #sl = sorted(l, reverse=True)
-    #return sl
-    return l
-
-
 def pretty_plot(title, list_solutions, labels, mark=np.array(['k.:', 'k.-']),
                 xticks=(0.5, 1, 1.5, 2), max_y=1.05, xlabel='k',
-                ylabel='share of competitive histories',
-                expect_decreasing=True):
+                ylabel='share of competitive histories', l1=True):
     plt.figure()
     for i, (solutions, label) in enumerate(zip(list_solutions, labels)):
-        if expect_decreasing:
-            solutions = ensure_decreasing(solutions)
         plt.plot(xticks, solutions, mark[i], label=label)
+    if l1:
+        plt.plot(xticks, [1] * len(xticks), linestyle='-', linewidth=.75,
+                 color='red')
     if labels[0] is not None:
         plt.legend(loc='best', fontsize=12)
     plt.axis([xticks[0], xticks[-1], 0, max_y])

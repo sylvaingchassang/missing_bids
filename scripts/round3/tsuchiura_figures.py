@@ -112,8 +112,7 @@ pretty_plot(
     [None], max_y=.15,
     ylabel='deviation temptation',
     xlabel='minimum markup',
-    xticks=r3_min_markups,
-    expect_decreasing=False
+    xticks=r3_min_markups, l1=False
 )
 
 print('saving data\n')
