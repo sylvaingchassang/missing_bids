@@ -37,10 +37,10 @@ for rnd in ['R1', 'R2', 'R3']:
 
 # set global optimization parameters
 NUM_POINTS = 1000
-NUM_EVAL = 10
+NUM_EVAL = 100
 
-all_deviations = [-.02, .0, .002]
-up_deviations = [.0, .002]
+all_deviations = [-.02, .0, .0015]
+up_deviations = [.0, .0015]
 down_deviations = [-.02, .0]
 
 all_deviations_tsuchiura = [-.02, .0, .0008]
