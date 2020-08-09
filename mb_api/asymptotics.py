@@ -32,8 +32,8 @@ class PIDMeanAuctionData(AuctionData):
         win_vector.loc[:, 'square_residual'] = \
             np.square(np.dot(centered_wins, weights))
         variance = win_vector.groupby('pid')['square_residual'].mean().mean()
-        min_std = 1e-6 * np.sqrt(np.dot(weights, weights))
-        return max(min_std, np.sqrt(variance))
+        #min_std = 1e-6 * np.sqrt(np.dot(weights, weights))
+        return np.sqrt(variance) #max(min_std, np.sqrt(variance))
 
     def _win_vector(self, df_bids, deviations):
         for rho in deviations:

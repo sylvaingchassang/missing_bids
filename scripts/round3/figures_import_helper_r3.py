@@ -37,10 +37,10 @@ for rnd in ['R1', 'R2', 'R3']:
 
 # set global optimization parameters
 NUM_POINTS = 1000
-NUM_EVAL = 100
+NUM_EVAL = 10
 
-all_deviations = [-.02, .0, .001]
-up_deviations = [.0, .001]
+all_deviations = [-.02, .0, .002]
+up_deviations = [.0, .002]
 down_deviations = [-.02, .0]
 
 all_deviations_tsuchiura = [-.02, .0, .0008]
@@ -107,7 +107,7 @@ class ComputeMinimizationSolution:
 
     def _apply_filter(self, data):
         if self.filtering:
-            filter_ties = auction_data.FilterTies(tolerance=.0001)
+            filter_ties = auction_data.FilterTies(tolerance=1e-15)
             this_data = filter_ties(data)
             _share_ties = filter_ties.get_ties(data).mean()
         else:
