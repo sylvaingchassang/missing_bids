@@ -107,7 +107,7 @@ class ComputeMinimizationSolution:
 
     def _apply_filter(self, data):
         if self.filtering:
-            filter_ties = auction_data.FilterTies(tolerance=1e-15)
+            filter_ties = auction_data.FilterTies(tolerance=.0001)
             this_data = filter_ties(data)
             _share_ties = filter_ties.get_ties(data).mean()
         else:
