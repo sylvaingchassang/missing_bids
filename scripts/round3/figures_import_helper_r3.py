@@ -37,7 +37,7 @@ for rnd in ['R1', 'R2', 'R3']:
 
 # set global optimization parameters
 NUM_POINTS = 1000
-NUM_EVAL = 8
+NUM_EVAL = 100
 
 all_deviations = [-.02, .0, .001]
 up_deviations = [.0, .001]
