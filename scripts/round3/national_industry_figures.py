@@ -3,8 +3,8 @@ from scripts.round3.figures_import_helper_r3 import *
 # before/after collusion scandal industry comparisons, using national data
 
 list_data_sets = [
-    ('Bridges', 'bc_collusion.csv'),
-    ('Electric', 'ec_collusion.csv'),
+    #('Bridges', 'bc_collusion.csv'),
+    #('Electric', 'ec_collusion.csv'),
     ('Pre-Stressed Concrete', 'pc_collusion.csv'),
     ('Floods', 'fc_collusion.csv')
 ]
