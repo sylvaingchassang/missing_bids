@@ -55,21 +55,40 @@ r3_constraints = [[environments.MarkupConstraint(
 
 empty_constraints = [[environments.EmptyConstraint()]] * len(r3_markups)
 
-moment_matrix = np.array([[-1, 0, 0], [-1, 1, 0], [0, 1, 0],
-                          [0, 1, -1], [0, 0, -1]])
+moment_matrix = np.array([[-1, 0, 0],
+                          [-1, 1, 0],
+                          [0, 1, 0],
+                          [0, 1, -1],
+                          [0, 0, -1]])
 moment_matrix_up = np.array([[1, 0], [1, -1], [0, -1]])
 moment_matrix_down = np.array([[-1, 0], [-1, 1], [0, 1]])
 
+# multistage_moment_matrix = np.array([
+#     [-.98, 1, .5, 1, 0],
+#     [1, -1, -.5, -1, 0],
+#     [0, 0, 0, 0, -1],
+#     [0, 0, 0, 1, -1]])
+
 multistage_moment_matrix = np.array([
-    [-.98, 1, .5, 1, 0],
-    [1, -1, -.5, -1, 0],
-    [0, 0, 0, 0, -1],
-    [0, 0, 0, 1, -1]])
+    [-1, 0, 0, 0, 0],
+    [-1, 1, .5, 1, 0],
+    [0, 0, 0, 1, 0],
+    [0, 0, 0, 1, -1],
+    [0, 0, 0, 0, -1]])
+
+
+# multistage_moment_matrix_up = np.array([
+#     [0, 0, 0, 0, -1], [0, 0, 0, 1, -1]])
+# multistage_moment_matrix_down = np.array([
+#     [-.98, 1, .5, 1, 0],
+#     [1, -1, -.5, -1, 0]])
+
 multistage_moment_matrix_up = np.array([
-    [0, 0, 0, 0, -1], [0, 0, 0, 1, -1]])
+    [0, 0, 0, 1, 0], [0, 0, 0, 0, -1], [0, 0, 0, 1, -1]])
 multistage_moment_matrix_down = np.array([
-    [-.98, 1, .5, 1, 0],
-    [1, -1, -.5, -1, 0]])
+    [-1, 0, 0, 0, 0],
+    [-1, 1, .5, 1, 0],
+    [0, 0, 0, 1, 0]])
 
 
 class ComputeMinimizationSolution:
