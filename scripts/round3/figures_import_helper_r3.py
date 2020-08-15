@@ -40,6 +40,7 @@ NUM_POINTS = 1000
 NUM_EVAL = 8
 
 all_deviations = [-.02, .0, .001]
+all_deviations_small_sample = [-.02, .0, .002]
 up_deviations = [.0, .001]
 down_deviations = [-.02, .0]
 
@@ -200,7 +201,7 @@ compute_asymptotic_multistage_solution_95 = ComputeMinimizationSolution(
 compute_asymptotic_multistage_solution_90 = ComputeMinimizationSolution(
     metric=rebidding.EfficientMultistageIsNonCompetitive,
     solver_cls=asymptotics.ParallelAsymptoticMultistageSolver,
-    confidence_level=.9
+    confidence_level=.1
 )
 
 compute_asymptotic_multistage_solution = \

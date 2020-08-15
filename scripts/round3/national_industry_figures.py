@@ -9,7 +9,7 @@ list_data_sets = [
     ('Floods', 'fc_collusion.csv')
 ]
 
-deviations = all_deviations
+
 for industry, file in list_data_sets:
     print('='*20 + '\n' + industry)
     print('collecting and processing data')
@@ -23,32 +23,37 @@ for industry, file in list_data_sets:
         industry))
     plot_delta(data=data_after, filename='R3/{}_delta_after'.format(industry))
 
-    print('computing before/after problem solution')
-    solutions_before, _ = compute_asymptotic_multistage_solution(
-        data_before, deviations)
-    solutions_after, _ = compute_asymptotic_multistage_solution(
-        data_after, deviations)
+    for deviations in [all_deviations, all_deviations_small_sample]:
+        print('computing before/after problem solution')
+        solutions_before, _ = compute_asymptotic_multistage_solution(
+            data_before, deviations)
+        solutions_after, _ = compute_asymptotic_multistage_solution(
+            data_after, deviations)
 
-    solutions_before_90, _ = compute_asymptotic_multistage_solution_90(
-        data_before, deviations)
-    solutions_after_90, _ = compute_asymptotic_multistage_solution_90(
-        data_after, deviations)
+        solutions_before_90, _ = compute_asymptotic_multistage_solution_90(
+            data_before, deviations)
+        solutions_after_90, _ = compute_asymptotic_multistage_solution_90(
+            data_after, deviations)
+
+        print('saving plot\n')
+        pretty_plot(
+            os.path.join('R3', industry, '|'.join(map(str, deviations))),
+            np.array([1 - solutions_before, 1 - solutions_after]),
+            np.array(["before investigation", "after investigation"]),
+            xlabel='minimum markup',
+            xticks=r3_min_markups
+        )
+        pretty_plot(
+            os.path.join('R3', industry + '_90',
+                         '|'.join(map(str, deviations))),
+            np.array([1 - solutions_before_90, 1 - solutions_after_90]),
+            np.array(["before investigation", "after investigation"]),
+            xlabel='minimum markup',
+            xticks=r3_min_markups
+        )
+
     del data
     del data_before
     del data_after
 
-    print('saving plot\n')
-    pretty_plot(
-        os.path.join('R3', industry),
-        np.array([1 - solutions_before, 1 - solutions_after]),
-        np.array(["before investigation", "after investigation"]),
-        xlabel='minimum markup',
-        xticks=r3_min_markups
-    )
-    pretty_plot(
-        os.path.join('R3', industry + '_90'),
-        np.array([1 - solutions_before_90, 1 - solutions_after_90]),
-        np.array(["before investigation", "after investigation"]),
-        xlabel='minimum markup',
-        xticks=r3_min_markups
-    )
+
