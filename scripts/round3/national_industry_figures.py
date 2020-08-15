@@ -37,15 +37,15 @@ for industry, file in list_data_sets:
 
         print('saving plot\n')
         pretty_plot(
-            os.path.join('R3', industry, '|'.join(map(str, deviations))),
+            os.path.join('R3', industry + '_'.join(map(str, deviations))),
             np.array([1 - solutions_before, 1 - solutions_after]),
             np.array(["before investigation", "after investigation"]),
             xlabel='minimum markup',
             xticks=r3_min_markups
         )
         pretty_plot(
-            os.path.join('R3', industry + '_90',
-                         '|'.join(map(str, deviations))),
+            os.path.join('R3', industry + '_90_' +
+                         '_'.join(map(str, deviations))),
             np.array([1 - solutions_before_90, 1 - solutions_after_90]),
             np.array(["before investigation", "after investigation"]),
             xlabel='minimum markup',
