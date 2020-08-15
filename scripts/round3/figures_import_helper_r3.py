@@ -37,7 +37,7 @@ for rnd in ['R1', 'R2', 'R3']:
 
 # set global optimization parameters
 NUM_POINTS = 1000
-NUM_EVAL = 8
+NUM_EVAL = 100
 
 all_deviations = [-.02, .0, .001]
 all_deviations_small_sample = [-.02, .0, .002]
@@ -198,7 +198,7 @@ compute_asymptotic_multistage_solution_95 = ComputeMinimizationSolution(
     metric=rebidding.EfficientMultistageIsNonCompetitive,
     solver_cls=asymptotics.ParallelAsymptoticMultistageSolver)
 
-compute_asymptotic_multistage_solution_90 = ComputeMinimizationSolution(
+compute_asymptotic_multistage_solution_10 = ComputeMinimizationSolution(
     metric=rebidding.EfficientMultistageIsNonCompetitive,
     solver_cls=asymptotics.ParallelAsymptoticMultistageSolver,
     confidence_level=.1

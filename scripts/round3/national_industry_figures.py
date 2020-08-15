@@ -3,8 +3,8 @@ from scripts.round3.figures_import_helper_r3 import *
 # before/after collusion scandal industry comparisons, using national data
 
 list_data_sets = [
-    # ('Bridges', 'bc_collusion.csv'),
-    # ('Electric', 'ec_collusion.csv'),
+    ('Bridges', 'bc_collusion.csv'),
+    ('Electric', 'ec_collusion.csv'),
     ('Pre-Stressed Concrete', 'pc_collusion.csv'),
     ('Floods', 'fc_collusion.csv')
 ]
@@ -30,9 +30,9 @@ for industry, file in list_data_sets:
         solutions_after, _ = compute_asymptotic_multistage_solution(
             data_after, deviations)
 
-        solutions_before_90, _ = compute_asymptotic_multistage_solution_90(
+        solutions_before_10, _ = compute_asymptotic_multistage_solution_10(
             data_before, deviations)
-        solutions_after_90, _ = compute_asymptotic_multistage_solution_90(
+        solutions_after_10, _ = compute_asymptotic_multistage_solution_10(
             data_after, deviations)
 
         print('saving plot\n')
@@ -44,9 +44,9 @@ for industry, file in list_data_sets:
             xticks=r3_min_markups
         )
         pretty_plot(
-            os.path.join('R3', industry + '_90_' +
+            os.path.join('R3', industry + '_10_' +
                          '_'.join(map(str, deviations))),
-            np.array([1 - solutions_before_90, 1 - solutions_after_90]),
+            np.array([1 - solutions_before_10, 1 - solutions_after_10]),
             np.array(["before investigation", "after investigation"]),
             xlabel='minimum markup',
             xticks=r3_min_markups
