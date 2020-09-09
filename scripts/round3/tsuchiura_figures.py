@@ -68,6 +68,15 @@ pretty_plot(
     xlabel='minimum markup',
     xticks=r3_min_markups)
 
+print('saving data\n')
+save2frame(
+    [share_comp_up_deviations_wo_ties,
+     share_comp_up_deviations_w_ties,
+     share_comp_all_deviations_w_ties],
+    ['upward dev.', 'upward dev. and ties',
+     'upward, downward deviations and ties'],
+    'R3/Tsuchiura -- different deviations -- no minimum price')
+
 
 print('saving plot 1b\n')
 pretty_plot(
@@ -81,6 +90,16 @@ pretty_plot(
     xlabel='minimum markup',
     xticks=r3_min_markups)
 
+print('saving data\n')
+save2frame(
+    [share_comp_up_deviations_wo_ties,
+     share_comp_up_deviations_w_ties,
+     share_comp_down_deviations,
+     share_comp_all_deviations_w_ties],
+    ['upward dev', 'upward dev and ties', 'downward dev',
+     'upward, downward dev and ties'],
+    'R3/Tsuchiura -- different deviations -- no minimum price (b)')
+
 print('saving plot 2\n')
 pretty_plot(
     'R3/Tsuchiura with and without min price',
@@ -89,6 +108,13 @@ pretty_plot(
     ['k.-', 'k.:'],
     xlabel='minimum markup',
     xticks=r3_min_markups)
+
+print('saving data\n')
+save2frame(
+    [share_comp_all_deviations_w_ties, share_comp_min_price],
+    ['without minimum price', 'with minimum price'],
+    'R3/Tsuchiura with and without min price')
+
 
 # computing deviation temptation over profits, using city data
 
