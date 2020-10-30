@@ -48,11 +48,15 @@ download the [data](https://www.dropbox.com/s/kigyfge4ubc8er3/data_missing_bids.
 
 from within the folder `missing_bids/scripts/round3/` create a file named `script_config.py` containing a single line:
 
-```path_data = '/home/chassang/data/data_for_missing_bids_figures'```
+```path_data = 'path/to/missing_bids_data'```
+where `path/to` is the absolute path to the `missing_bids_data` folder you created.
+
 
 then, from within  `missing_bids/scripts/round3/` run 
 
     `bash generate_figures.sh`
+    
+figure will be outputed to the `missing_bids_data` folder
     
 generating figures requires 16GB RAM;  
 suggestions for improvements welcome
