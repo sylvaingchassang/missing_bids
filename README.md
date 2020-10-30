@@ -38,8 +38,21 @@ if you want to contribute, follow [PEP8](https://www.python.org/dev/peps/pep-000
     
     make sure the folder containing `missing_bids/` is included in your `PYTHONPATH`
 
-1. to generate figures included in the paper, run
-    `bash missing_bids/scripts/round3/generate_figures.sh`
+1. to generate figures included in the paper
+
+download the [data](https://www.dropbox.com/s/kigyfge4ubc8er3/data_missing_bids.zip?dl=0) and extract it to a folder `missing_bids_data` with the following structure:
+- `missing_bids_data/`
+
+        - bc_collusion.csv
+        - other `csv` files
+
+from within the folder `missing_bids/scripts/round3/` create a file named `script_config.py` containing a single line:
+
+```path_data = '/home/chassang/data/data_for_missing_bids_figures'```
+
+then, from within  `missing_bids/scripts/round3/` run 
+
+    `bash generate_figures.sh`
     
-    generating figures requires 16GB RAM;  
-    suggestions for improvements welcome
+generating figures requires 16GB RAM;  
+suggestions for improvements welcome
