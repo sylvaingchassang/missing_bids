@@ -68,7 +68,7 @@ class PIDMeanAuctionData(AuctionData):
         return self.demand_vector(list_rhos)
 
 
-class AuctionDataAsymptotics(PIDMeanAuctionData):
+class AsymptoticAuctionData(PIDMeanAuctionData):
     def _get_counterfactual_demand(self, df_bids, rho):
         df_bids['new_wins'] = self._get_new_wins(df_bids, rho)
         return df_bids['new_wins'].mean()
@@ -88,8 +88,8 @@ class AuctionDataAsymptotics(PIDMeanAuctionData):
     def num_bids(self):
         return  self.df_bids.shape[0]
 
-class MultistagePIDMeanAuctionData(PIDMeanAuctionData):
 
+class MultistageDataMixin:
     def _win_vector(self, df_bids, deviations):
         _check_up_down_deviations(deviations)
         down_dev = deviations[0]
@@ -117,6 +117,15 @@ class MultistagePIDMeanAuctionData(PIDMeanAuctionData):
 
     def moment_names(self, deviations=None):
         return ['win_down', 'marg_cont', 'marg_info', 'win0', 'win_up']
+
+
+class MultistagePIDMeanAuctionData(MultistageDataMixin, PIDMeanAuctionData):
+    pass
+
+
+class MultistageAsymptoticAuctionData(
+    MultistageDataMixin, AsymptoticAuctionData):
+    pass
 
 
 class AsymptoticProblem(ConvexProblem):
@@ -147,7 +156,6 @@ class AsymptoticMinCollusionSolver(MinCollusionSolver):
         return self._get_tolerance(self.pvalues)
 
     def _get_tolerance(self, pvalues):
-        assert isinstance(self._data, PIDMeanAuctionData)
         list_tol = []
         for weights, p in zip(self._moment_matrix, pvalues):
             list_tol.append(

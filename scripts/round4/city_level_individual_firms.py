@@ -9,7 +9,8 @@ filename = 'municipal_pub_reserve_no_pricefloor.csv'
 # +
 filter_ties = auction_data.FilterTies(tolerance=.0001)
 
-unfiltered_data = asymptotics.PIDMeanAuctionData(os.path.join(path_data, filename))
+unfiltered_data = asymptotics.AsymptoticAuctionData(
+    os.path.join(path_data, filename))
 
 data = filter_ties(unfiltered_data)
 plot_delta(data)
@@ -25,7 +26,7 @@ deviations = all_deviations
 list_solutions = []
 for i, bidder in enumerate(top30_bidders):    
     print('firm {}'.format(i + 1))
-    data_firm = asymptotics.PIDMeanAuctionData.from_clean_bids(
+    data_firm = asymptotics.AsymptoticAuctionData.from_clean_bids(
         data.df_bids.loc[unfiltered_data.data.bidder_id == bidder])
     demand_firm = data_firm.assemble_target_moments(deviations)
 
@@ -55,6 +56,6 @@ for i, bidder in enumerate(top30_bidders):
 print('saving data\n')
 save2frame(list_solutions,
            ['rank', 'bidder_id', 'share competitive'],
-           'R3/city_auctions_individual_firms')
+           'R4/city_auctions_individual_firms')
 
 

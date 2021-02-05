@@ -1,8 +1,10 @@
 import os
 import numpy as np
 from unittest.case import TestCase
+from parameterized import parameterized
 
-from numpy.testing import assert_array_almost_equal, assert_almost_equal
+from numpy.testing import assert_array_almost_equal, assert_almost_equal, \
+    assert_array_equal
 
 from .. import asymptotics
 from .. import environments
@@ -19,7 +21,7 @@ class TestAuctionDataPIDMean(TestCase):
             bidding_data_or_path=path
         )
         self.deviations = [-.02, 0, .005]
-        self.equal_weighted_auctions = asymptotics.AuctionDataAsymptotics(
+        self.equal_weighted_auctions = asymptotics.AsymptoticAuctionData(
             bidding_data_or_path=path
         )
 
@@ -159,9 +161,11 @@ class TestAsymptoticProblem(TestCase):
             decimal=5)
 
 
-class TestMultistagePIDMeanAuctionData(TestCase):
+class TestMultistageAsymptoticAuctionData(TestCase):
     def setUp(self):
         self.data = asymptotics.MultistagePIDMeanAuctionData(
+            _load_multistage_data())
+        self.ew_data = asymptotics.MultistageAsymptoticAuctionData(
             _load_multistage_data())
         self.deviations = [-.01, 0, .005]
 
@@ -170,17 +174,19 @@ class TestMultistagePIDMeanAuctionData(TestCase):
                           self.data.df_bids, [0., .005])
 
     def test_win_vector(self):
-        assert_array_almost_equal(
-            self.data._win_vector(self.data.df_bids, self.deviations).head(3),
-            [[15., 1., 0., 0., 1., 0.],
-             [15., 1., 0., 0., 0., 0.],
-             [15., 0, 0., 0., 0., 0.]]
-        )
-        assert_array_almost_equal(
-            self.data._win_vector(self.data.df_bids, self.deviations).mean(),
-            [9.611816e+02, 4.745575e-01, 5.973451e-02, 2.382573e-02,
-             2.501702e-01, 1.806501e-01], decimal=5
-        )
+        for data_ob in [self.data, self.ew_data]:
+            assert_array_almost_equal(
+                data_ob._win_vector(data_ob.df_bids, self.deviations).head(3),
+                [[15., 1., 0., 0., 1., 0.],
+                 [15., 1., 0., 0., 0., 0.],
+                 [15., 0, 0., 0., 0., 0.]]
+            )
+            assert_array_almost_equal(
+                data_ob._win_vector(data_ob.df_bids, self.deviations).mean(),
+                [9.611816e+02, 4.745575e-01, 5.973451e-02, 2.382573e-02,
+                 2.501702e-01, 1.806501e-01], decimal=5
+            )
+
 
     def test_demands(self):
         assert_array_almost_equal(
@@ -188,11 +194,30 @@ class TestMultistagePIDMeanAuctionData(TestCase):
             [0.532985, 0.08288, 0.034218, 0.29353, 0.212029]
         )
 
+    def test_ew_demands(self):
+        assert_array_almost_equal(
+            self.ew_data.demand_vector(self.deviations),
+            [0.474558, 0.059735, 0.023826, 0.25017 , 0.18065]
+        )
+
     def test_confidence_thresholds(self):
         assert_almost_equal(
             self.data.confidence_threshold([1, 0, 0, -1, 0], self.deviations),
             0.2577102084
         )
+
+    def test_ew_confidence_thresholds(self):
+        assert_almost_equal(
+            self.ew_data.confidence_threshold(
+                [1, 0, 0, -1, 0], self.deviations),
+            0.243157733
+        )
+
+    def test_moment_names(self):
+        for data_ob in [self.data, self.ew_data]:
+            assert_array_equal(
+                data_ob.moment_names(),
+                ['win_down', 'marg_cont', 'marg_info', 'win0', 'win_up'])
 
 
 class TestAsymptoticMultistageSolver(TestCase):

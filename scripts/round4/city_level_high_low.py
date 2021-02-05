@@ -8,14 +8,15 @@ print('='*20, '\n city level high low')
 
 # +
 filename = 'tsuchiura_data.csv'
-tsuchiura_data = asymptotics.PIDMeanAuctionData(
+tsuchiura_data = asymptotics.AsymptoticAuctionData(
     os.path.join(path_data, filename))
-tsuchiura_data = asymptotics.PIDMeanAuctionData(
+tsuchiura_data = asymptotics.AsymptoticAuctionData(
     tsuchiura_data.df_bids.loc[tsuchiura_data.data.minprice.isnull()])
 plot_delta(tsuchiura_data)
 
 filename = 'municipal_pub_reserve_no_pricefloor.csv'
-other_data = asymptotics.PIDMeanAuctionData(os.path.join(path_data, filename))
+other_data = asymptotics.AsymptoticAuctionData(
+    os.path.join(path_data, filename))
 
 # +
 s1 = set(other_data.df_bids.pid)
@@ -25,13 +26,13 @@ assert len(s2.intersection(s1)) == 0
 
 # +
 all_bids = pd.concat((other_data.df_bids, tsuchiura_data.df_bids), axis=0)
-data_low = asymptotics.PIDMeanAuctionData.from_clean_bids(
+data_low = asymptotics.AsymptoticAuctionData.from_clean_bids(
     all_bids.loc[all_bids.norm_bid < .9])
-data_high = asymptotics.PIDMeanAuctionData.from_clean_bids(
+data_high = asymptotics.AsymptoticAuctionData.from_clean_bids(
     all_bids.loc[all_bids.norm_bid > .9])
                                                      
-plot_delta(data_low, filename='R3/city_delta_low')
-plot_delta(data_high, filename='R3/city_delta_high')
+plot_delta(data_low, filename='R4/city_delta_low')
+plot_delta(data_high, filename='R4/city_delta_high')
 # -
 
 deviations = all_deviations
@@ -43,7 +44,7 @@ for data in [data_low, data_high]:
 
 print('saving plot\n')
 pretty_plot(
-    'R3/city auctions -- high and low bids',
+    'R4/city auctions -- high and low bids',
     list_solutions,
     ['normalized bid $ < .9$', 'normalized bid $> .9$'],
     xlabel='minimum markup',
@@ -53,6 +54,6 @@ pretty_plot(
 print('saving data\n')
 save2frame(list_solutions,
            ['min_m={}'.format(m) for m in r3_min_markups],
-           'R3/city_auctions_high_low')
+           'R4/city_auctions_high_low')
 
 

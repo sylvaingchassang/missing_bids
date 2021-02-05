@@ -5,8 +5,8 @@ from scripts.round3.figures_import_helper_r3 import *
 
 # +
 filename = 'municipal_pub_reserve_no_pricefloor.csv'
-data = asymptotics.PIDMeanAuctionData(os.path.join(path_data, filename))
-plot_delta(data, filename='R3/city_auctions_delta_ex_tsuchiura')
+data = asymptotics.AsymptoticAuctionData(os.path.join(path_data, filename))
+plot_delta(data, filename='R4/city_auctions_delta_ex_tsuchiura')
 
 list_devs = [up_deviations, down_deviations, all_deviations]
 list_solutions = []
@@ -17,7 +17,7 @@ for devs in list_devs:
 
 print('saving plot\n')
 pretty_plot(
-    'R3/city auctions (ex Tsuchiura)',
+    'R4/city auctions (ex Tsuchiura)',
     list_solutions,
     [r"deviations {}".format(dev_repr(devs)) for devs in list_devs],
     xlabel='minimum markup',
@@ -28,4 +28,4 @@ pretty_plot(
 print('saving data\n')
 save2frame(list_solutions,
            ['min_m={}'.format(m) for m in r3_min_markups],
-           'R3/city_auctions_ex_tsuchiura')
+           'R4/city_auctions_ex_tsuchiura')

@@ -13,15 +13,15 @@ list_data_sets = [
 for industry, file in list_data_sets:
     print('='*20 + '\n' + industry)
     print('collecting and processing data')
-    data = asymptotics.MultistagePIDMeanAuctionData(
+    data = asymptotics.MultistageAsymptoticAuctionData(
         os.path.join(path_data, file))
-    data_before = asymptotics.MultistagePIDMeanAuctionData.from_clean_bids(
+    data_before = asymptotics.MultistageAsymptoticAuctionData.from_clean_bids(
         data.df_bids.loc[data.data.before == 1])
-    data_after = asymptotics.MultistagePIDMeanAuctionData.from_clean_bids(
+    data_after = asymptotics.MultistageAsymptoticAuctionData.from_clean_bids(
         data.df_bids.loc[data.data.before.isnull()])
-    plot_delta(data=data_before, filename='R3/{}_delta_before'.format(
+    plot_delta(data=data_before, filename='R4/{}_delta_before'.format(
         industry))
-    plot_delta(data=data_after, filename='R3/{}_delta_after'.format(industry))
+    plot_delta(data=data_after, filename='R4/{}_delta_after'.format(industry))
 
     for deviations in [all_deviations, all_deviations_small_sample]:
         print('computing before/after problem solution')
@@ -37,14 +37,14 @@ for industry, file in list_data_sets:
 
         print('saving plot\n')
         pretty_plot(
-            os.path.join('R3', industry + '_'.join(map(str, deviations))),
+            os.path.join('R4', industry + '_'.join(map(str, deviations))),
             np.array([1 - solutions_before, 1 - solutions_after]),
             np.array(["before investigation", "after investigation"]),
             xlabel='minimum markup',
             xticks=r3_min_markups
         )
         pretty_plot(
-            os.path.join('R3', industry + '_10_' +
+            os.path.join('R4', industry + '_10_' +
                          '_'.join(map(str, deviations))),
             np.array([1 - solutions_before_10, 1 - solutions_after_10]),
             np.array(["before investigation", "after investigation"]),

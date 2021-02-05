@@ -32,7 +32,7 @@ def ensure_dir(path_dir):
 
 
 ensure_dir(path_figures)
-for rnd in ['R1', 'R2', 'R3']:
+for rnd in ['R1', 'R2', 'R3', 'R4']:
     ensure_dir(os.path.join(path_figures, rnd))
 
 # set global optimization parameters
