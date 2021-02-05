@@ -19,15 +19,29 @@ class TestAuctionDataPIDMean(TestCase):
             bidding_data_or_path=path
         )
         self.deviations = [-.02, 0, .005]
+        self.equal_weighted_auctions = asymptotics.AuctionDataAsymptotics(
+            bidding_data_or_path=path
+        )
 
     def test_counterfactual_demand(self):
         assert_array_almost_equal(
             [self.auctions.get_counterfactual_demand(r) for r in [-.05, .05]],
             [0.896378, 0.023846])
 
+    def test_ew_counterfactual_demand(self):
+        assert_array_almost_equal(
+            [self.equal_weighted_auctions.get_counterfactual_demand(r)
+             for r in [-.05, .05]],
+            [0.86096 , 0.020677])
+
     def test_standard_deviation(self):
         assert_almost_equal(self.auctions.standard_deviation(
             self.deviations, (.4, .2, .4)), 0.34073885)
+
+    def test_ew_standard_deviation(self):
+        assert_almost_equal(
+            self.equal_weighted_auctions.standard_deviation(
+            self.deviations, (.4, .2, .4)), 0.37988299)
 
     def test_win_vector(self):
         df_bids = self.auctions._win_vector(
@@ -50,6 +64,12 @@ class TestAuctionDataPIDMean(TestCase):
         assert_almost_equal(
             self.auctions.confidence_threshold([-1, 1, 0], self.deviations),
             -0.4425795)
+
+    def test_ew_confidence_threshold(self):
+        assert_almost_equal(
+            self.equal_weighted_auctions.confidence_threshold(
+                [-1, 1, 0], self.deviations),
+            -0.42048479)
 
 
 def _load_data_constraints_metric(

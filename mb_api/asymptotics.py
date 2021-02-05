@@ -14,7 +14,7 @@ class PIDMeanAuctionData(AuctionData):
 
     def _get_counterfactual_demand(self, df_bids, rho):
         df_bids['new_wins'] = self._get_new_wins(df_bids, rho)
-        pid_counterfactual_demand = df_bids.groupby('pid')['new_wins'].mean()
+        pid_counterfactual_demand = df_bids.groupby('pid')['new_wins'].mean()  # update
         return pid_counterfactual_demand.mean()
 
     @staticmethod
@@ -31,9 +31,12 @@ class PIDMeanAuctionData(AuctionData):
             win_vector, deviations)
         win_vector.loc[:, 'square_residual'] = \
             np.square(np.dot(centered_wins, weights))
-        variance = win_vector.groupby('pid')['square_residual'].mean().mean()
+        variance =  self._square_residual_to_variance(win_vector)
         min_std = .01/np.sqrt(self.df_auctions.shape[0])
         return max(min_std, np.sqrt(variance))
+
+    def _square_residual_to_variance(self, win_vector):
+        return win_vector.groupby('pid')['square_residual'].mean().mean()
 
     def _win_vector(self, df_bids, deviations):
         for rho in deviations:
@@ -64,6 +67,26 @@ class PIDMeanAuctionData(AuctionData):
     def assemble_target_moments(self, list_rhos, **kwargs):
         return self.demand_vector(list_rhos)
 
+
+class AuctionDataAsymptotics(PIDMeanAuctionData):
+    def _get_counterfactual_demand(self, df_bids, rho):
+        df_bids['new_wins'] = self._get_new_wins(df_bids, rho)
+        return df_bids['new_wins'].mean()
+
+    def _demand_vector(self, win_vector, deviations):
+        list_moments = self.moment_names(deviations)
+        return win_vector[list_moments].mean(axis=0)
+
+    def _square_residual_to_variance(self, win_vector):
+        mean_var_by_auc = win_vector.groupby('pid')['square_residual'].mean()
+        n_bids_by_auction =  win_vector.groupby('pid')['square_residual'].count()
+        mean_var_by_auc *= np.square(n_bids_by_auction *
+            self.num_auctions / self.num_bids)
+        return mean_var_by_auc.mean()
+
+    @lazy_property.LazyProperty
+    def num_bids(self):
+        return  self.df_bids.shape[0]
 
 class MultistagePIDMeanAuctionData(PIDMeanAuctionData):
 
