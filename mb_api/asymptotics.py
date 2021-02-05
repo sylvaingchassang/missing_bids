@@ -88,8 +88,8 @@ class AuctionDataAsymptotics(PIDMeanAuctionData):
     def num_bids(self):
         return  self.df_bids.shape[0]
 
-class MultistagePIDMeanAuctionData(PIDMeanAuctionData):
 
+class MultistageDataMixin:
     def _win_vector(self, df_bids, deviations):
         _check_up_down_deviations(deviations)
         down_dev = deviations[0]
@@ -117,6 +117,15 @@ class MultistagePIDMeanAuctionData(PIDMeanAuctionData):
 
     def moment_names(self, deviations=None):
         return ['win_down', 'marg_cont', 'marg_info', 'win0', 'win_up']
+
+
+class MultistagePIDMeanAuctionData(MultistageDataMixin, PIDMeanAuctionData):
+    pass
+
+
+class MultistageAuctionDataAsymptotics(
+    MultistageDataMixin, AuctionDataAsymptotics):
+    pass
 
 
 class AsymptoticProblem(ConvexProblem):
