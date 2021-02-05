@@ -1,9 +1,9 @@
 from scripts.round3.figures_import_helper_r3 import *
-# %matplotlib inline
+from datetime import datetime
 
 print('='*20 + '\n' + 'National sample (individual firms)')
 print('collecting and processing data')
-national_data = asymptotics.MultistagePIDMeanAuctionData(
+national_data = asymptotics.MultistageAsymptoticAuctionData(
     os.path.join(path_data, 'sample_with_firm_rank.csv'))
 
 deviations = all_deviations
@@ -15,7 +15,7 @@ print('solving minimization problem for each firm')
 for rank in range(30):
     print('firm {}'.format(rank + 1))
     filtered_data_firm = \
-        asymptotics.MultistagePIDMeanAuctionData.from_clean_bids(
+        asymptotics.MultistageAsymptoticAuctionData.from_clean_bids(
             filtered_data.df_bids.loc[national_data.data.rank2 == rank + 1])
 
     metric = rebidding.EfficientMultistageIsNonCompetitive
@@ -39,4 +39,7 @@ for rank in range(30):
         [rank + 1, 1 - min_collusion_solver.result.solution])
 
 save2frame(share_competitive,
-           ['rank', 'share_comp'], 'R3/national_individual_firms')
+           ['rank', 'share_comp'], 'R4/national_individual_firms')
+
+print("**** END TIME {} ****".format(
+      datetime.now().strftime("%d/%m/%Y %H:%M:%S")))

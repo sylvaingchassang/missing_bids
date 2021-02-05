@@ -7,15 +7,16 @@ print('data located at \n\t{}'.format(path_data))
 print('plots saved at \n\t{}\n'.format(path_figures))
 
 filename = 'tsuchiura_data.csv'
-tsuchiura_data = asymptotics.PIDMeanAuctionData(
+tsuchiura_data = asymptotics.AsymptoticAuctionData(
     os.path.join(path_data, filename))
-tsuchiura_data = asymptotics.PIDMeanAuctionData(
+tsuchiura_data = asymptotics.AsymptoticAuctionData(
     tsuchiura_data.df_bids.loc[tsuchiura_data.data.minprice.isnull()])
 
 plot_delta(tsuchiura_data)
 
 filename = 'municipal_pub_reserve_no_pricefloor.csv'
-other_data = asymptotics.PIDMeanAuctionData(os.path.join(path_data, filename))
+other_data = asymptotics.AsymptoticAuctionData(
+    os.path.join(path_data, filename))
 
 # +
 s1 = set(other_data.df_bids.pid)
@@ -25,14 +26,14 @@ assert len(s2.intersection(s1)) == 0
 
 # +
 all_bids = pd.concat((other_data.df_bids, tsuchiura_data.df_bids), axis=0)
-data_low = asymptotics.PIDMeanAuctionData.from_clean_bids(
+data_low = asymptotics.AsymptoticAuctionData.from_clean_bids(
     all_bids.loc[all_bids.norm_bid < .9])
-data_high = asymptotics.PIDMeanAuctionData.from_clean_bids(
+data_high = asymptotics.AsymptoticAuctionData.from_clean_bids(
     all_bids.loc[all_bids.norm_bid > .9])
 
 
 plot_delta(data_high,
-           filename='R3/all_cities_delta_bids above_90pct')
+           filename='R4/all_cities_delta_bids above_90pct')
 
 
 print('computing solutions for different deviations, no min price')
@@ -53,7 +54,7 @@ share_comp_up_deviations_wo_ties = share_comp_up_deviations + \
 
 print('saving plot 1\n')
 pretty_plot(
-    'R3/city data -- different deviations -- no minimum price',
+    'R4/city data -- different deviations -- no minimum price',
     [share_comp_up_deviations_wo_ties,
      share_comp_up_deviations_w_ties,
      share_comp_all_deviations_w_ties],
@@ -81,7 +82,7 @@ dev_gain, _ = min_deviation_temptation_solver(
 
 print('saving plot\n')
 pretty_plot(
-    'R3/All cities -- Deviation Gain', [dev_gain],
+    'R4/All cities -- Deviation Gain', [dev_gain],
     [None], max_y=.15,
     ylabel='deviation temptation',
     xlabel='minimum markup',
@@ -91,5 +92,5 @@ pretty_plot(
 print('saving data\n')
 save2frame([dev_gain],
            ['min_m={}'.format(m) for m in r3_min_markups],
-           'R3/all_cities_deviation_temptation',
+           'R4/all_cities_deviation_temptation',
            ['deviation gains'])

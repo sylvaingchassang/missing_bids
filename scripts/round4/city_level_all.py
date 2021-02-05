@@ -6,14 +6,15 @@ print('='*20, '\n city level all')
 
 # +
 filename = 'tsuchiura_data.csv'
-tsuchiura_data = asymptotics.PIDMeanAuctionData(
+tsuchiura_data = asymptotics.AsymptoticAuctionData(
     os.path.join(path_data, filename))
-tsuchiura_data = asymptotics.PIDMeanAuctionData(
+tsuchiura_data = asymptotics.AsymptoticAuctionData(
     tsuchiura_data.df_bids.loc[tsuchiura_data.data.minprice.isnull()])
 plot_delta(tsuchiura_data)
 
 filename = 'municipal_pub_reserve_no_pricefloor.csv'
-other_data = asymptotics.PIDMeanAuctionData(os.path.join(path_data, filename))
+other_data = asymptotics.AsymptoticAuctionData(
+    os.path.join(path_data, filename))
 plot_delta(other_data)
 
 # +
@@ -24,8 +25,8 @@ assert len(s2.intersection(s1)) == 0
 # -
 
 all_bids = pd.concat((other_data.df_bids, tsuchiura_data.df_bids), axis=0)
-data = asymptotics.PIDMeanAuctionData.from_clean_bids(all_bids)
-plot_delta(data, filename='R3/city_auctions_delta')
+data = asymptotics.AsymptoticAuctionData.from_clean_bids(all_bids)
+plot_delta(data, filename='R4/city_auctions_delta')
 
 list_devs = [up_deviations, down_deviations, all_deviations]
 
@@ -37,7 +38,7 @@ for devs in list_devs:
 
 print('saving plot\n')
 pretty_plot(
-    'R3/city auctions',
+    'R4/city auctions',
     list_solutions,
     [r"deviations {}".format(dev_repr(devs)) for devs in list_devs],
     xlabel='minimum markup',
@@ -48,7 +49,7 @@ pretty_plot(
 print('saving data\n')
 save2frame(list_solutions,
            ['min_m={}'.format(m) for m in r3_min_markups],
-           'R3/city_auctions')
+           'R4/city_auctions')
 
 
 # varying maximum markup
@@ -69,7 +70,7 @@ for max_markup in list_max_markups:
 
 print('saving plot\n')
 pretty_plot(
-    'R3/city auctions -- varying max markup',
+    'R4/city auctions -- varying max markup',
     list_solutions,
     [r"max markup {}".format(max_markup) for max_markup in list_max_markups],
     xlabel='minimum markup',
@@ -80,4 +81,4 @@ pretty_plot(
 print('saving data\n')
 save2frame(list_solutions,
            ['min_m={}'.format(m) for m in r3_min_markups],
-           'R3/city_auctions_max_markup')
+           'R4/city_auctions_max_markup')

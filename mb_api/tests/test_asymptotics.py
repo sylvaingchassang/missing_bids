@@ -21,7 +21,7 @@ class TestAuctionDataPIDMean(TestCase):
             bidding_data_or_path=path
         )
         self.deviations = [-.02, 0, .005]
-        self.equal_weighted_auctions = asymptotics.AuctionDataAsymptotics(
+        self.equal_weighted_auctions = asymptotics.AsymptoticAuctionData(
             bidding_data_or_path=path
         )
 
@@ -165,7 +165,7 @@ class TestMultistageAsymptoticAuctionData(TestCase):
     def setUp(self):
         self.data = asymptotics.MultistagePIDMeanAuctionData(
             _load_multistage_data())
-        self.ew_data = asymptotics.MultistageAuctionDataAsymptotics(
+        self.ew_data = asymptotics.MultistageAsymptoticAuctionData(
             _load_multistage_data())
         self.deviations = [-.01, 0, .005]
 

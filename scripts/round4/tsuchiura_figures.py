@@ -1,4 +1,8 @@
 from scripts.round3.figures_import_helper_r3 import *
+from datetime import datetime
+print("**** START TIME {} ****".format(
+      datetime.now().strftime("%d/%m/%Y %H:%M:%S")))
+
 
 # illustrating impact of different IC constraints, using city data
 
@@ -7,29 +11,29 @@ print('plots saved at \n\t{}\n'.format(path_figures))
 
 print('=' * 20 + '\n' + 'Tsuchiura (before min. price)')
 print('collecting and processing data')
-tsuchiura_data = asymptotics.PIDMeanAuctionData(
+tsuchiura_data = asymptotics.AsymptoticAuctionData(
     os.path.join(path_data, 'tsuchiura_data.csv'))
-plot_delta(tsuchiura_data, filename='R3/tsuchiura_delta')
+plot_delta(tsuchiura_data, filename='R4/tsuchiura_delta')
 
-tsuchiura_before_min_price_ = asymptotics.PIDMeanAuctionData(
+tsuchiura_before_min_price_ = asymptotics.AsymptoticAuctionData(
     tsuchiura_data.df_bids.loc[tsuchiura_data.data.minprice.isnull()])
 
-tsuchiura_before_min_price = asymptotics.PIDMeanAuctionData.from_clean_bids(
+tsuchiura_before_min_price = asymptotics.AsymptoticAuctionData.from_clean_bids(
     tsuchiura_before_min_price_.df_bids.loc[
         tsuchiura_before_min_price_.df_bids.norm_bid > .9])
 
 plot_delta(tsuchiura_before_min_price,
-           filename='R3/tsuchiura_delta_no_min_price_bids_above_80pct')
+           filename='R4/tsuchiura_delta_no_min_price_bids_above_80pct')
 
-tsuchiura_after_min_price_ = asymptotics.PIDMeanAuctionData(
+tsuchiura_after_min_price_ = asymptotics.AsymptoticAuctionData(
     tsuchiura_data.df_bids.loc[~tsuchiura_data.data.minprice.isnull()])
 
-tsuchiura_after_min_price = asymptotics.PIDMeanAuctionData.from_clean_bids(
+tsuchiura_after_min_price = asymptotics.AsymptoticAuctionData.from_clean_bids(
     tsuchiura_after_min_price_.df_bids.loc[
         tsuchiura_after_min_price_.df_bids.norm_bid > .9])
 
 plot_delta(tsuchiura_after_min_price,
-           filename='R3/tsuchiura_delta_with_min_price_bids_above_80pct')
+           filename='R4/tsuchiura_delta_with_min_price_bids_above_80pct')
 
 print('computing solutions for different deviations, no min price')
 
@@ -59,7 +63,7 @@ share_comp_up_deviations_wo_ties = share_comp_up_deviations + \
 
 print('saving plot 1\n')
 pretty_plot(
-    'R3/Tsuchiura -- different deviations -- no minimum price',
+    'R4/Tsuchiura -- different deviations -- no minimum price',
     [share_comp_up_deviations_wo_ties,
      share_comp_up_deviations_w_ties,
      share_comp_all_deviations_w_ties],
@@ -74,12 +78,12 @@ save2frame(
      share_comp_up_deviations_w_ties,
      share_comp_all_deviations_w_ties],
     ['min_m={}'.format(m) for m in r3_min_markups],
-    'R3/Tsuchiura -- different deviations -- no minimum price')
+    'R4/Tsuchiura -- different deviations -- no minimum price')
 
 
 print('saving plot 1b\n')
 pretty_plot(
-    'R3/Tsuchiura -- different deviations -- no minimum price (b)',
+    'R4/Tsuchiura -- different deviations -- no minimum price (b)',
     [share_comp_up_deviations_wo_ties,
      share_comp_up_deviations_w_ties,
      share_comp_down_deviations,
@@ -96,11 +100,11 @@ save2frame(
      share_comp_down_deviations,
      share_comp_all_deviations_w_ties],
     ['min_m={}'.format(m) for m in r3_min_markups],
-    'R3/Tsuchiura -- different deviations -- no minimum price (b)')
+    'R4/Tsuchiura -- different deviations -- no minimum price (b)')
 
 print('saving plot 2\n')
 pretty_plot(
-    'R3/Tsuchiura with and without min price',
+    'R4/Tsuchiura with and without min price',
     [share_comp_all_deviations_w_ties, share_comp_min_price],
     ['without minimum price', 'with minimum price'],
     ['k.-', 'k.:'],
@@ -111,7 +115,7 @@ print('saving data\n')
 save2frame(
     [share_comp_all_deviations_w_ties, share_comp_min_price],
     ['min_m={}'.format(m) for m in r3_min_markups],
-    'R3/Tsuchiura with and without min price')
+    'R4/Tsuchiura with and without min price')
 
 
 # computing deviation temptation over profits, using city data
@@ -132,7 +136,7 @@ dev_gain, _ = min_deviation_temptation_solver(
 
 print('saving plot\n')
 pretty_plot(
-    'R3/Tsuchiura -- Deviation Gain', [dev_gain],
+    'R4/Tsuchiura -- Deviation Gain', [dev_gain],
     [None], max_y=.15,
     ylabel='deviation temptation',
     xlabel='minimum markup',
@@ -142,5 +146,5 @@ pretty_plot(
 print('saving data\n')
 save2frame([dev_gain],
            ['min_m={}'.format(m) for m in r3_min_markups],
-           'R3/tsuchiura_deviation_temptation',
+           'R4/tsuchiura_deviation_temptation',
            ['deviation gains'])
