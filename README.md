@@ -58,5 +58,8 @@ then, from within  `missing_bids/scripts/round3/` run
     
 figure will be outputed to the `missing_bids_data` folder
     
-generating figures requires 16GB RAM;  
+generating figures requires at least 16GB RAM;  
 suggestions for improvements welcome
+
+Computation take 29 hours on 8 core (dual cpu) intel i7-3770 clocked at 3.4 GHz, with 32G of RAM
+
