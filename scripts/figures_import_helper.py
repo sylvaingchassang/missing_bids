@@ -5,6 +5,7 @@ import os
 from datetime import datetime
 import pandas as pd
 from itertools import product
+from collections.abc import Iterable
 
 from mb_api import asymptotics, analytics, environments, auction_data, \
     rebidding, solvers
@@ -33,8 +34,10 @@ def ensure_dir(path_dir):
 ensure_dir(path_figures)
 
 # set global optimization parameters
-NUM_POINTS = 500
-NUM_EVAL = 4
+NUM_POINTS = 1000
+NUM_EVAL = 100
+SEEDS = [0, 1]
+CONVERGENCE_TOL = .0001
 
 all_deviations = [-.02, .0, .001]
 all_deviations_small_sample = [-.02, .0, .002]
@@ -83,7 +86,7 @@ class ComputeMinimizationSolution:
     def __init__(
             self, metric=analytics.IsNonCompetitive,
             markups=r3_markups, constraints=empty_constraints,
-            seed=0, solver_cls=None, confidence_level=.95,
+            seed=SEEDS, solver_cls=None, confidence_level=.95,
             enhanced_guesses=True):
         self.metric = metric
         self.markups_list = markups
@@ -95,19 +98,41 @@ class ComputeMinimizationSolution:
         self.enhanced_guesses = enhanced_guesses
 
     def __call__(self, data, deviations):
-        solutions = []
         deviations = analytics.ordered_deviations(deviations)
         _share_ties, this_data = self._apply_filter(data)
 
-        for mkps, constraints in zip(self.markups_list, self.constraints_list):
-            this_solver = self.get_solver(
-                this_data, deviations, constraints, mkps)
-            solutions.append(this_solver.result.solution)
-            del this_solver
+        seeds = self.seed if isinstance(self.seed, Iterable) else [self.seed]
+
+        list_solutions = []
+        for seed in seeds:
+            list_solutions.append(
+                self._get_solutions(deviations, this_data, seed))
+        try:
+            assert self._is_converging(list_solutions)
+        except AssertionError:
+            print('>>> Convergence not achieved, increase grid precision')
+            raise
 
         del this_data
         del data
-        return np.array(solutions), _share_ties
+        return np.array(list_solutions[0]), _share_ties
+
+    def _get_solutions(self, deviations, this_data, seed):
+        solutions = []
+        for mkps, constraints in zip(self.markups_list, self.constraints_list):
+            this_solver = self.get_solver(
+                this_data, deviations, constraints, mkps, seed)
+            solutions.append(this_solver.result.solution)
+            del this_solver
+        return solutions
+
+    @staticmethod
+    def _is_converging(list_solutions):
+        reference_solution = list_solutions[0]
+        convergence_list = [np.all(
+            np.isclose(reference_solution, other_sol, atol=CONVERGENCE_TOL))
+            for other_sol in list_solutions]
+        return np.all(convergence_list)
 
     def _apply_filter(self, data):
         if self.filtering:
@@ -119,7 +144,7 @@ class ComputeMinimizationSolution:
             _share_ties = 0
         return _share_ties, this_data
 
-    def get_solver(self, this_data, deviations, constraints, mkps):
+    def get_solver(self, this_data, deviations, constraints, mkps, seed):
         self._update_metric_params(mkps)
         return self.solver_cls(
             data=this_data,
@@ -127,7 +152,7 @@ class ComputeMinimizationSolution:
             metric=self.metric,
             plausibility_constraints=constraints,
             num_points=self._NUM_POINTS,
-            seed=self.seed,
+            seed=seed,
             project=False,
             filter_ties=None,
             num_evaluations=self._NUM_EVAL,
