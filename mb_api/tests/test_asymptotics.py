@@ -80,8 +80,8 @@ def _load_data_constraints_metric(
         os.path.dirname(__file__), 'reference_data',
         'tsuchiura_data.csv')
     raw_data = _read_bids(path)
-    raw_data['reserveprice'] *= coeff
-    raw_data['norm_bid'] = raw_data['bid'] / raw_data['reserveprice']
+    raw_data.loc[:, 'reserveprice'] *= coeff
+    raw_data.loc[:, 'norm_bid'] = raw_data['bid'] / raw_data['reserveprice']
     if coeff != 1:
         data = data_cls(bidding_data_or_path=raw_data)
     else:

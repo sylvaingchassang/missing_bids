@@ -52,10 +52,11 @@ class AuctionData:
     @lazy_property.LazyProperty
     def df_bids(self):
         df_bids = self.data[self.COLS].set_index("pid")
-        df_bids["lowest"] = self.df_auctions["lowest"]
-        df_bids["second_lowest"] = self.df_auctions["second_lowest"]
+        df_bids.loc[:, "lowest"] = self.df_auctions["lowest"]
+        df_bids.loc[:, "second_lowest"] = self.df_auctions["second_lowest"]
 
-        df_bids["most_competitive"] = self._truncated_lowest_bid(df_bids)
+        df_bids.loc[:, "most_competitive"] = self._truncated_lowest_bid(
+            df_bids)
         is_bid_lowest = np.isclose(df_bids["norm_bid"], df_bids["lowest"])
         df_bids.loc[is_bid_lowest, "most_competitive"] = df_bids.loc[
             is_bid_lowest, "second_lowest"]
@@ -143,11 +144,3 @@ class FilterTies:
             atol=self.tolerance
         )
 
-
-def hist_plot(df, title=''):
-    plt.figure(figsize=(10, 6))
-    sns.distplot(
-        df, kde=False, hist_kws=dict(alpha=1), bins=200, hist=True,
-        norm_hist=1)
-    plt.title(title)
-    plt.tight_layout()

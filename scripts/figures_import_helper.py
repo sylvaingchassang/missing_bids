@@ -6,29 +6,23 @@ from datetime import datetime
 import pandas as pd
 from itertools import product
 
-from mb_api import analytics, environments, auction_data, rebidding, solvers
+from mb_api import asymptotics, analytics, environments, auction_data, \
+    rebidding, solvers
 
 from matplotlib import rc
+
+# set path/to/data in a script_config.py file, which you must create
+# script_config.py is included in .gitignore
+from scripts.script_config import path_data
 
 rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']})
 rc('text', usetex=True)
 
-hist_plot = auction_data.hist_plot
 sns.set_style('white')
 
-# getting data directory
-# path/to/data (if you know it, otherwise, we'll find it below)
-path_data = None
-
-if path_data is None:
-    name = 'data_for_missing_bids_figures'
-    for root, dirs, _ in os.walk('/'):
-        if name in dirs:
-            path_data = os.path.join(root, name)
-            break
 
 path_figures = os.path.join(path_data, 'figures',
-                            datetime.utcnow().strftime('%Y%m%d'))
+                            datetime.utcnow().strftime('%Y%m%d'),'')
 
 
 def ensure_dir(path_dir):
@@ -37,42 +31,49 @@ def ensure_dir(path_dir):
 
 
 ensure_dir(path_figures)
-for round in ['R1', 'R2', 'R3']:
-    ensure_dir(os.path.join(path_figures, round))
 
 # set global optimization parameters
-NUM_POINTS = 3000 #5000
-NUM_EVAL = 10 #400
+NUM_POINTS = 500
+NUM_EVAL = 4
 
 all_deviations = [-.02, .0, .001]
+all_deviations_small_sample = [-.02, .0, .002]
 up_deviations = [.0, .001]
 down_deviations = [-.02, .0]
 
 all_deviations_tsuchiura = [-.02, .0, .0008]
 up_deviations_tsuchiura = [.0, .0008]
 
+r3_min_markups = [.0, .025, .05, .1, .2, .4]
+r3_markups = list(product(r3_min_markups, [.5]))
 
-def markup_info_constraints(max_markups, ks, demands):
-    return [
-        [environments.MarkupConstraint(max_markup=max_markup, min_markup=.02),
-         environments.InformationConstraint(k=k, sample_demands=demands)]
-        for max_markup, k in product(max_markups, ks)
-    ]
+r3_constraints = [[environments.MarkupConstraint(
+    max_markup=max_markup, min_markup=min_markup)]
+    for min_markup, max_markup in r3_markups]
 
+empty_constraints = [[environments.EmptyConstraint()]] * len(r3_markups)
 
-def round1_constraints(demands):
-    return markup_info_constraints(
-        max_markups=(.5,), ks=(0.5, 1, 1.5, 2), demands=demands)
+moment_matrix = np.array([[-1, 0, 0],
+                          [-1, 1, 0],
+                          [0, 1, 0],
+                          [0, 1, -1],
+                          [0, 0, -1]])
+moment_matrix_up = np.array([[1, 0], [1, -1], [0, -1]])
+moment_matrix_down = np.array([[-1, 0], [-1, 1], [0, 1]])
 
+multistage_moment_matrix = np.array([
+    [-1, 0, 0, 0, 0],
+    [-1, 1, .5, 1, 0],
+    [0, 0, 0, 1, 0],
+    [0, 0, 0, 1, -1],
+    [0, 0, 0, 0, -1]])
 
-r2_min_mkps = [.0, .025, .05, .1, .2, .4]
-
-
-def round2_constraints(demands):
-    return [
-        [environments.MarkupConstraint(max_markup=.5, min_markup=min_markup)]
-        for min_markup in r2_min_mkps
-    ]
+multistage_moment_matrix_up = np.array([
+    [0, 0, 0, 1, 0], [0, 0, 0, 0, -1], [0, 0, 0, 1, -1]])
+multistage_moment_matrix_down = np.array([
+    [-1, 0, 0, 0, 0],
+    [-1, 1, .5, 1, 0],
+    [0, 0, 0, 1, 0]])
 
 
 class ComputeMinimizationSolution:
@@ -81,27 +82,26 @@ class ComputeMinimizationSolution:
 
     def __init__(
             self, metric=analytics.IsNonCompetitive,
-            constraint_func=round1_constraints, project_choices=None,
-            filtering=True, seed=0, solver_cls=None):
+            markups=r3_markups, constraints=empty_constraints,
+            seed=0, solver_cls=None, confidence_level=.95,
+            enhanced_guesses=True):
         self.metric = metric
-        self.constraint_func = constraint_func
-        self._project_choices = project_choices
-        self.filtering = filtering
+        self.markups_list = markups
+        self.constraints_list = constraints
+        self.filtering = True
         self.seed = seed
-        self.solver_cls = solver_cls or solvers.IteratedSolver
+        self.solver_cls = solver_cls or solvers.ParallelSolver
+        self.confidence_level = confidence_level
+        self.enhanced_guesses = enhanced_guesses
 
     def __call__(self, data, deviations):
         solutions = []
         deviations = analytics.ordered_deviations(deviations)
         _share_ties, this_data = self._apply_filter(data)
-        demands = this_data.assemble_target_moments(deviations)
-        iter_constraints = self.constraint_func(demands)
-        project_choices = \
-            self._project_choices or [False] * len(iter_constraints)
 
-        for constraints, proj in zip(iter_constraints, project_choices):
+        for mkps, constraints in zip(self.markups_list, self.constraints_list):
             this_solver = self.get_solver(
-                this_data, deviations, constraints, proj)
+                this_data, deviations, constraints, mkps)
             solutions.append(this_solver.result.solution)
             del this_solver
 
@@ -119,65 +119,77 @@ class ComputeMinimizationSolution:
             _share_ties = 0
         return _share_ties, this_data
 
-    def get_solver(self, this_data, deviations, constraints, proj):
+    def get_solver(self, this_data, deviations, constraints, mkps):
+        self._update_metric_params(mkps)
         return self.solver_cls(
             data=this_data,
             deviations=deviations,
             metric=self.metric,
             plausibility_constraints=constraints,
-            num_points=int(self._NUM_POINTS / (1 + 9 * proj)),
+            num_points=self._NUM_POINTS,
             seed=self.seed,
-            project=proj,
+            project=False,
             filter_ties=None,
             num_evaluations=self._NUM_EVAL,
-            confidence_level=1 - .05 / len(deviations),
+            confidence_level=self.confidence_level,
             moment_matrix=self._moment_matrix(deviations),
-            moment_weights=self._moment_weights(deviations)
+            moment_weights=None,
+            enhanced_guesses=self.enhanced_guesses
         )
 
+    def _update_metric_params(self, mkps):
+        min_markup, max_markup = mkps
+        if self._is_efficient():
+            self.metric.min_markup = min_markup
+            self.metric.max_markup = max_markup
+
     def _moment_matrix(self, deviations):
-        if self._is_rebidding():
-            if deviations[0] > -1e-8:
-                return rebidding.refined_moment_matrix_up_dev
-            return rebidding.refined_moment_matrix()
-        return auction_data.moment_matrix(
-            analytics.ordered_deviations(deviations), 'slope')
+        if self._is_multistage_solver():
+            return self._multistage_moment_matrix(deviations)
+        else:
+            return self._singlestage_moment_matrix(deviations)
 
-    def _moment_weights(self, deviations):
-        if self._is_rebidding():
-            if deviations[0] > -1e-8:
-                return rebidding.refined_weights_up_dev
-            elif deviations[2] < 1e-8:
-                return rebidding.refined_weights_down_dev
-            return np.identity(5)
-        return np.identity(len(analytics.ordered_deviations(deviations)))
+    def _is_multistage_solver(self):
+        return issubclass(self.solver_cls,
+                          (asymptotics.AsymptoticMultistageSolver,
+                           asymptotics.ParallelAsymptoticMultistageSolver))
 
-    def _is_rebidding(self):
-        return self.solver_cls == rebidding.ParallelRefinedMultistageSolver
+    @staticmethod
+    def _multistage_moment_matrix(deviations):
+        if deviations[0] > -1e-8:
+            return multistage_moment_matrix_up
+        elif deviations[-1] < 1e-8:
+            return multistage_moment_matrix_down
+        return multistage_moment_matrix
+
+    @staticmethod
+    def _singlestage_moment_matrix(deviations):
+        if deviations[0] > -1e-8:
+            return moment_matrix_up
+        elif deviations[-1] < 1e-8:
+            return moment_matrix_down
+        return moment_matrix
+
+    def _is_efficient(self):
+        return issubclass(self.metric, analytics.EfficientIsNonCompetitive)
 
 
-compute_minimization_solution = ComputeMinimizationSolution()
-compute_minimization_solution_unfiltered = ComputeMinimizationSolution(
-    filtering=False)
-
-compute_solution_parallel = ComputeMinimizationSolution(
-    solver_cls=solvers.ParallelSolver, constraint_func=round2_constraints)
-compute_solution_parallel_unfiltered = ComputeMinimizationSolution(
-    solver_cls=solvers.ParallelSolver, filtering=False,
-    constraint_func=round2_constraints)
-compute_solution_rebidding = ComputeMinimizationSolution(
-    constraint_func=round2_constraints,
-    solver_cls=rebidding.ParallelRefinedMultistageSolver,
-    metric=rebidding.RefinedMultistageIsNonCompetitive)
-compute_solution_rebidding_unfiltered = ComputeMinimizationSolution(
-    constraint_func=round2_constraints,
-    solver_cls=rebidding.ParallelRefinedMultistageSolver,
-    metric=rebidding.RefinedMultistageIsNonCompetitive,
-    filtering=False)
-
-compute_efficient_solution_parallel = ComputeMinimizationSolution(
+compute_asymptotic_solution = ComputeMinimizationSolution(
     metric=analytics.EfficientIsNonCompetitive,
-    solver_cls=solvers.ParallelSolver, constraint_func=round2_constraints)
+    solver_cls=asymptotics.ParallelAsymptoticSolver)
+
+compute_asymptotic_multistage_solution_95 = ComputeMinimizationSolution(
+    metric=rebidding.EfficientMultistageIsNonCompetitive,
+    solver_cls=asymptotics.ParallelAsymptoticMultistageSolver)
+
+compute_asymptotic_multistage_solution_10 = ComputeMinimizationSolution(
+    metric=rebidding.EfficientMultistageIsNonCompetitive,
+    solver_cls=asymptotics.ParallelAsymptoticMultistageSolver,
+    confidence_level=.1
+)
+
+compute_asymptotic_multistage_solution = \
+    compute_asymptotic_multistage_solution_95
 
 
 def dev_repr(devs):
@@ -186,20 +198,15 @@ def dev_repr(devs):
     return r'\{' + dev_str + r'\}'
 
 
-def ensure_decreasing(l):
-    sl = sorted(l, reverse=True)
-    return sl
-
-
 def pretty_plot(title, list_solutions, labels, mark=np.array(['k.:', 'k.-']),
                 xticks=(0.5, 1, 1.5, 2), max_y=1.05, xlabel='k',
-                ylabel='share of competitive histories',
-                expect_decreasing=True):
+                ylabel='share of competitive histories', l1=True):
     plt.figure()
     for i, (solutions, label) in enumerate(zip(list_solutions, labels)):
-        if expect_decreasing:
-            solutions = ensure_decreasing(solutions)
         plt.plot(xticks, solutions, mark[i], label=label)
+    if l1:
+        plt.plot(xticks, [1] * len(xticks), linestyle='-', linewidth=.75,
+                 color='red')
     if labels[0] is not None:
         plt.legend(loc='best', fontsize=12)
     plt.axis([xticks[0], xticks[-1], 0, max_y])
@@ -217,11 +224,3 @@ def save2frame(data, columns, title, index=False):
     pd.DataFrame(data=data, columns=columns).to_csv(
         os.path.join(path_figures, '{}.csv'.format(title)), index=index)
 
-
-def plot_delta(data, rho=.05, filename=None):
-    delta = data.df_bids.norm_bid - data.df_bids.most_competitive
-    delta = delta[delta.between(-rho, rho)]
-    hist_plot(delta, 'distribution of normalized bid differences')
-    plt.xlabel(r'normalized bid difference $\Delta$')
-    if filename is not None:
-        plt.savefig(os.path.join(path_figures, '{}.pdf'.format(filename)))

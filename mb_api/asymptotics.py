@@ -13,8 +13,10 @@ from mb_api.solvers import ParallelSolver
 class PIDMeanAuctionData(AuctionData):
 
     def _get_counterfactual_demand(self, df_bids, rho):
-        df_bids['new_wins'] = self._get_new_wins(df_bids, rho)
-        pid_counterfactual_demand = df_bids.groupby('pid')['new_wins'].mean()  # update
+        this_df_bids = df_bids.copy()
+        this_df_bids.loc[:, 'new_wins'] = self._get_new_wins(df_bids, rho)
+        pid_counterfactual_demand = this_df_bids.groupby('pid')[
+            'new_wins'].mean()
         return pid_counterfactual_demand.mean()
 
     @staticmethod
@@ -31,7 +33,7 @@ class PIDMeanAuctionData(AuctionData):
             win_vector, deviations)
         win_vector.loc[:, 'square_residual'] = \
             np.square(np.dot(centered_wins, weights))
-        variance =  self._square_residual_to_variance(win_vector)
+        variance = self._square_residual_to_variance(win_vector)
         min_std = .01/np.sqrt(self.df_auctions.shape[0])
         return max(min_std, np.sqrt(variance))
 
@@ -39,9 +41,10 @@ class PIDMeanAuctionData(AuctionData):
         return win_vector.groupby('pid')['square_residual'].mean().mean()
 
     def _win_vector(self, df_bids, deviations):
+        this_df_bids = df_bids.copy()
         for rho in deviations:
-            df_bids[rho] = self._get_new_wins(df_bids, rho)
-        return df_bids
+            this_df_bids.loc[:, rho] = self._get_new_wins(df_bids, rho)
+        return this_df_bids
 
     def _demand_vector(self, win_vector, deviations):
         list_moments = self.moment_names(deviations)
@@ -70,8 +73,7 @@ class PIDMeanAuctionData(AuctionData):
 
 class AsymptoticAuctionData(PIDMeanAuctionData):
     def _get_counterfactual_demand(self, df_bids, rho):
-        df_bids['new_wins'] = self._get_new_wins(df_bids, rho)
-        return df_bids['new_wins'].mean()
+        return self._get_new_wins(df_bids, rho).mean()
 
     def _demand_vector(self, win_vector, deviations):
         list_moments = self.moment_names(deviations)
@@ -79,25 +81,26 @@ class AsymptoticAuctionData(PIDMeanAuctionData):
 
     def _square_residual_to_variance(self, win_vector):
         mean_var_by_auc = win_vector.groupby('pid')['square_residual'].mean()
-        n_bids_by_auction =  win_vector.groupby('pid')['square_residual'].count()
+        n_bids_by_auction = win_vector.groupby('pid')['square_residual'].count()
         mean_var_by_auc *= np.square(n_bids_by_auction *
-            self.num_auctions / self.num_bids)
+                                     self.num_auctions / self.num_bids)
         return mean_var_by_auc.mean()
 
     @lazy_property.LazyProperty
     def num_bids(self):
-        return  self.df_bids.shape[0]
+        return self.df_bids.shape[0]
 
 
 class MultistageDataMixin:
     def _win_vector(self, df_bids, deviations):
+        this_df_bids = df_bids.copy()
         _check_up_down_deviations(deviations)
         down_dev = deviations[0]
         for col, rho in zip(['win_down', 'win0', 'win_up'], deviations):
-            df_bids[col] = self._get_new_wins(df_bids, rho)
-        df_bids['marg_cont'] = self.is_marginal_cont(df_bids, down_dev)
-        df_bids['marg_info'] = self.is_marginal_info(df_bids, down_dev)
-        return df_bids[['pid'] + self.moment_names()]
+            this_df_bids.loc[:, col] = self._get_new_wins(df_bids, rho)
+        this_df_bids.loc[:, 'marg_cont'] = self.is_marginal_cont(df_bids, down_dev)
+        this_df_bids.loc[:, 'marg_info'] = self.is_marginal_info(df_bids, down_dev)
+        return this_df_bids[['pid'] + self.moment_names()]
 
     @staticmethod
     def bids_after_deviation(df_bids, rho):
