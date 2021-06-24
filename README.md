@@ -31,11 +31,6 @@ if you want to contribute, follow [PEP8](https://www.python.org/dev/peps/pep-000
     
     from within the `missing_bids/` folder
     
-1. to play with an example notebook illustrating key functionality, run
-    `jupyter notebook example_tsuchiura.ipynb`
-    
-    from inside the `missing_bids/notebooks/` folder
-    
     make sure the folder containing `missing_bids/` is included in your `PYTHONPATH`
 
 1. to generate figures included in the paper
@@ -46,20 +41,29 @@ download the [data](https://www.dropbox.com/s/kigyfge4ubc8er3/data_missing_bids.
         - bc_collusion.csv
         - other `csv` files
 
-from within the folder `missing_bids/scripts/round3/` create a file named `script_config.py` containing a single line:
+from within the folder `missing_bids/scripts/` create a file named `script_config.py` containing a single line:
 
 ```path_data = 'path/to/missing_bids_data'```
 where `path/to` is the absolute path to the `missing_bids_data` folder you created.
 
 
-then, from within  `missing_bids/scripts/round3/` run 
+then, from within  `missing_bids/scripts/` run 
 
     `bash generate_figures.sh`
     
-figure will be outputed to the `missing_bids_data` folder
+figures will be outputed to the `missing_bids_data` folder
     
 generating figures requires at least 16GB RAM;  
 suggestions for improvements welcome
 
-Computation take 29 hours on 8 core (dual cpu) intel i7-3770 clocked at 3.4 GHz, with 32G of RAM
+1. Computation parameters are specified in the `missing_bids/scripts/figures_import_helper.py` file
+
+    - figures used in the paper are generated using parameters
+      NUM_POINTS = 1000, NUM_EVAL = 200, SEEDS = [0, 1]
+      Computations take  roughly one week on an 8 core (dual cpu) intel i7-3770 clocked at 3.4 GHz, with 32G of RAM
+    - very similar figures can be generated within a third of the time by using parameters 
+      NUM_POINTS = 1000, NUM_EVAL = 100, SEEDS = [0]
+    - to test that everything is working, it is useful to run computations with parameters 
+      NUM_POINTS = 500, NUM_EVAL = 2, SEEDS = [0]
+      under that configuration, computations typically take under one hour.
 
